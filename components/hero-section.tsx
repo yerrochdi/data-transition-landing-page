@@ -70,7 +70,7 @@ export function HeroSection() {
               className="rounded-full border-accent/30 bg-accent/5 px-4 py-1.5 text-xs font-semibold text-accent"
             >
               <Sparkles className="mr-1.5 h-3 w-3" />
-              {"Mentorat senior"}
+              {"Mentorat senior 2025"}
             </Badge>
             <span className="text-xs font-medium text-muted-foreground">
               {"6 semaines"}
