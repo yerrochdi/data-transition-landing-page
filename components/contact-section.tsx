@@ -3,6 +3,7 @@
 import React from "react"
 
 import { useState } from "react";
+import { useRouter } from "next/navigation";
 import { Button } from "@/components/ui/button";
 import { Input } from "@/components/ui/input";
 import { Textarea } from "@/components/ui/textarea";
@@ -16,6 +17,8 @@ import {
   Calendar,
   ExternalLink,
 } from "lucide-react";
+import { getBookingUrlWithUtm, BOOKING_URL } from "@/lib/booking";
+import { trackFormSubmit, trackBookingOpen } from "@/lib/analytics";
 
 type FormStatus = "idle" | "loading" | "success" | "error";
 
@@ -23,6 +26,12 @@ export function ContactSection() {
   const [status, setStatus] = useState<FormStatus>("idle");
   const [errorMessage, setErrorMessage] = useState("");
   const [showCalendly, setShowCalendly] = useState(false);
+  const router = useRouter();
+
+  const handleOpenCalendly = () => {
+    setShowCalendly(true);
+    trackBookingOpen("contact_section");
+  };
 
   async function handleSubmit(e: React.FormEvent<HTMLFormElement>) {
     e.preventDefault();
@@ -35,6 +44,7 @@ export function ContactSection() {
       email: formData.get("email") as string,
       profile: formData.get("profile") as string,
       goal: formData.get("goal") as string,
+      website: formData.get("website") as string, // Honeypot field
     };
 
     try {
@@ -52,9 +62,15 @@ export function ContactSection() {
         return;
       }
 
+      trackFormSubmit("contact");
       setStatus("success");
+
+      // Redirect to thank-you page after short delay
+      setTimeout(() => {
+        router.push("/thank-you");
+      }, 2000);
     } catch {
-      setErrorMessage("Impossible de contacter le serveur. Veuillez r\u00e9essayer.");
+      setErrorMessage("Impossible de contacter le serveur. Veuillez réessayer.");
       setStatus("error");
     }
   }
@@ -73,7 +89,7 @@ export function ContactSection() {
             {"Prenons 15 minutes pour en parler."}
           </h2>
           <p className="mt-3 text-muted-foreground">
-            {"Remplissez le formulaire ou r\u00e9servez directement un cr\u00e9neau."}
+            {"Remplissez le formulaire ou réservez directement un créneau."}
           </p>
         </div>
 
@@ -86,33 +102,33 @@ export function ContactSection() {
                   <CheckCircle2 className="h-8 w-8 text-accent" />
                 </div>
                 <h3 className="font-display text-xl font-bold text-foreground">
-                  {"Demande envoy\u00e9e !"}
+                  {"Demande envoyée !"}
                 </h3>
                 <p className="max-w-sm text-sm text-muted-foreground">
-                  {"Merci pour votre int\u00e9r\u00eat. Nous revenons vers vous sous 48h pour planifier un \u00e9change."}
+                  {"Merci pour votre intérêt. Redirection vers la page de confirmation..."}
                 </p>
                 <div className="mt-2 flex flex-col gap-3 sm:flex-row">
                   <Button
-                    onClick={() => setShowCalendly(true)}
+                    onClick={handleOpenCalendly}
                     className="rounded-full bg-accent text-accent-foreground shadow-md shadow-accent/25 hover:bg-accent/90"
                   >
                     <Calendar className="mr-2 h-4 w-4" />
-                    {"R\u00e9server un cr\u00e9neau maintenant"}
-                  </Button>
-                  <Button
-                    variant="outline"
-                    className="rounded-full bg-transparent"
-                    onClick={() => {
-                      setStatus("idle");
-                      setErrorMessage("");
-                    }}
-                  >
-                    {"Envoyer une autre demande"}
+                    {"Réserver un créneau maintenant"}
                   </Button>
                 </div>
               </div>
             ) : (
               <form onSubmit={handleSubmit} className="flex flex-col gap-5">
+                {/* Honeypot field - hidden from users, visible to bots */}
+                <input
+                  type="text"
+                  name="website"
+                  tabIndex={-1}
+                  autoComplete="off"
+                  className="absolute -left-[9999px] h-0 w-0 opacity-0"
+                  aria-hidden="true"
+                />
+
                 <div className="grid grid-cols-1 gap-4 sm:grid-cols-2">
                   <div className="flex flex-col gap-2">
                     <label
@@ -157,7 +173,7 @@ export function ContactSection() {
                   <Input
                     id="profile"
                     name="profile"
-                    placeholder="Ex: Responsable SIRH, 8 ans d'exp\u00e9rience"
+                    placeholder="Ex: Responsable SIRH, 8 ans d'expérience"
                     className="rounded-xl"
                   />
                 </div>
@@ -172,7 +188,7 @@ export function ContactSection() {
                   <Textarea
                     id="goal"
                     name="goal"
-                    placeholder="D\u00e9crivez bri\u00e8vement votre objectif de transition data..."
+                    placeholder="Décrivez brièvement votre objectif de transition data..."
                     rows={4}
                     className="rounded-xl"
                   />
@@ -205,7 +221,7 @@ export function ContactSection() {
 
                 <p className="flex items-center gap-2 text-xs text-muted-foreground">
                   <Clock className="h-3.5 w-3.5" />
-                  {"Pas de vente forc\u00e9e. R\u00e9ponse sous 48h."}
+                  {"Pas de vente forcée. Réponse sous 48h."}
                 </p>
               </form>
             )}
@@ -221,7 +237,7 @@ export function ContactSection() {
                 </div>
                 <div>
                   <h3 className="font-display text-base font-bold text-foreground">
-                    {"R\u00e9servez directement"}
+                    {"Réservez directement"}
                   </h3>
                   <p className="text-xs text-muted-foreground">
                     {"15 min, sans engagement"}
@@ -229,10 +245,10 @@ export function ContactSection() {
                 </div>
               </div>
               <Button
-                onClick={() => setShowCalendly(true)}
+                onClick={handleOpenCalendly}
                 className="w-full rounded-full bg-accent text-accent-foreground shadow-md shadow-accent/25 hover:bg-accent/90"
               >
-                {"Choisir un cr\u00e9neau"}
+                {"Choisir un créneau"}
                 <ExternalLink className="ml-2 h-3.5 w-3.5" />
               </Button>
             </div>
@@ -244,14 +260,14 @@ export function ContactSection() {
               </h3>
               <div className="flex flex-col gap-3">
                 <a
-                  href="mailto:contact@datatransition.fr"
+                  href="mailto:yerrochdi.telecomparis@gmail.com"
                   className="flex items-center gap-3 rounded-xl bg-secondary p-3 text-sm text-foreground transition-colors hover:bg-secondary/70"
                 >
                   <Mail className="h-4 w-4 text-accent" />
-                  {"contact@datatransition.fr"}
+                  {"yerrochdi.telecomparis@gmail.com"}
                 </a>
                 <a
-                  href="https://linkedin.com"
+                  href="https://linkedin.com/in/yerrochdi"
                   target="_blank"
                   rel="noopener noreferrer"
                   className="flex items-center gap-3 rounded-xl bg-secondary p-3 text-sm text-foreground transition-colors hover:bg-secondary/70"
@@ -265,10 +281,10 @@ export function ContactSection() {
             {/* Quote */}
             <div className="rounded-2xl border border-border/60 bg-card p-6">
               <p className="text-sm font-medium leading-relaxed text-foreground">
-                {"\u00ab Je ne cherche pas \u00e0 vendre. Je cherche les bons profils : ceux qui ont d\u00e9j\u00e0 l\u2019exp\u00e9rience, mais pas encore le bon positionnement. \u00bb"}
+                {"« Je ne cherche pas à vendre. Je cherche les bons profils : ceux qui ont déjà l'expérience, mais pas encore le bon positionnement. »"}
               </p>
               <p className="mt-3 text-xs font-semibold text-muted-foreground">
-                {"\u2014 Fondateur, Data Transition"}
+                {"— Fondateur, Data Transition"}
               </p>
             </div>
           </div>
@@ -280,7 +296,7 @@ export function ContactSection() {
             <div className="relative mx-4 w-full max-w-2xl rounded-3xl bg-card p-2 shadow-2xl">
               <div className="flex items-center justify-between px-5 py-3">
                 <h3 className="font-display text-lg font-bold text-foreground">
-                  {"R\u00e9server un cr\u00e9neau"}
+                  {"Réserver un créneau"}
                 </h3>
                 <button
                   type="button"
@@ -288,13 +304,13 @@ export function ContactSection() {
                   className="flex h-8 w-8 items-center justify-center rounded-full text-muted-foreground transition-colors hover:bg-secondary hover:text-foreground"
                   aria-label="Fermer"
                 >
-                  {"\u00d7"}
+                  {"×"}
                 </button>
               </div>
               <div className="overflow-hidden rounded-2xl bg-background">
                 <iframe
-                  src={`${process.env.NEXT_PUBLIC_CALENDLY_URL || "https://calendly.com/datatransition/15min"}`}
-                  title="R\u00e9server un cr\u00e9neau - Data Transition"
+                  src={getBookingUrlWithUtm()}
+                  title="Réserver un créneau - Data Transition"
                   className="h-[560px] w-full border-0"
                   loading="lazy"
                 />

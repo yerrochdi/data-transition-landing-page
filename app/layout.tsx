@@ -1,6 +1,8 @@
 import React from "react"
 import type { Metadata, Viewport } from "next";
 import { Inter, Plus_Jakarta_Sans } from "next/font/google";
+import { Analytics } from "@vercel/analytics/react";
+import { StickyCta } from "@/components/sticky-cta";
 
 import "./globals.css";
 
@@ -35,6 +37,8 @@ export default function RootLayout({
         className={`${inter.variable} ${jakarta.variable} font-sans antialiased`}
       >
         {children}
+        <StickyCta />
+        <Analytics />
       </body>
     </html>
   );
