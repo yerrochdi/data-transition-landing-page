@@ -13,6 +13,8 @@ const config: Config = {
       fontFamily: {
         sans: ['var(--font-inter)', 'system-ui', 'sans-serif'],
         display: ['var(--font-jakarta)', 'var(--font-inter)', 'system-ui', 'sans-serif'],
+        headline: ['var(--font-jakarta)', 'system-ui', 'sans-serif'],
+        body: ['var(--font-inter)', 'system-ui', 'sans-serif'],
       },
       colors: {
         background: 'hsl(var(--background))',
@@ -55,6 +57,17 @@ const config: Config = {
           '4': 'hsl(var(--chart-4))',
           '5': 'hsl(var(--chart-5))',
         },
+        // Surface hierarchy (Material 3 / Digital Architect)
+        surface: {
+          DEFAULT: 'hsl(var(--surface))',
+          dim: 'hsl(var(--surface-dim))',
+          bright: 'hsl(var(--surface-bright))',
+          'container-lowest': 'hsl(var(--surface-container-lowest))',
+          'container-low': 'hsl(var(--surface-container-low))',
+          container: 'hsl(var(--surface-container))',
+          'container-high': 'hsl(var(--surface-container-high))',
+          'container-highest': 'hsl(var(--surface-container-highest))',
+        },
         sidebar: {
           DEFAULT: 'hsl(var(--sidebar-background))',
           foreground: 'hsl(var(--sidebar-foreground))',
@@ -73,20 +86,12 @@ const config: Config = {
       },
       keyframes: {
         'accordion-down': {
-          from: {
-            height: '0',
-          },
-          to: {
-            height: 'var(--radix-accordion-content-height)',
-          },
+          from: { height: '0' },
+          to: { height: 'var(--radix-accordion-content-height)' },
         },
         'accordion-up': {
-          from: {
-            height: 'var(--radix-accordion-content-height)',
-          },
-          to: {
-            height: '0',
-          },
+          from: { height: 'var(--radix-accordion-content-height)' },
+          to: { height: '0' },
         },
       },
       animation: {

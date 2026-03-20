@@ -1,0 +1,356 @@
+<!DOCTYPE html>
+
+<html class="dark" lang="en"><head>
+<meta charset="utf-8"/>
+<meta content="width=device-width, initial-scale=1.0" name="viewport"/>
+<title>NextMove AI | Career Journey</title>
+<script src="https://cdn.tailwindcss.com?plugins=forms,container-queries"></script>
+<link href="https://fonts.googleapis.com/css2?family=Plus+Jakarta+Sans:wght@400;500;600;700;800&amp;family=Inter:wght@300;400;500;600&amp;display=swap" rel="stylesheet"/>
+<link href="https://fonts.googleapis.com/css2?family=Material+Symbols+Outlined:wght,FILL@100..700,0..1&amp;display=swap" rel="stylesheet"/>
+<link href="https://fonts.googleapis.com/css2?family=Material+Symbols+Outlined:wght,FILL@100..700,0..1&amp;display=swap" rel="stylesheet"/>
+<script id="tailwind-config">
+        tailwind.config = {
+            darkMode: "class",
+            theme: {
+                extend: {
+                    colors: {
+                        "inverse-on-surface": "#2d3136",
+                        "on-surface": "#e0e2ea",
+                        "on-primary": "#003915",
+                        "tertiary": "#d1bdff",
+                        "surface-container-highest": "#31353b",
+                        "on-secondary-fixed": "#001a42",
+                        "surface-container": "#1c2025",
+                        "error": "#ffb4ab",
+                        "primary-fixed-dim": "#4ae176",
+                        "on-primary-fixed-variant": "#005321",
+                        "inverse-primary": "#006e2f",
+                        "surface-container-lowest": "#0a0e13",
+                        "on-secondary-fixed-variant": "#004395",
+                        "on-surface-variant": "#bccbb9",
+                        "on-tertiary-fixed": "#23005c",
+                        "surface-container-high": "#262a30",
+                        "on-primary-container": "#004b1e",
+                        "tertiary-fixed-dim": "#d0bcff",
+                        "surface-container-low": "#181c21",
+                        "tertiary-fixed": "#e9ddff",
+                        "on-tertiary-container": "#4e02b8",
+                        "surface-bright": "#36393f",
+                        "secondary": "#adc6ff",
+                        "error-container": "#93000a",
+                        "on-error": "#690005",
+                        "outline-variant": "#3d4a3d",
+                        "surface": "#101419",
+                        "on-secondary-container": "#e6ecff",
+                        "primary-container": "#22c55e",
+                        "on-error-container": "#ffdad6",
+                        "outline": "#869585",
+                        "secondary-fixed-dim": "#adc6ff",
+                        "on-tertiary-fixed-variant": "#5516be",
+                        "secondary-container": "#0566d9",
+                        "inverse-surface": "#e0e2ea",
+                        "primary": "#4be277",
+                        "surface-tint": "#4ae176",
+                        "on-background": "#e0e2ea",
+                        "primary-fixed": "#6bff8f",
+                        "tertiary-container": "#b89cff",
+                        "background": "#101419",
+                        "surface-variant": "#31353b",
+                        "on-primary-fixed": "#002109",
+                        "secondary-fixed": "#d8e2ff",
+                        "on-secondary": "#002e6a",
+                        "surface-dim": "#101419",
+                        "on-tertiary": "#3c0091"
+                    },
+                    fontFamily: {
+                        "headline": ["Plus Jakarta Sans"],
+                        "body": ["Inter"],
+                        "label": ["Inter"]
+                    },
+                    borderRadius: {"DEFAULT": "0.125rem", "lg": "0.25rem", "xl": "0.5rem", "full": "0.75rem"},
+                },
+            },
+        }
+    </script>
+<style>
+        .material-symbols-outlined {
+            font-variation-settings: 'FILL' 0, 'wght' 400, 'GRAD' 0, 'opsz' 24;
+        }
+        .glass-panel {
+            background: rgba(49, 53, 59, 0.6);
+            backdrop-filter: blur(20px);
+        }
+        .text-glow {
+            text-shadow: 0 0 10px rgba(75, 226, 119, 0.4);
+        }
+        .node-line {
+            background: linear-gradient(to bottom, #4be277 0%, #1c2025 100%);
+        }
+    </style>
+<style>
+    body {
+      min-height: max(884px, 100dvh);
+    }
+  </style>
+  </head>
+<body class="bg-background text-on-surface font-body selection:bg-primary selection:text-on-primary">
+<!-- Top Navigation Bar -->
+<nav class="fixed top-0 w-full z-50 bg-[#1c2025]/60 backdrop-blur-xl border-b border-[#3d4a3d]/15 shadow-[0_20px_40px_rgba(0,0,0,0.4)] flex justify-between items-center px-6 h-16">
+<div class="flex items-center gap-3">
+<span class="material-symbols-outlined text-primary text-2xl" style="font-variation-settings: 'FILL' 1;">bubble_chart</span>
+<span class="font-headline font-black text-xl text-primary tracking-tight drop-shadow-[0_0_8px_rgba(75,226,119,0.4)]">NextMove AI</span>
+</div>
+<div class="hidden md:flex items-center gap-8">
+<a class="text-primary font-headline font-bold text-sm tracking-wide" href="#">Path</a>
+<a class="text-on-surface-variant hover:text-primary transition-colors text-sm font-headline font-bold tracking-wide" href="#">Market</a>
+<a class="text-on-surface-variant hover:text-primary transition-colors text-sm font-headline font-bold tracking-wide" href="#">Feed</a>
+</div>
+<div class="flex items-center gap-4">
+<button class="p-2 rounded-full hover:bg-surface-container-high transition-all">
+<span class="material-symbols-outlined text-on-surface-variant">search</span>
+</button>
+<div class="h-8 w-8 rounded-full bg-surface-container-highest border border-outline-variant overflow-hidden">
+<img alt="User Avatar" class="w-full h-full object-cover" data-alt="Cyberpunk style profile avatar placeholder" src="https://lh3.googleusercontent.com/aida-public/AB6AXuByzyg6xRc02D984AWRi8dGQyVuH5LGyfg8By6mkwZNWFpFnbrf9BwmxqimJuo3X7UTsqVjcpHjxM8wzdDmXEEKEZN_ZzbgR-igFrY3LJORKizcPlzaNz1V2J8PW3swkorTA9qRru7TRGIpMGANPvSpsuoNdJfkmb14nJZ3ewciybiPqyONWFBrBmGj1KjkKTtr5zc02lEAAnseDCXBm9lf4RKXsm2o7sn43lwgHGIf_uSBYmGkF98aRnMZCiEYdr-mqVR80NTCVIVD"/>
+</div>
+</div>
+</nav>
+<!-- Main Content Grid -->
+<main class="pt-24 pb-32 px-6 max-w-7xl mx-auto grid grid-cols-1 lg:grid-cols-12 gap-12">
+<!-- Sidebar Navigation Drawer (Web) -->
+<aside class="hidden lg:flex lg:col-span-3 flex-col gap-6">
+<div class="bg-surface-container-lowest rounded-r-2xl p-6 shadow-2xl space-y-4">
+<div class="flex items-center gap-4 p-4 bg-surface-container-low rounded-xl mb-6">
+<div class="w-12 h-12 rounded-full bg-primary-container/20 flex items-center justify-center text-primary">
+<span class="material-symbols-outlined" style="font-variation-settings: 'FILL' 1;">psychology</span>
+</div>
+<div>
+<p class="font-headline font-bold text-primary text-sm">Career Architect</p>
+<p class="text-xs text-on-surface-variant">NextMove Premium</p>
+</div>
+</div>
+<div class="space-y-1">
+<a class="flex items-center gap-3 p-3 rounded-lg text-on-surface-variant hover:bg-surface-container transition-all" href="#">
+<span class="material-symbols-outlined">dashboard</span>
+<span class="font-headline text-sm font-medium">Dashboard</span>
+</a>
+<a class="flex items-center gap-3 p-3 rounded-lg bg-surface-container text-primary border-l-4 border-primary transition-all shadow-lg shadow-primary/5" href="#">
+<span class="material-symbols-outlined" style="font-variation-settings: 'FILL' 1;">alt_route</span>
+<span class="font-headline text-sm font-bold">Immersive Path</span>
+</a>
+<a class="flex items-center gap-3 p-3 rounded-lg text-on-surface-variant hover:bg-surface-container transition-all" href="#">
+<span class="material-symbols-outlined">insights</span>
+<span class="font-headline text-sm font-medium">Skill Roadmap</span>
+</a>
+<a class="flex items-center gap-3 p-3 rounded-lg text-on-surface-variant hover:bg-surface-container transition-all" href="#">
+<span class="material-symbols-outlined">work</span>
+<span class="font-headline text-sm font-medium">Job Market</span>
+</a>
+</div>
+</div>
+<!-- Current Progress Card -->
+<div class="glass-panel p-6 rounded-2xl border-t border-primary-fixed-dim/30">
+<h4 class="font-headline text-xs font-bold uppercase tracking-widest text-on-surface-variant mb-4">Current Velocity</h4>
+<div class="relative h-2 w-full bg-surface-container-lowest rounded-full overflow-hidden mb-2">
+<div class="absolute top-0 left-0 h-full w-[64%] bg-gradient-to-r from-primary to-primary-container shadow-[0_0_10px_#4be277]"></div>
+</div>
+<div class="flex justify-between items-center">
+<span class="text-[10px] text-on-surface-variant font-medium">PHASE: POSITIONNEMENT</span>
+<span class="text-xs font-bold text-primary">64%</span>
+</div>
+</div>
+</aside>
+<!-- Vertical Interactive Timeline Canvas -->
+<section class="lg:col-span-9">
+<header class="mb-12">
+<h1 class="font-headline text-4xl font-extrabold tracking-tight text-on-surface mb-2">The Journey Path</h1>
+<p class="text-on-surface-variant font-body max-w-2xl">Your career evolution mapped by AI. Complete the architectural phases to unlock your final position in the tech ecosystem.</p>
+</header>
+<div class="relative pl-8 md:pl-16 space-y-16">
+<!-- Vertical Progress Line -->
+<div class="absolute left-[15px] md:left-[31px] top-4 bottom-4 w-px bg-outline-variant/30">
+<div class="absolute top-0 left-0 w-full h-[64%] node-line"></div>
+</div>
+<!-- Phase 1: Diagnostic -->
+<div class="relative group">
+<div class="absolute -left-[16px] md:-left-[32px] top-0 w-8 md:w-16 flex justify-center">
+<div class="w-8 h-8 rounded-full bg-primary flex items-center justify-center text-on-primary shadow-[0_0_20px_rgba(75,226,119,0.5)] z-10 transition-transform group-hover:scale-110">
+<span class="material-symbols-outlined text-sm" style="font-variation-settings: 'FILL' 1;">check</span>
+</div>
+</div>
+<div class="bg-surface-container-low p-6 md:p-8 rounded-2xl border border-outline-variant/10 group-hover:bg-surface-container transition-all">
+<div class="flex flex-col md:flex-row md:items-center justify-between gap-4 mb-6">
+<div>
+<span class="text-[10px] font-headline font-bold uppercase tracking-[0.2em] text-primary mb-1 block">Phase 01</span>
+<h3 class="font-headline text-2xl font-bold text-on-surface">Diagnostic</h3>
+</div>
+<div class="bg-primary/10 px-4 py-1.5 rounded-full border border-primary/20">
+<span class="text-xs font-bold text-primary">COMPLETED</span>
+</div>
+</div>
+<div class="grid grid-cols-1 md:grid-cols-3 gap-4">
+<div class="bg-surface-container-lowest p-4 rounded-xl border border-outline-variant/5">
+<span class="material-symbols-outlined text-primary mb-2">psychology</span>
+<p class="text-xs font-bold text-on-surface mb-1">Skill Analysis</p>
+<p class="text-[10px] text-on-surface-variant">Validated 12 Core Competencies</p>
+</div>
+<div class="bg-surface-container-lowest p-4 rounded-xl border border-outline-variant/5">
+<span class="material-symbols-outlined text-primary mb-2">monitoring</span>
+<p class="text-xs font-bold text-on-surface mb-1">Gap Report</p>
+<p class="text-[10px] text-on-surface-variant">3 Critical Gaps Identified</p>
+</div>
+<div class="bg-surface-container-lowest p-4 rounded-xl border border-outline-variant/5">
+<span class="material-symbols-outlined text-primary mb-2">verified</span>
+<p class="text-xs font-bold text-on-surface mb-1">Baseline</p>
+<p class="text-[10px] text-on-surface-variant">Career Score: 780/1000</p>
+</div>
+</div>
+</div>
+</div>
+<!-- Phase 2: Vision -->
+<div class="relative group">
+<div class="absolute -left-[16px] md:-left-[32px] top-0 w-8 md:w-16 flex justify-center">
+<div class="w-8 h-8 rounded-full bg-primary flex items-center justify-center text-on-primary shadow-[0_0_20px_rgba(75,226,119,0.5)] z-10 transition-transform group-hover:scale-110">
+<span class="material-symbols-outlined text-sm" style="font-variation-settings: 'FILL' 1;">check</span>
+</div>
+</div>
+<div class="bg-surface-container-low p-6 md:p-8 rounded-2xl border border-outline-variant/10 group-hover:bg-surface-container transition-all">
+<div class="flex flex-col md:flex-row md:items-center justify-between gap-4 mb-6">
+<div>
+<span class="text-[10px] font-headline font-bold uppercase tracking-[0.2em] text-primary mb-1 block">Phase 02</span>
+<h3 class="font-headline text-2xl font-bold text-on-surface">Vision</h3>
+</div>
+<div class="bg-primary/10 px-4 py-1.5 rounded-full border border-primary/20">
+<span class="text-xs font-bold text-primary">COMPLETED</span>
+</div>
+</div>
+<div class="space-y-4">
+<div class="flex items-center gap-4 bg-surface-container-lowest/50 p-4 rounded-xl">
+<img alt="Vision Map" class="w-12 h-12 rounded-lg object-cover" data-alt="Abstract glowing architectural blueprint of career future" src="https://lh3.googleusercontent.com/aida-public/AB6AXuBLsLbM14_51G2C8nS2w6ZX_SSuzusd22-WFlE-tksbLpX0eWONBxJh0uljjJeOM1-S_vpKeWyQPZgSiYYAqPJi91SBQti1EETQSPas3EjT6FypymadTDEi4dKUaCo5acq2om1K0Ve2WVMnxSw1ifgXlUd4ds_y71pJAiy4S3vh62FbhudIRXcHmgGn7tg0CB5thCyyJiODIyraB9rGD9kPUQgRR29BIVkImRbG9kxAP0SMJSEGgAxQ78n7dCAUep5qTs1CaK4Lb-p_"/>
+<div class="flex-1">
+<p class="text-sm font-bold text-on-surface">Architectural Outcome</p>
+<p class="text-xs text-on-surface-variant">Principal Technical Architect (FinTech focus)</p>
+</div>
+<span class="material-symbols-outlined text-primary text-xl">rocket_launch</span>
+</div>
+</div>
+</div>
+</div>
+<!-- Phase 3: Positionnement (ACTIVE) -->
+<div class="relative group">
+<div class="absolute -left-[16px] md:-left-[32px] top-0 w-8 md:w-16 flex justify-center">
+<div class="w-8 h-8 rounded-full bg-surface-container-high border-2 border-primary flex items-center justify-center text-primary shadow-[0_0_15px_rgba(75,226,119,0.3)] z-10 transition-transform group-hover:scale-110 animate-pulse">
+<span class="material-symbols-outlined text-sm" style="font-variation-settings: 'FILL' 1;">play_arrow</span>
+</div>
+</div>
+<div class="bg-surface-container-high p-6 md:p-8 rounded-2xl border border-primary/20 shadow-xl shadow-primary/5 group-hover:bg-surface-variant transition-all overflow-hidden relative">
+<!-- Neon Accent -->
+<div class="absolute top-0 right-0 w-1/2 h-full bg-gradient-to-l from-primary/5 to-transparent pointer-events-none"></div>
+<div class="flex flex-col md:flex-row md:items-center justify-between gap-4 mb-8">
+<div>
+<span class="text-[10px] font-headline font-bold uppercase tracking-[0.2em] text-primary mb-1 block">Phase 03</span>
+<h3 class="font-headline text-2xl font-bold text-on-surface">Positionnement</h3>
+<p class="text-xs text-on-surface-variant mt-1">Refining your narrative and market placement.</p>
+</div>
+<div class="flex items-center gap-3">
+<span class="text-xs font-bold text-on-surface-variant">IN PROGRESS</span>
+<div class="w-16 h-1 bg-surface-container-lowest rounded-full overflow-hidden">
+<div class="h-full bg-primary w-[64%] shadow-[0_0_5px_#4be277]"></div>
+</div>
+</div>
+</div>
+<!-- Tasks Container -->
+<div class="space-y-4">
+<!-- Task 1 -->
+<div class="flex items-start gap-4 p-4 rounded-xl bg-surface-container-lowest/80 border border-outline-variant/10">
+<div class="w-6 h-6 rounded border border-primary flex items-center justify-center bg-primary text-on-primary mt-1">
+<span class="material-symbols-outlined text-xs">done</span>
+</div>
+<div class="flex-1">
+<div class="flex justify-between mb-1">
+<h4 class="text-sm font-bold text-on-surface">Personal Brand Logic</h4>
+<span class="text-[10px] text-primary font-bold">DONE</span>
+</div>
+<p class="text-xs text-on-surface-variant">Defining your unique 'Architect' USP for the hiring market.</p>
+</div>
+</div>
+<!-- Task 2 (Current) -->
+<div class="flex items-start gap-4 p-4 rounded-xl bg-surface-container-highest border-l-4 border-primary shadow-lg">
+<div class="w-6 h-6 rounded border border-primary flex items-center justify-center text-primary mt-1">
+<span class="material-symbols-outlined text-xs animate-spin">sync</span>
+</div>
+<div class="flex-1">
+<div class="flex justify-between mb-1">
+<h4 class="text-sm font-bold text-on-surface">Target Entity Mapping</h4>
+<span class="text-[10px] text-primary font-bold">64%</span>
+</div>
+<p class="text-xs text-on-surface-variant mb-4">Identifying top-tier companies matching your architectural profile.</p>
+<button class="bg-gradient-to-r from-primary to-primary-container text-on-primary px-4 py-2 rounded-lg text-xs font-bold flex items-center gap-2 hover:scale-105 transition-transform active:scale-95">
+                                        RESUME SESSION
+                                        <span class="material-symbols-outlined text-xs">arrow_forward</span>
+</button>
+</div>
+</div>
+<!-- Task 3 -->
+<div class="flex items-start gap-4 p-4 rounded-xl bg-surface-container-lowest/40 border border-outline-variant/10 opacity-60">
+<div class="w-6 h-6 rounded border border-outline-variant flex items-center justify-center text-on-surface-variant mt-1">
+<span class="material-symbols-outlined text-xs">lock</span>
+</div>
+<div class="flex-1">
+<h4 class="text-sm font-bold text-on-surface">Narrative Pitch Simulation</h4>
+<p class="text-xs text-on-surface-variant">AI-powered interview simulation (Unlock at 100% Target Mapping).</p>
+</div>
+</div>
+</div>
+</div>
+</div>
+<!-- Phase 4: Execution -->
+<div class="relative group opacity-50 grayscale">
+<div class="absolute -left-[16px] md:-left-[32px] top-0 w-8 md:w-16 flex justify-center">
+<div class="w-8 h-8 rounded-full bg-surface-container-lowest border border-outline-variant flex items-center justify-center text-on-surface-variant z-10 transition-transform group-hover:scale-110">
+<span class="material-symbols-outlined text-sm">lock</span>
+</div>
+</div>
+<div class="bg-surface-container-low p-6 md:p-8 rounded-2xl border border-outline-variant/10">
+<div class="flex items-center justify-between mb-2">
+<div>
+<span class="text-[10px] font-headline font-bold uppercase tracking-[0.2em] text-on-surface-variant mb-1 block">Phase 04</span>
+<h3 class="font-headline text-2xl font-bold text-on-surface">Execution</h3>
+</div>
+</div>
+<p class="text-xs text-on-surface-variant">Strategic application and offer negotiation protocols.</p>
+</div>
+</div>
+</div>
+</section>
+<!-- Bottom Navigation Bar (Mobile Only) -->
+<nav class="md:hidden fixed bottom-0 w-full rounded-t-3xl z-50 bg-[#101419]/90 backdrop-blur-lg border-t border-[#3d4a3d]/15 shadow-[0_-10px_30px_rgba(0,0,0,0.5)] flex justify-around items-center h-20 px-4 pb-safe">
+<a class="flex flex-col items-center justify-center text-[#bccbb9] opacity-60 hover:opacity-100 transition-opacity" href="#">
+<span class="material-symbols-outlined">home</span>
+<span class="font-['Inter'] text-[10px] uppercase tracking-widest mt-1">Home</span>
+</a>
+<a class="flex flex-col items-center justify-center text-[#bccbb9] opacity-60 hover:opacity-100 transition-opacity" href="#">
+<span class="material-symbols-outlined">smart_toy</span>
+<span class="font-['Inter'] text-[10px] uppercase tracking-widest mt-1">AI Agent</span>
+</a>
+<a class="flex flex-col items-center justify-center text-[#4be277] relative after:content-[''] after:absolute after:-bottom-1 after:w-1 after:h-1 after:bg-[#4be277] after:rounded-full after:shadow-[0_0_10px_#4be277]" href="#">
+<span class="material-symbols-outlined" style="font-variation-settings: 'FILL' 1;">alt_route</span>
+<span class="font-['Inter'] text-[10px] uppercase tracking-widest mt-1">Path</span>
+</a>
+<a class="flex flex-col items-center justify-center text-[#bccbb9] opacity-60 hover:opacity-100 transition-opacity" href="#">
+<span class="material-symbols-outlined">storefront</span>
+<span class="font-['Inter'] text-[10px] uppercase tracking-widest mt-1">Market</span>
+</a>
+<a class="flex flex-col items-center justify-center text-[#bccbb9] opacity-60 hover:opacity-100 transition-opacity" href="#">
+<span class="material-symbols-outlined">dynamic_feed</span>
+<span class="font-['Inter'] text-[10px] uppercase tracking-widest mt-1">Feed</span>
+</a>
+</nav>
+<!-- Floating Insight FAB (Contextual) -->
+<button class="fixed bottom-24 right-6 md:bottom-12 md:right-12 w-14 h-14 rounded-full bg-gradient-to-tr from-primary to-primary-container text-on-primary shadow-[0_10px_40px_rgba(75,226,119,0.3)] flex items-center justify-center hover:scale-110 active:scale-90 transition-all z-40 group">
+<span class="material-symbols-outlined text-2xl group-hover:rotate-12 transition-transform" style="font-variation-settings: 'FILL' 1;">magic_button</span>
+<div class="absolute right-full mr-4 bg-surface-container-high px-3 py-1.5 rounded-lg border border-primary/20 whitespace-nowrap opacity-0 group-hover:opacity-100 transition-opacity pointer-events-none">
+<span class="text-xs font-bold text-primary">Ask AI Career Coach</span>
+</div>
+</button>
+</main>
+</body></html>

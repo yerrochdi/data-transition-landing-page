@@ -1,0 +1,408 @@
+// ============================================================
+// NextMove AI — Data Model
+// ============================================================
+
+generator client {
+  provider = "prisma-client"
+  output   = "../lib/generated/prisma"
+}
+
+datasource db {
+  provider = "postgresql"
+}
+
+// ============================================================
+// Auth & User
+// ============================================================
+
+model User {
+  id                  String    @id @default(uuid())
+  email               String    @unique
+  firstName           String
+  lastName            String
+  avatarUrl           String?
+  plan                Plan      @default(FREE)
+  onboardingCompleted Boolean   @default(false)
+  createdAt           DateTime  @default(now())
+  updatedAt           DateTime  @updatedAt
+  lastActiveAt        DateTime  @default(now())
+
+  // Supabase auth link
+  supabaseId          String?   @unique
+
+  // Relations
+  profile             UserProfile?
+  onboarding          OnboardingResponse?
+  journeyProgress     JourneyProgress[]
+  agentConversations  AgentConversation[]
+  bookmarks           OpportunityBookmark[]
+  analyticsSnapshots  AnalyticsSnapshot[]
+  activities          Activity[]
+
+  @@map("users")
+}
+
+enum Plan {
+  FREE
+  PREMIUM
+  ENTERPRISE
+}
+
+// ============================================================
+// User Profile (career info)
+// ============================================================
+
+model UserProfile {
+  id               String   @id @default(uuid())
+  userId           String   @unique
+  currentRole      String?
+  currentCompany   String?
+  currentSector    String?
+  targetRole       String?
+  targetSector     String?
+  experienceYears  Int?
+  topSkills        String[] // array of skill names
+  skillGaps        String[]
+  careerScore      Int      @default(0)
+  readinessScore   Int      @default(0)
+  confidenceLevel  Int      @default(5) // 1-10
+  createdAt        DateTime @default(now())
+  updatedAt        DateTime @updatedAt
+
+  user User @relation(fields: [userId], references: [id], onDelete: Cascade)
+
+  @@map("user_profiles")
+}
+
+// ============================================================
+// Onboarding
+// ============================================================
+
+model OnboardingResponse {
+  id               String   @id @default(uuid())
+  userId           String   @unique
+  situation        String?
+  currentRole      String?
+  currentSector    String?
+  experienceYears  Int?
+  targetRole       String?
+  targetSector     String?
+  topSkills        String[]
+  skillGaps        String[]
+  blockers         String[]
+  confidenceLevel  Int?
+  shortTermGoal    String?
+  longTermGoal     String?
+  preferredPace    Pace     @default(MODERATE)
+  completedAt      DateTime?
+  createdAt        DateTime @default(now())
+  updatedAt        DateTime @updatedAt
+
+  // AI-generated summary
+  aiSummary        String?  @db.Text
+  aiRecommendation String?  @db.Text
+
+  user User @relation(fields: [userId], references: [id], onDelete: Cascade)
+
+  @@map("onboarding_responses")
+}
+
+enum Pace {
+  RELAXED
+  MODERATE
+  INTENSIVE
+}
+
+// ============================================================
+// Journey (Parcours)
+// ============================================================
+
+model JourneyPhase {
+  id          String      @id @default(uuid())
+  slug        String      @unique // diagnostic, vision, positionnement, execution, acceleration
+  number      String      // "01", "02", etc.
+  title       String
+  description String
+  order       Int
+  createdAt   DateTime    @default(now())
+
+  modules     JourneyModule[]
+  tasks       JourneyTask[]
+  progress    JourneyProgress[]
+
+  @@map("journey_phases")
+}
+
+model JourneyModule {
+  id          String   @id @default(uuid())
+  phaseId     String
+  icon        String
+  title       String
+  subtitle    String
+  order       Int
+  createdAt   DateTime @default(now())
+
+  phase JourneyPhase @relation(fields: [phaseId], references: [id], onDelete: Cascade)
+
+  @@map("journey_modules")
+}
+
+model JourneyTask {
+  id          String   @id @default(uuid())
+  phaseId     String
+  title       String
+  description String
+  order       Int
+  createdAt   DateTime @default(now())
+
+  phase    JourneyPhase      @relation(fields: [phaseId], references: [id], onDelete: Cascade)
+  progress JourneyTaskProgress[]
+
+  @@map("journey_tasks")
+}
+
+model JourneyProgress {
+  id        String      @id @default(uuid())
+  userId    String
+  phaseId   String
+  status    PhaseStatus @default(LOCKED)
+  progress  Int         @default(0) // 0-100
+  startedAt DateTime?
+  completedAt DateTime?
+  updatedAt DateTime    @updatedAt
+
+  user  User         @relation(fields: [userId], references: [id], onDelete: Cascade)
+  phase JourneyPhase @relation(fields: [phaseId], references: [id], onDelete: Cascade)
+  tasks JourneyTaskProgress[]
+
+  @@unique([userId, phaseId])
+  @@map("journey_progress")
+}
+
+enum PhaseStatus {
+  LOCKED
+  ACTIVE
+  COMPLETED
+}
+
+model JourneyTaskProgress {
+  id                String     @id @default(uuid())
+  journeyProgressId String
+  taskId            String
+  status            TaskStatus @default(LOCKED)
+  progress          Int        @default(0) // 0-100
+  completedAt       DateTime?
+  updatedAt         DateTime   @updatedAt
+
+  journeyProgress JourneyProgress @relation(fields: [journeyProgressId], references: [id], onDelete: Cascade)
+  task            JourneyTask     @relation(fields: [taskId], references: [id], onDelete: Cascade)
+
+  @@unique([journeyProgressId, taskId])
+  @@map("journey_task_progress")
+}
+
+enum TaskStatus {
+  LOCKED
+  IN_PROGRESS
+  DONE
+}
+
+// ============================================================
+// AI Agents
+// ============================================================
+
+model AgentDefinition {
+  id           String   @id @default(uuid())
+  slug         String   @unique // career-coach, strategist, etc.
+  name         String
+  role         String
+  description  String   @db.Text
+  icon         String
+  color        String
+  capabilities Json     // [{id, label, description}]
+  quickActions Json     // [{id, label, icon}]
+  isActive     Boolean  @default(true)
+  createdAt    DateTime @default(now())
+
+  conversations AgentConversation[]
+
+  @@map("agent_definitions")
+}
+
+model AgentConversation {
+  id        String   @id @default(uuid())
+  userId    String
+  agentId   String
+  title     String?
+  createdAt DateTime @default(now())
+  updatedAt DateTime @updatedAt
+
+  user     User              @relation(fields: [userId], references: [id], onDelete: Cascade)
+  agent    AgentDefinition   @relation(fields: [agentId], references: [id], onDelete: Cascade)
+  messages AgentMessage[]
+
+  @@map("agent_conversations")
+}
+
+model AgentMessage {
+  id             String      @id @default(uuid())
+  conversationId String
+  role           MessageRole // USER or AGENT
+  content        String      @db.Text
+  messageType    MessageType @default(CHAT)
+  metadata       Json?       // extra data (action results, sources, etc.)
+  createdAt      DateTime    @default(now())
+
+  conversation AgentConversation @relation(fields: [conversationId], references: [id], onDelete: Cascade)
+
+  @@map("agent_messages")
+}
+
+enum MessageRole {
+  USER
+  AGENT
+}
+
+enum MessageType {
+  CHAT
+  INSIGHT
+  SUGGESTION
+  ACTION
+  SUMMARY
+}
+
+// ============================================================
+// Opportunities
+// ============================================================
+
+model Opportunity {
+  id          String          @id @default(uuid())
+  title       String
+  company     String
+  location    String
+  type        OpportunityType
+  salary      String?
+  tags        String[]
+  description String          @db.Text
+  remote      Boolean         @default(false)
+  sourceUrl   String?
+  postedAt    DateTime
+  isActive    Boolean         @default(true)
+  createdAt   DateTime        @default(now())
+  updatedAt   DateTime        @updatedAt
+
+  bookmarks OpportunityBookmark[]
+  matches   OpportunityMatch[]
+
+  @@map("opportunities")
+}
+
+enum OpportunityType {
+  JOB
+  FREELANCE
+  TRANSITION
+  FORMATION
+}
+
+model OpportunityMatch {
+  id            String   @id @default(uuid())
+  opportunityId String
+  userId        String
+  matchScore    Int      // 0-100
+  aiReason      String   @db.Text
+  createdAt     DateTime @default(now())
+
+  opportunity Opportunity @relation(fields: [opportunityId], references: [id], onDelete: Cascade)
+
+  @@unique([opportunityId, userId])
+  @@map("opportunity_matches")
+}
+
+model OpportunityBookmark {
+  id            String   @id @default(uuid())
+  userId        String
+  opportunityId String
+  createdAt     DateTime @default(now())
+
+  user        User        @relation(fields: [userId], references: [id], onDelete: Cascade)
+  opportunity Opportunity @relation(fields: [opportunityId], references: [id], onDelete: Cascade)
+
+  @@unique([userId, opportunityId])
+  @@map("opportunity_bookmarks")
+}
+
+// ============================================================
+// Analytics & Tracking
+// ============================================================
+
+model AnalyticsSnapshot {
+  id                 String   @id @default(uuid())
+  userId             String
+  careerScore        Int
+  readinessScore     Int
+  overallProgress    Int
+  completedPhases    Int
+  totalTasksCompleted Int
+  streakDays         Int
+  skillProgress      Json     // [{name, current, target, category}]
+  snapshotDate       DateTime @default(now())
+
+  user User @relation(fields: [userId], references: [id], onDelete: Cascade)
+
+  @@map("analytics_snapshots")
+}
+
+model Activity {
+  id          String       @id @default(uuid())
+  userId      String
+  type        ActivityType
+  title       String
+  description String?
+  icon        String?
+  metadata    Json?
+  createdAt   DateTime     @default(now())
+
+  user User @relation(fields: [userId], references: [id], onDelete: Cascade)
+
+  @@map("activities")
+}
+
+enum ActivityType {
+  AGENT_INTERACTION
+  TASK_COMPLETED
+  PHASE_COMPLETED
+  OPPORTUNITY_VIEWED
+  OPPORTUNITY_BOOKMARKED
+  MILESTONE
+  ONBOARDING_STEP
+}
+
+// ============================================================
+// Resources
+// ============================================================
+
+model Resource {
+  id          String       @id @default(uuid())
+  title       String
+  description String       @db.Text
+  type        ResourceType
+  category    String
+  imageUrl    String?
+  readTime    String?
+  author      String?
+  url         String
+  isNew       Boolean      @default(true)
+  isPublished Boolean      @default(true)
+  createdAt   DateTime     @default(now())
+  updatedAt   DateTime     @updatedAt
+
+  @@map("resources")
+}
+
+enum ResourceType {
+  ARTICLE
+  GUIDE
+  VIDEO
+  TEMPLATE
+  CASE_STUDY
+}

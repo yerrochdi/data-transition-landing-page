@@ -1,8 +1,7 @@
-import React from "react"
+import React from "react";
 import type { Metadata, Viewport } from "next";
 import { Inter, Plus_Jakarta_Sans } from "next/font/google";
 import { Analytics } from "@vercel/analytics/react";
-import { StickyCta } from "@/components/sticky-cta";
 
 import "./globals.css";
 
@@ -17,13 +16,13 @@ const jakarta = Plus_Jakarta_Sans({
 });
 
 export const metadata: Metadata = {
-  title: "Data Transition | Mentorat senior pour votre transition data",
+  title: "NextMove AI | Your AI-Powered Career Evolution Platform",
   description:
-    "Accompagnement structur\u00e9 pour les profils fonctionnels exp\u00e9riment\u00e9s (RH/SIRH/AMOA/IT) qui veulent un r\u00f4le data cr\u00e9dible. Mentorat senior, pas formation.",
+    "NextMove is an AI-first platform that accelerates your professional transition with specialized agents, structured pathways, and intelligent guidance.",
 };
 
 export const viewport: Viewport = {
-  themeColor: "#0f172a",
+  themeColor: "#101419",
 };
 
 export default function RootLayout({
@@ -32,12 +31,11 @@ export default function RootLayout({
   children: React.ReactNode;
 }>) {
   return (
-    <html lang="fr" className="scroll-smooth">
+    <html lang="fr" className="dark scroll-smooth">
       <body
-        className={`${inter.variable} ${jakarta.variable} font-sans antialiased`}
+        className={`${inter.variable} ${jakarta.variable} font-body antialiased bg-background text-foreground selection:bg-primary selection:text-primary-foreground`}
       >
         {children}
-        <StickyCta />
         <Analytics />
       </body>
     </html>
