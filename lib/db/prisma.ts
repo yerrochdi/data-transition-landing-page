@@ -7,9 +7,9 @@ const globalForPrisma = globalThis as unknown as {
 };
 
 function createPrismaClient() {
-  const connectionString = process.env.DIRECT_URL || process.env.DATABASE_URL;
+  const connectionString = process.env.DATABASE_URL;
   if (!connectionString) {
-    throw new Error("Missing DIRECT_URL or DATABASE_URL environment variable");
+    throw new Error("Missing DATABASE_URL environment variable");
   }
   const pool = new Pool({ connectionString });
   const adapter = new PrismaPg(pool);
