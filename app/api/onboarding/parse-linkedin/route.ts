@@ -3,8 +3,12 @@ import { createClient } from "@/lib/supabase/server";
 import { ai } from "@/lib/ai/client";
 import { SYSTEM_PROMPT } from "@/lib/ai/prompts";
 
-// eslint-disable-next-line @typescript-eslint/no-require-imports
-const pdfParse = require("pdf-parse");
+// pdf-parse v1 tries to load a test file on require() — dynamic import avoids this at build time
+async function parsePdf(buffer: Buffer) {
+  // eslint-disable-next-line @typescript-eslint/no-require-imports
+  const pdfParse = require("pdf-parse/lib/pdf-parse");
+  return pdfParse(buffer);
+}
 
 const LINKEDIN_EXTRACTION_PROMPT = `Analyse ce texte extrait d'un profil LinkedIn PDF et extrais les informations suivantes en JSON.
 
@@ -81,7 +85,7 @@ export async function POST(request: NextRequest) {
 
     // Parse PDF
     const buffer = Buffer.from(await file.arrayBuffer());
-    const pdfData = await pdfParse(buffer);
+    const pdfData = await parsePdf(buffer);
     const pdfText = pdfData.text;
 
     if (!pdfText || pdfText.trim().length < 50) {
