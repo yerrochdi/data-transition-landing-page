@@ -89,6 +89,7 @@ model OnboardingResponse {
   targetSector     String?
   topSkills        String[]
   skillGaps        String[]
+  skillLevels      Json?    // [{name, level}]
   blockers         String[]
   confidenceLevel  Int?
   shortTermGoal    String?
@@ -97,6 +98,20 @@ model OnboardingResponse {
   completedAt      DateTime?
   createdAt        DateTime @default(now())
   updatedAt        DateTime @updatedAt
+
+  // New enriched fields
+  educationLevel       String?
+  certifications       String[]
+  hasDataTraining      Boolean  @default(false)
+  motivation           String?  // "attracted" | "fleeing" | "both"
+  keyAchievements      String?  @db.Text
+  dreamScenario        String?  @db.Text
+  availableHoursPerWeek Int?
+  trainingBudget       String?  // "none" | "low" | "medium" | "high"
+  location             String?
+  remotePreference     String?  // "remote" | "hybrid" | "onsite" | "flexible"
+  learningStyle        String[]
+  priorities           String[] // ordered
 
   // AI-generated summary
   aiSummary        String?  @db.Text

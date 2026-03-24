@@ -12,7 +12,6 @@ import {
   BookOpen,
 } from "lucide-react";
 import { cn } from "@/lib/utils";
-import { mockUser, analyticsData, journeyPhases } from "@/lib/mock-data";
 
 const iconMap: Record<string, React.ElementType> = {
   LayoutDashboard,
@@ -33,12 +32,21 @@ const navItems = [
   { label: "Resources", href: "/resources", icon: "BookOpen" },
 ];
 
-export function AppSidebar() {
+interface AppSidebarProps {
+  user: {
+    firstName: string;
+    lastName: string;
+    plan: string;
+    targetRole: string | null;
+    readinessScore: number;
+  };
+}
+
+export function AppSidebar({ user }: AppSidebarProps) {
   const pathname = usePathname();
-  const activePhase = journeyPhases.find((p) => p.status === "active");
 
   return (
-    <aside className="hidden lg:flex lg:col-span-3 flex-col gap-6">
+    <aside className="hidden lg:flex lg:col-span-3 flex-col gap-6 sticky top-24 self-start max-h-[calc(100vh-7rem)] overflow-y-auto">
       {/* Nav Card */}
       <div className="bg-surface-container-lowest rounded-2xl p-6 space-y-4">
         {/* User Badge */}
@@ -47,8 +55,12 @@ export function AppSidebar() {
             <Brain className="w-6 h-6" />
           </div>
           <div>
-            <p className="font-headline font-bold text-primary text-sm">Career Architect</p>
-            <p className="text-xs text-muted-foreground">NextMove {mockUser.plan === "premium" ? "Premium" : "Free"}</p>
+            <p className="font-headline font-bold text-primary text-sm">
+              {user.targetRole || "Career Architect"}
+            </p>
+            <p className="text-xs text-muted-foreground">
+              NextMove {user.plan === "PREMIUM" ? "Premium" : user.plan === "ENTERPRISE" ? "Enterprise" : "Free"}
+            </p>
           </div>
         </div>
 
@@ -79,19 +91,19 @@ export function AppSidebar() {
       {/* Progress Card */}
       <div className="glass-panel p-6 rounded-2xl light-streak">
         <h4 className="font-headline text-xs font-bold uppercase tracking-widest text-muted-foreground mb-4">
-          Current Velocity
+          Readiness Score
         </h4>
         <div className="relative h-2 w-full bg-surface-container-lowest rounded-full overflow-hidden mb-2">
           <div
             className="absolute top-0 left-0 h-full bg-gradient-to-r from-primary to-green-500 shadow-[0_0_10px_hsl(var(--primary))]"
-            style={{ width: `${analyticsData.overallProgress}%` }}
+            style={{ width: `${user.readinessScore}%` }}
           />
         </div>
         <div className="flex justify-between items-center">
           <span className="text-[10px] text-muted-foreground font-medium uppercase">
-            Phase: {activePhase?.title || "—"}
+            {user.targetRole || "En cours de diagnostic"}
           </span>
-          <span className="text-xs font-bold text-primary">{analyticsData.overallProgress}%</span>
+          <span className="text-xs font-bold text-primary">{user.readinessScore}%</span>
         </div>
       </div>
     </aside>

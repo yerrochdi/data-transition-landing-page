@@ -4,11 +4,20 @@ import Link from "next/link";
 import { usePathname } from "next/navigation";
 import { Search, LogOut } from "lucide-react";
 import { cn } from "@/lib/utils";
-import { topNav, mockUser } from "@/lib/mock-data";
+import { topNav } from "@/lib/mock-data";
 import { signOut } from "@/lib/auth/actions";
 import { APP_NAME } from "@/lib/constants";
 
-export function Topbar() {
+interface TopbarProps {
+  user: {
+    firstName: string;
+    lastName: string;
+    avatarUrl: string | null;
+    plan: string;
+  };
+}
+
+export function Topbar({ user }: TopbarProps) {
   const pathname = usePathname();
 
   return (
@@ -59,12 +68,20 @@ export function Topbar() {
           href="/dashboard"
           className="h-8 w-8 rounded-full bg-surface-container-highest overflow-hidden ghost-border"
         >
-          <div className="w-full h-full gradient-primary flex items-center justify-center">
-            <span className="text-xs font-bold text-primary-foreground">
-              {mockUser.firstName[0]}
-              {mockUser.lastName[0]}
-            </span>
-          </div>
+          {user.avatarUrl ? (
+            <img
+              src={user.avatarUrl}
+              alt={`${user.firstName} ${user.lastName}`}
+              className="w-full h-full object-cover"
+            />
+          ) : (
+            <div className="w-full h-full gradient-primary flex items-center justify-center">
+              <span className="text-xs font-bold text-primary-foreground">
+                {user.firstName[0]}
+                {user.lastName[0]}
+              </span>
+            </div>
+          )}
         </Link>
       </div>
     </nav>

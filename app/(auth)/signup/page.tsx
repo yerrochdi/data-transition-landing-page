@@ -2,12 +2,13 @@
 
 import { useState } from "react";
 import Link from "next/link";
-import { ArrowRight, Loader2, Sparkles } from "lucide-react";
+import { ArrowRight, Loader2, Sparkles, Mail, CheckCircle } from "lucide-react";
 import { signUp, signInWithGoogle } from "@/lib/auth/actions";
 
 export default function SignupPage() {
   const [error, setError] = useState<string | null>(null);
   const [loading, setLoading] = useState(false);
+  const [confirmEmail, setConfirmEmail] = useState(false);
 
   async function handleSubmit(formData: FormData) {
     setLoading(true);
@@ -32,6 +33,9 @@ export default function SignupPage() {
     if (result?.error) {
       setError(result.error);
       setLoading(false);
+    } else if (result?.confirmEmail) {
+      setConfirmEmail(true);
+      setLoading(false);
     }
   }
 
@@ -43,6 +47,31 @@ export default function SignupPage() {
       setError(result.error);
       setLoading(false);
     }
+  }
+
+  if (confirmEmail) {
+    return (
+      <div className="text-center py-8">
+        <div className="w-16 h-16 rounded-2xl bg-primary/10 flex items-center justify-center text-primary mx-auto mb-6">
+          <Mail className="w-8 h-8" />
+        </div>
+        <h1 className="font-headline text-2xl font-extrabold text-foreground mb-3">
+          Vérifiez votre email
+        </h1>
+        <p className="text-sm text-muted-foreground mb-6 max-w-sm mx-auto">
+          Un lien de confirmation a été envoyé à votre adresse email. Cliquez dessus pour activer votre compte.
+        </p>
+        <div className="bg-surface-container-lowest p-4 rounded-xl ghost-border inline-flex items-center gap-2">
+          <CheckCircle className="w-4 h-4 text-primary" />
+          <span className="text-xs text-muted-foreground">Après confirmation, vous serez redirigé vers l&apos;onboarding</span>
+        </div>
+        <p className="text-sm text-muted-foreground mt-6">
+          <Link href="/login" className="text-primary font-bold hover:underline">
+            Retour à la connexion
+          </Link>
+        </p>
+      </div>
+    );
   }
 
   return (
