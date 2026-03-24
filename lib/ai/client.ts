@@ -7,7 +7,11 @@ const globalForAi = globalThis as unknown as {
 function createAiClient() {
   const apiKey = process.env.MOONSHOT_API_KEY;
   if (!apiKey) {
-    throw new Error("Missing MOONSHOT_API_KEY environment variable");
+    // Return a placeholder — routes check for the key before calling
+    return new OpenAI({
+      apiKey: "placeholder",
+      baseURL: "https://api.moonshot.ai/v1",
+    });
   }
   return new OpenAI({
     apiKey,
