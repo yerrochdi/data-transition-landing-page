@@ -3,6 +3,8 @@ import { AppSidebar } from "@/components/platform/app-sidebar";
 import { MobileNav } from "@/components/platform/mobile-nav";
 import { AiFab } from "@/components/platform/ai-fab";
 import { getDashboardData } from "@/lib/dashboard/actions";
+import { createClient } from "@/lib/supabase/server";
+import { prisma } from "@/lib/db";
 import { redirect } from "next/navigation";
 
 export default async function PlatformLayout({
@@ -10,10 +12,41 @@ export default async function PlatformLayout({
 }: {
   children: React.ReactNode;
 }) {
-  const data = await getDashboardData();
+  let data = await getDashboardData();
 
+  // If no Prisma user but Auth session exists, auto-create the user
   if (!data) {
-    redirect("/login");
+    const supabase = await createClient();
+    const { data: { user: authUser } } = await supabase.auth.getUser();
+
+    if (authUser) {
+      // Create missing Prisma user from Auth session
+      try {
+        const meta = authUser.user_metadata;
+        await prisma.user.upsert({
+          where: { supabaseId: authUser.id },
+          update: {},
+          create: {
+            supabaseId: authUser.id,
+            email: authUser.email || "",
+            firstName: meta?.first_name || meta?.full_name?.split(" ")[0] || "Utilisateur",
+            lastName: meta?.last_name || meta?.full_name?.split(" ").slice(1).join(" ") || "",
+            avatarUrl: meta?.avatar_url || null,
+          },
+        });
+        // Re-fetch dashboard data
+        data = await getDashboardData();
+      } catch (e) {
+        console.error("Failed to auto-create user:", e);
+      }
+    }
+
+    if (!data) {
+      // Sign out to break the redirect loop, then redirect to login
+      const supabase2 = await createClient();
+      await supabase2.auth.signOut();
+      redirect("/login");
+    }
   }
 
   const userInfo = {
