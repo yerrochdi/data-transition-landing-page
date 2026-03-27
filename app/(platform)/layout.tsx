@@ -23,17 +23,32 @@ export default async function PlatformLayout({
       // Create missing Prisma user from Auth session
       try {
         const meta = authUser.user_metadata;
-        await prisma.user.upsert({
-          where: { supabaseId: authUser.id },
-          update: {},
-          create: {
-            supabaseId: authUser.id,
-            email: authUser.email || "",
-            firstName: meta?.first_name || meta?.full_name?.split(" ")[0] || "Utilisateur",
-            lastName: meta?.last_name || meta?.full_name?.split(" ").slice(1).join(" ") || "",
-            avatarUrl: meta?.avatar_url || null,
-          },
-        });
+        const email = authUser.email || "";
+
+        // Check if a user with this email already exists (possibly with a different supabaseId)
+        const existingByEmail = await prisma.user.findUnique({ where: { email } });
+
+        if (existingByEmail && existingByEmail.supabaseId !== authUser.id) {
+          await prisma.user.update({
+            where: { email },
+            data: {
+              supabaseId: authUser.id,
+              avatarUrl: meta?.avatar_url || existingByEmail.avatarUrl,
+            },
+          });
+        } else {
+          await prisma.user.upsert({
+            where: { supabaseId: authUser.id },
+            update: {},
+            create: {
+              supabaseId: authUser.id,
+              email,
+              firstName: meta?.first_name || meta?.full_name?.split(" ")[0] || "Utilisateur",
+              lastName: meta?.last_name || meta?.full_name?.split(" ").slice(1).join(" ") || "",
+              avatarUrl: meta?.avatar_url || null,
+            },
+          });
+        }
         // Re-fetch dashboard data
         data = await getDashboardData();
       } catch (e) {

@@ -39,16 +39,26 @@ export async function signUp(formData: FormData) {
   // Create user in our database
   if (data.user) {
     try {
-      await prisma.user.upsert({
-        where: { supabaseId: data.user.id },
-        update: {},
-        create: {
-          supabaseId: data.user.id,
-          email,
-          firstName,
-          lastName,
-        },
-      });
+      // Check if a user with this email already exists (possibly with a different supabaseId)
+      const existingByEmail = await prisma.user.findUnique({ where: { email } });
+
+      if (existingByEmail && existingByEmail.supabaseId !== data.user.id) {
+        await prisma.user.update({
+          where: { email },
+          data: { supabaseId: data.user.id },
+        });
+      } else {
+        await prisma.user.upsert({
+          where: { supabaseId: data.user.id },
+          update: {},
+          create: {
+            supabaseId: data.user.id,
+            email,
+            firstName,
+            lastName,
+          },
+        });
+      }
     } catch (e) {
       console.error("Failed to create user in DB:", e);
     }

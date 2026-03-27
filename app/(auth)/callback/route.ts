@@ -14,20 +14,37 @@ export async function GET(request: Request) {
       // Sync user to our database
       try {
         const meta = data.user.user_metadata;
-        await prisma.user.upsert({
-          where: { supabaseId: data.user.id },
-          update: {
-            email: data.user.email || "",
-            lastActiveAt: new Date(),
-          },
-          create: {
-            supabaseId: data.user.id,
-            email: data.user.email || "",
-            firstName: meta?.first_name || meta?.full_name?.split(" ")[0] || "",
-            lastName: meta?.last_name || meta?.full_name?.split(" ").slice(1).join(" ") || "",
-            avatarUrl: meta?.avatar_url || null,
-          },
-        });
+        const email = data.user.email || "";
+
+        // Check if a user with this email already exists (possibly with a different supabaseId)
+        const existingByEmail = await prisma.user.findUnique({ where: { email } });
+
+        if (existingByEmail && existingByEmail.supabaseId !== data.user.id) {
+          // Email exists with a different supabaseId — update it to link to this auth user
+          await prisma.user.update({
+            where: { email },
+            data: {
+              supabaseId: data.user.id,
+              lastActiveAt: new Date(),
+              avatarUrl: meta?.avatar_url || existingByEmail.avatarUrl,
+            },
+          });
+        } else {
+          await prisma.user.upsert({
+            where: { supabaseId: data.user.id },
+            update: {
+              email,
+              lastActiveAt: new Date(),
+            },
+            create: {
+              supabaseId: data.user.id,
+              email,
+              firstName: meta?.first_name || meta?.full_name?.split(" ")[0] || "",
+              lastName: meta?.last_name || meta?.full_name?.split(" ").slice(1).join(" ") || "",
+              avatarUrl: meta?.avatar_url || null,
+            },
+          });
+        }
       } catch (e) {
         console.error("Failed to sync user:", e);
       }
