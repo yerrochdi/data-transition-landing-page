@@ -3,6 +3,7 @@
 import { createClient } from "@/lib/supabase/server";
 import { prisma } from "@/lib/db";
 import type { OnboardingFormData, SkillWithLevel } from "./types";
+import { computeReadinessScore, computeCareerScore, computeSkillGaps } from "@/lib/dashboard/scoring";
 
 async function getCurrentUserId(): Promise<string | null> {
   const supabase = await createClient();
@@ -133,7 +134,12 @@ export async function completeOnboarding(
       update: fullData,
     });
 
-    // Create/update user profile
+    // Compute scores from onboarding data
+    const readinessScore = computeReadinessScore(data);
+    const careerScore = computeCareerScore(data, readinessScore);
+    const skillGaps = computeSkillGaps(data);
+
+    // Create/update user profile with computed scores
     await prisma.userProfile.upsert({
       where: { userId },
       create: {
@@ -144,7 +150,10 @@ export async function completeOnboarding(
         targetSector: data.targetSector || null,
         experienceYears: data.experienceYears,
         topSkills: data.topSkills,
+        skillGaps,
         confidenceLevel: data.confidenceLevel,
+        readinessScore,
+        careerScore,
       },
       update: {
         currentRole: data.currentRole || null,
@@ -153,7 +162,10 @@ export async function completeOnboarding(
         targetSector: data.targetSector || null,
         experienceYears: data.experienceYears,
         topSkills: data.topSkills,
+        skillGaps,
         confidenceLevel: data.confidenceLevel,
+        readinessScore,
+        careerScore,
       },
     });
 

@@ -20,6 +20,7 @@ export interface DashboardProfile {
   targetSector: string | null;
   experienceYears: number | null;
   topSkills: string[];
+  skillGaps: string[];
   confidenceLevel: number;
   careerScore: number;
   readinessScore: number;
@@ -103,6 +104,7 @@ export async function getDashboardData(): Promise<DashboardData | null> {
           targetSector: dbUser.profile.targetSector,
           experienceYears: dbUser.profile.experienceYears,
           topSkills: dbUser.profile.topSkills,
+          skillGaps: dbUser.profile.skillGaps,
           confidenceLevel: dbUser.profile.confidenceLevel,
           careerScore: dbUser.profile.careerScore,
           readinessScore: dbUser.profile.readinessScore,
