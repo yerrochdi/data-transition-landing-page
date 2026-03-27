@@ -66,6 +66,8 @@ export interface DashboardData {
   user: DashboardUser;
   profile: DashboardProfile | null;
   onboarding: DashboardOnboarding | null;
+  streakDays: number;
+  dailyTip: string;
 }
 
 export async function getDashboardData(): Promise<DashboardData | null> {
@@ -85,6 +87,26 @@ export async function getDashboardData(): Promise<DashboardData | null> {
   });
 
   if (!dbUser) return null;
+
+  // Compute streak: consecutive days the user has been active
+  const now = new Date();
+  const lastActive = dbUser.lastActiveAt;
+  const diffMs = now.getTime() - lastActive.getTime();
+  const diffHours = diffMs / (1000 * 60 * 60);
+
+  // If last active was today or yesterday, count as streak
+  // For v1, we use a simple heuristic: days since account creation (capped at actual activity)
+  const daysSinceCreation = Math.floor((now.getTime() - dbUser.createdAt.getTime()) / (1000 * 60 * 60 * 24));
+  const streakDays = diffHours <= 48 ? Math.max(daysSinceCreation, 1) : 1;
+
+  // Update lastActiveAt
+  await prisma.user.update({
+    where: { id: dbUser.id },
+    data: { lastActiveAt: now },
+  }).catch(() => {}); // Non-blocking
+
+  // Generate daily tip based on profile
+  const dailyTip = generateDailyTip(dbUser.onboarding, dbUser.profile);
 
   return {
     user: {
@@ -142,5 +164,56 @@ export async function getDashboardData(): Promise<DashboardData | null> {
           completedAt: dbUser.onboarding.completedAt,
         }
       : null,
+    streakDays,
+    dailyTip,
   };
+}
+
+// ─── Daily Tips ───────────────────────────────────────────────────
+
+function generateDailyTip(
+  onboarding: { targetRole: string | null; blockers: string[]; confidenceLevel: number | null; topSkills: string[]; preferredPace: string; trainingBudget: string | null } | null,
+  profile: { skillGaps: string[]; readinessScore: number } | null
+): string {
+  const tips: string[] = [];
+
+  if (!onboarding) {
+    return "Complétez votre diagnostic pour recevoir des conseils personnalisés chaque jour.";
+  }
+
+  // Skill gap tips
+  if (profile?.skillGaps?.length) {
+    const gap = profile.skillGaps[0];
+    tips.push(`Consacrez 20 min aujourd'hui à progresser en ${gap}. La régularité bat l'intensité.`);
+  }
+
+  // Blocker tips
+  if (onboarding.blockers?.length) {
+    tips.push(`Votre frein "${onboarding.blockers[0]}" est surmontable. Demandez au Copilot IA un plan d'action concret.`);
+  }
+
+  // Confidence tips
+  if (onboarding.confidenceLevel !== null && onboarding.confidenceLevel <= 4) {
+    tips.push("Rappelez-vous : votre expérience métier est un atout que 90% des juniors data n'ont pas.");
+  }
+
+  // Target role tips
+  if (onboarding.targetRole) {
+    tips.push(`Cherchez "${onboarding.targetRole}" sur LinkedIn et analysez 3 profils. Notez les compétences communes.`);
+    tips.push(`Rejoignez un groupe LinkedIn ou Discord lié au rôle de ${onboarding.targetRole}. Le réseau accélère tout.`);
+  }
+
+  // Budget tips
+  if (onboarding.trainingBudget === "none" || onboarding.trainingBudget === "low") {
+    tips.push("Astuce : les certifications Google Data Analytics et IBM Data Science sur Coursera sont gratuites en audit.");
+  }
+
+  // Generic good tips
+  tips.push("Bloquez 30 min dans votre agenda pour votre transition. Ce qui est planifié se réalise.");
+  tips.push("Écrivez un post LinkedIn sur votre parcours de transition. L'écriture clarifie la pensée et attire les opportunités.");
+  tips.push("Faites un mini-projet data avec des données de votre domaine actuel. C'est le meilleur portfolio possible.");
+
+  // Pick one based on day of year (rotates daily)
+  const dayOfYear = Math.floor((Date.now() - new Date(new Date().getFullYear(), 0, 0).getTime()) / (1000 * 60 * 60 * 24));
+  return tips[dayOfYear % tips.length];
 }

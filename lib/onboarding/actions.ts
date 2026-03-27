@@ -108,7 +108,7 @@ export async function completeOnboarding(
       targetRole: data.targetRole,
       targetSector: data.targetSector,
       topSkills: data.topSkills,
-      skillLevels: data.skillLevels as unknown as Record<string, unknown>[],
+      skillLevels: JSON.parse(JSON.stringify(data.skillLevels ?? [])),
       motivation: data.motivation,
       keyAchievements: data.keyAchievements,
       dreamScenario: data.dreamScenario,

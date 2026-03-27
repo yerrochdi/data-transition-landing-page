@@ -7,7 +7,7 @@ import { cn } from "@/lib/utils";
 
 const items = [
   { label: "Home", href: "/dashboard", icon: Home },
-  { label: "AI Agent", href: "/agents", icon: Bot },
+  { label: "Copilot", href: "/agents", icon: Bot },
   { label: "Path", href: "/journey", icon: GitBranch },
   { label: "Market", href: "/opportunities", icon: Briefcase },
   { label: "Feed", href: "/resources", icon: Rss },

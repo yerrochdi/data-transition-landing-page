@@ -26,7 +26,7 @@ const iconMap: Record<string, React.ElementType> = {
 const navItems = [
   { label: "Dashboard", href: "/dashboard", icon: "LayoutDashboard" },
   { label: "Immersive Path", href: "/journey", icon: "GitBranch" },
-  { label: "AI Agents", href: "/agents", icon: "Bot" },
+  { label: "Copilot IA", href: "/agents", icon: "Bot" },
   { label: "Skill Roadmap", href: "/analytics", icon: "TrendingUp" },
   { label: "Job Market", href: "/opportunities", icon: "Briefcase" },
   { label: "Resources", href: "/resources", icon: "BookOpen" },

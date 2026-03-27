@@ -25,6 +25,7 @@ import { GoalsAvailability } from "./goals-availability";
 import { PrioritiesLearning } from "./priorities-learning";
 import { ReadinessBreakdown } from "./readiness-breakdown";
 import { SkillGaps } from "./skill-gaps";
+import { StreakTip } from "./streak-tip";
 import { cn } from "@/lib/utils";
 
 interface DashboardViewProps {
@@ -32,7 +33,7 @@ interface DashboardViewProps {
 }
 
 export function DashboardView({ data }: DashboardViewProps) {
-  const { user, profile, onboarding } = data;
+  const { user, profile, onboarding, streakDays, dailyTip } = data;
 
   const careerScore = profile?.careerScore ?? 0;
   const readinessScore = profile?.readinessScore ?? 0;
@@ -203,6 +204,13 @@ export function DashboardView({ data }: DashboardViewProps) {
           )}
         </div>
       </div>
+
+      {/* ═══════════════════════════════════════════════════════════
+          STREAK + DAILY TIP
+          ═══════════════════════════════════════════════════════════ */}
+      {hasCompletedOnboarding && (
+        <StreakTip streakDays={streakDays} dailyTip={dailyTip} />
+      )}
 
       {/* ═══════════════════════════════════════════════════════════
           ROW 1 — AI Summary (full width for structured view)
