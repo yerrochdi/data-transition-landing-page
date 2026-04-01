@@ -26,6 +26,7 @@ import { PrioritiesLearning } from "./priorities-learning";
 import { ReadinessBreakdown } from "./readiness-breakdown";
 import { SkillGaps } from "./skill-gaps";
 import { StreakTip } from "./streak-tip";
+import { Achievements } from "./achievements";
 import { cn } from "@/lib/utils";
 
 interface DashboardViewProps {
@@ -210,6 +211,23 @@ export function DashboardView({ data }: DashboardViewProps) {
           ═══════════════════════════════════════════════════════════ */}
       {hasCompletedOnboarding && (
         <StreakTip streakDays={streakDays} dailyTip={dailyTip} />
+      )}
+
+      {/* ═══════════════════════════════════════════════════════════
+          BADGES / ACHIEVEMENTS
+          ═══════════════════════════════════════════════════════════ */}
+      {hasCompletedOnboarding && (
+        <Achievements
+          careerScore={careerScore}
+          readinessScore={readinessScore}
+          streakDays={streakDays}
+          skillCount={skills.length}
+          gapCount={skillGaps.length}
+          confidenceLevel={confidenceLevel}
+          hasDataTraining={onboarding?.hasDataTraining ?? false}
+          certificationCount={onboarding?.certifications?.length ?? 0}
+          blockerCount={onboarding?.blockers?.length ?? 0}
+        />
       )}
 
       {/* ═══════════════════════════════════════════════════════════

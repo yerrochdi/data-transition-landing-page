@@ -10,6 +10,7 @@ import {
   Brain,
   Bot,
   BookOpen,
+  Settings,
 } from "lucide-react";
 import { cn } from "@/lib/utils";
 
@@ -21,6 +22,7 @@ const iconMap: Record<string, React.ElementType> = {
   Brain,
   Bot,
   BookOpen,
+  Settings,
 };
 
 const navItems = [
@@ -30,6 +32,7 @@ const navItems = [
   { label: "Skill Roadmap", href: "/analytics", icon: "TrendingUp" },
   { label: "Job Market", href: "/opportunities", icon: "Briefcase" },
   { label: "Resources", href: "/resources", icon: "BookOpen" },
+  { label: "Paramètres", href: "/settings", icon: "Settings" },
 ];
 
 interface AppSidebarProps {
