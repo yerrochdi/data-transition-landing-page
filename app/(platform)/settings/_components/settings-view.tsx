@@ -17,9 +17,10 @@ import {
   Calendar,
   AlertTriangle,
   CheckCircle,
+  RefreshCw,
 } from "lucide-react";
 import { cn } from "@/lib/utils";
-import { updateProfile, deleteAccount } from "@/lib/settings/actions";
+import { updateProfile, deleteAccount, resetOnboarding } from "@/lib/settings/actions";
 import { signOut } from "@/lib/auth/actions";
 import type { SettingsData } from "@/lib/settings/actions";
 
@@ -120,6 +121,7 @@ export function SettingsView({ data }: { data: SettingsData }) {
   const [isPending, startTransition] = useTransition();
   const [message, setMessage] = useState<{ type: "success" | "error"; text: string } | null>(null);
   const [showDeleteConfirm, setShowDeleteConfirm] = useState(false);
+  const [showResetConfirm, setShowResetConfirm] = useState(false);
 
   // Form state
   const [firstName, setFirstName] = useState(data.user.firstName);
@@ -150,6 +152,18 @@ export function SettingsView({ data }: { data: SettingsData }) {
         setMessage({ type: "success", text: "Profil mis à jour avec succès" });
       } else {
         setMessage({ type: "error", text: result.error || "Erreur" });
+      }
+    });
+  };
+
+  const handleResetOnboarding = () => {
+    startTransition(async () => {
+      const result = await resetOnboarding();
+      if (result.success) {
+        router.push("/onboarding");
+      } else {
+        setMessage({ type: "error", text: result.error || "Erreur" });
+        setShowResetConfirm(false);
       }
     });
   };
@@ -345,7 +359,34 @@ export function SettingsView({ data }: { data: SettingsData }) {
           <h3 className="font-headline text-sm font-bold text-red-400">Zone dangereuse</h3>
         </div>
 
-        <div className="flex flex-col sm:flex-row gap-3">
+        <div className="flex flex-col sm:flex-row gap-3 flex-wrap">
+          {!showResetConfirm ? (
+            <button
+              onClick={() => setShowResetConfirm(true)}
+              className="flex items-center gap-2 px-5 py-2.5 rounded-xl text-sm font-bold text-amber-400 bg-amber-500/10 border border-amber-500/20 hover:bg-amber-500/20 transition-all"
+            >
+              <RefreshCw className="w-4 h-4" />
+              Refaire l&apos;onboarding
+            </button>
+          ) : (
+            <div className="flex items-center gap-3">
+              <button
+                onClick={handleResetOnboarding}
+                disabled={isPending}
+                className="flex items-center gap-2 px-5 py-2.5 rounded-xl text-sm font-bold text-white bg-amber-500 hover:bg-amber-600 transition-all"
+              >
+                {isPending ? <Loader2 className="w-4 h-4 animate-spin" /> : <RefreshCw className="w-4 h-4" />}
+                Confirmer le reset
+              </button>
+              <button
+                onClick={() => setShowResetConfirm(false)}
+                className="text-xs text-muted-foreground hover:text-foreground transition-colors"
+              >
+                Annuler
+              </button>
+            </div>
+          )}
+
           <button
             onClick={handleSignOut}
             disabled={isPending}
@@ -384,7 +425,7 @@ export function SettingsView({ data }: { data: SettingsData }) {
         </div>
 
         <p className="text-[10px] text-muted-foreground mt-3">
-          La suppression est définitive. Toutes vos données seront effacées.
+          Refaire l&apos;onboarding réinitialise votre profil, scores et parcours. La suppression est définitive.
         </p>
       </div>
     </div>

@@ -160,6 +160,52 @@ export async function updateProfile(data: {
   }
 }
 
+// ─── Reset Onboarding ─────────────────────────────────────────────
+
+export async function resetOnboarding(): Promise<{ success: boolean; error?: string }> {
+  const supabase = await createClient();
+  const {
+    data: { user: authUser },
+  } = await supabase.auth.getUser();
+
+  if (!authUser) return { success: false, error: "Non authentifié" };
+
+  try {
+    const dbUser = await prisma.user.findUnique({
+      where: { supabaseId: authUser.id },
+    });
+
+    if (!dbUser) return { success: false, error: "Utilisateur introuvable" };
+
+    // Delete onboarding response
+    await prisma.onboardingResponse.deleteMany({ where: { userId: dbUser.id } });
+
+    // Delete user profile
+    await prisma.userProfile.deleteMany({ where: { userId: dbUser.id } });
+
+    // Delete journey progress (cascade deletes task progress)
+    await prisma.journeyProgress.deleteMany({ where: { userId: dbUser.id } });
+
+    // Delete seeded journey phases/tasks if no other users have progress on them
+    const otherProgress = await prisma.journeyProgress.count();
+    if (otherProgress === 0) {
+      await prisma.journeyTask.deleteMany();
+      await prisma.journeyPhase.deleteMany();
+    }
+
+    // Reset onboarding flag
+    await prisma.user.update({
+      where: { id: dbUser.id },
+      data: { onboardingCompleted: false },
+    });
+
+    return { success: true };
+  } catch (e) {
+    console.error("Reset onboarding error:", e);
+    return { success: false, error: "Erreur lors du reset" };
+  }
+}
+
 // ─── Delete Account ───────────────────────────────────────────────
 
 export async function deleteAccount(): Promise<{ success: boolean; error?: string }> {
