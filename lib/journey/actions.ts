@@ -148,9 +148,6 @@ function buildDefaultPhases(onboarding: {
 // ─── Seed Journey ─────────────────────────────────────────────────
 
 async function seedJourneyForUser(userId: string): Promise<void> {
-  // Check if phases already seeded
-  const existingPhases = await prisma.journeyPhase.count();
-
   // Get user's onboarding data for personalization
   const user = await prisma.user.findUnique({
     where: { id: userId },
@@ -171,68 +168,64 @@ async function seedJourneyForUser(userId: string): Promise<void> {
     technicalAppetite: user.onboarding.technicalAppetite,
   } : null;
 
-  const defaultPhases = buildDefaultPhases(onboarding);
-
-  // Seed global phases and tasks if not already done
-  if (existingPhases === 0) {
-    for (let i = 0; i < defaultPhases.length; i++) {
-      const p = defaultPhases[i];
-      await prisma.journeyPhase.create({
-        data: {
-          slug: p.slug,
-          number: p.number,
-          title: p.title,
-          description: p.description,
-          order: i,
-          tasks: {
-            create: p.tasks.map((t, j) => ({
-              title: t.title,
-              description: t.description,
-              order: j,
-            })),
-          },
-        },
-      });
-    }
-  }
-
-  // Seed user progress if not already done
+  // Check if user already has progress records
   const existingProgress = await prisma.journeyProgress.count({
     where: { userId },
   });
 
-  if (existingProgress === 0) {
-    const phases = await prisma.journeyPhase.findMany({
-      orderBy: { order: "asc" },
+  if (existingProgress > 0) return; // Already seeded for this user
+
+  // Delete old global phases/tasks to regenerate personalized ones
+  // (safe because progress records are per-user and we just checked none exist)
+  await prisma.journeyTask.deleteMany();
+  await prisma.journeyPhase.deleteMany();
+
+  // Build and seed personalized phases
+  const defaultPhases = buildDefaultPhases(onboarding);
+
+  for (let i = 0; i < defaultPhases.length; i++) {
+    const p = defaultPhases[i];
+    const phase = await prisma.journeyPhase.create({
+      data: {
+        slug: p.slug,
+        number: p.number,
+        title: p.title,
+        description: p.description,
+        order: i,
+        tasks: {
+          create: p.tasks.map((t, j) => ({
+            title: t.title,
+            description: t.description,
+            order: j,
+          })),
+        },
+      },
       include: { tasks: { orderBy: { order: "asc" } } },
     });
 
-    for (let i = 0; i < phases.length; i++) {
-      const phase = phases[i];
-      // First phase is active (diagnostic = already done), rest locked
-      const status = i === 0 ? "ACTIVE" as const : "LOCKED" as const;
+    // First phase is active, rest locked
+    const status = i === 0 ? "ACTIVE" as const : "LOCKED" as const;
 
-      const jp = await prisma.journeyProgress.create({
+    const jp = await prisma.journeyProgress.create({
+      data: {
+        userId,
+        phaseId: phase.id,
+        status,
+        progress: 0,
+        startedAt: i === 0 ? new Date() : null,
+      },
+    });
+
+    // Create task progress entries
+    for (const task of phase.tasks) {
+      await prisma.journeyTaskProgress.create({
         data: {
-          userId,
-          phaseId: phase.id,
-          status,
+          journeyProgressId: jp.id,
+          taskId: task.id,
+          status: i === 0 ? "IN_PROGRESS" as const : "LOCKED" as const,
           progress: 0,
-          startedAt: i === 0 ? new Date() : null,
         },
       });
-
-      // Create task progress entries
-      for (const task of phase.tasks) {
-        await prisma.journeyTaskProgress.create({
-          data: {
-            journeyProgressId: jp.id,
-            taskId: task.id,
-            status: i === 0 ? "IN_PROGRESS" as const : "LOCKED" as const,
-            progress: 0,
-          },
-        });
-      }
     }
   }
 }
