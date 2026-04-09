@@ -2,7 +2,7 @@
 
 import { useState } from "react";
 import Link from "next/link";
-import { ArrowRight, Loader2, Sparkles, Mail, CheckCircle } from "lucide-react";
+import { Loader2, Sparkles, Mail, CheckCircle } from "lucide-react";
 import { signUp, signInWithGoogle } from "@/lib/auth/actions";
 
 export default function SignupPage() {
@@ -124,7 +124,7 @@ export default function SignupPage() {
               type="text"
               name="firstName"
               required
-              placeholder="Yassine"
+              placeholder="Prénom"
               className="w-full bg-surface-container-lowest rounded-xl p-4 text-sm text-foreground placeholder:text-muted-foreground focus:outline-none focus:ring-2 focus:ring-primary/50 transition-all"
             />
           </div>
@@ -136,7 +136,7 @@ export default function SignupPage() {
               type="text"
               name="lastName"
               required
-              placeholder="E."
+              placeholder="Nom"
               className="w-full bg-surface-container-lowest rounded-xl p-4 text-sm text-foreground placeholder:text-muted-foreground focus:outline-none focus:ring-2 focus:ring-primary/50 transition-all"
             />
           </div>
