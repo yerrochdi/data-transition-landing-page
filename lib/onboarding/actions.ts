@@ -43,26 +43,29 @@ export async function saveOnboardingStep(
         if (data.certifications !== undefined) updateData.certifications = data.certifications;
         if (data.hasDataTraining !== undefined) updateData.hasDataTraining = data.hasDataTraining;
         break;
-      case 3: // Ambitions
+      case 3: // Technical appetite
+        if (data.technicalAppetite !== undefined) updateData.technicalAppetite = data.technicalAppetite;
+        break;
+      case 4: // Ambitions
         if (data.targetRole !== undefined) updateData.targetRole = data.targetRole;
         if (data.targetSector !== undefined) updateData.targetSector = data.targetSector;
         break;
-      case 4: // Skills
+      case 5: // Skills
         if (data.topSkills !== undefined) updateData.topSkills = data.topSkills;
         if (data.skillLevels !== undefined) updateData.skillLevels = data.skillLevels;
         break;
-      case 5: // Motivation
+      case 6: // Motivation
         if (data.motivation !== undefined) updateData.motivation = data.motivation;
         if (data.keyAchievements !== undefined) updateData.keyAchievements = data.keyAchievements;
         if (data.dreamScenario !== undefined) updateData.dreamScenario = data.dreamScenario;
         break;
-      case 6: // Blockers
+      case 7: // Blockers
         if (data.blockers !== undefined) updateData.blockers = data.blockers;
         break;
-      case 7: // Confidence
+      case 8: // Confidence
         if (data.confidenceLevel !== undefined) updateData.confidenceLevel = data.confidenceLevel;
         break;
-      case 8: // Availability & Goals
+      case 9: // Availability & Goals
         if (data.shortTermGoal !== undefined) updateData.shortTermGoal = data.shortTermGoal;
         if (data.longTermGoal !== undefined) updateData.longTermGoal = data.longTermGoal;
         if (data.preferredPace !== undefined) updateData.preferredPace = data.preferredPace.toUpperCase();
@@ -105,6 +108,7 @@ export async function completeOnboarding(
       educationLevel: data.educationLevel,
       certifications: data.certifications,
       hasDataTraining: data.hasDataTraining,
+      technicalAppetite: data.technicalAppetite,
       targetRole: data.targetRole,
       targetSector: data.targetSector,
       topSkills: data.topSkills,
@@ -205,6 +209,7 @@ export async function loadOnboardingProgress(): Promise<{
         educationLevel: r.educationLevel || "",
         certifications: r.certifications || [],
         hasDataTraining: r.hasDataTraining,
+        technicalAppetite: (r.technicalAppetite as "no-code" | "low-code" | "code" | "flexible") || "flexible",
         targetRole: r.targetRole || "",
         targetSector: r.targetSector || "",
         topSkills: r.topSkills,

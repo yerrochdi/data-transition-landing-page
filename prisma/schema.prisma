@@ -103,6 +103,7 @@ model OnboardingResponse {
   educationLevel       String?
   certifications       String[]
   hasDataTraining      Boolean  @default(false)
+  technicalAppetite    String?  // "no-code" | "low-code" | "code" | "flexible"
   motivation           String?  // "attracted" | "fleeing" | "both"
   keyAchievements      String?  @db.Text
   dreamScenario        String?  @db.Text

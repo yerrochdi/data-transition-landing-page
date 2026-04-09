@@ -16,6 +16,7 @@ import {
   ArrowRight,
   ArrowLeft,
   Check,
+  Cpu,
 } from "lucide-react";
 import { Linkedin } from "lucide-react";
 import { cn } from "@/lib/utils";
@@ -42,6 +43,7 @@ import { StepMotivation } from "./step-motivation";
 import { StepBlockers } from "./step-blockers";
 import { StepConfidence } from "./step-confidence";
 import { StepAvailability } from "./step-availability";
+import { StepTechnical } from "./step-technical";
 import { StepSummary } from "./step-summary";
 
 // ───────────────────────────────────────────────────
@@ -52,6 +54,7 @@ const STEPS = [
   { id: "linkedin", title: "LinkedIn", description: "Importez votre profil (optionnel)", icon: "Linkedin" },
   { id: "role", title: "Métier & Secteur", description: "Votre rôle et expérience", icon: "Briefcase" },
   { id: "education", title: "Formation", description: "Diplômes et certifications", icon: "GraduationCap" },
+  { id: "technical", title: "Profil technique", description: "Votre appétence pour le code", icon: "Cpu" },
   { id: "ambitions", title: "Ambitions", description: "Votre rôle cible data/IA", icon: "Target" },
   { id: "skills", title: "Compétences", description: "Vos forces et niveaux", icon: "Zap" },
   { id: "motivation", title: "Motivation", description: "Ce qui vous pousse", icon: "Heart" },
@@ -62,7 +65,7 @@ const STEPS = [
 ];
 
 const iconMap: Record<string, React.ElementType> = {
-  User, Briefcase, GraduationCap, Target, Zap, Heart, Shield, Flame, Settings, Sparkles, Linkedin,
+  User, Briefcase, GraduationCap, Target, Zap, Heart, Shield, Flame, Settings, Sparkles, Linkedin, Cpu,
 };
 
 interface OnboardingFlowProps {
@@ -103,12 +106,13 @@ export function OnboardingFlow({ initialData }: OnboardingFlowProps) {
         case 0: return { situation: formData.situation };
         case 1: return { currentRole: formData.currentRole, currentSector: formData.currentSector, experienceYears: formData.experienceYears };
         case 2: return { educationLevel: formData.educationLevel, certifications: formData.certifications, hasDataTraining: formData.hasDataTraining };
-        case 3: return { targetRole: formData.targetRole, targetSector: formData.targetSector };
-        case 4: return { topSkills: formData.topSkills, skillLevels: formData.skillLevels };
-        case 5: return { motivation: formData.motivation, keyAchievements: formData.keyAchievements, dreamScenario: formData.dreamScenario };
-        case 6: return { blockers: formData.blockers };
-        case 7: return { confidenceLevel: formData.confidenceLevel };
-        case 8: return {
+        case 3: return { technicalAppetite: formData.technicalAppetite };
+        case 4: return { targetRole: formData.targetRole, targetSector: formData.targetSector };
+        case 5: return { topSkills: formData.topSkills, skillLevels: formData.skillLevels };
+        case 6: return { motivation: formData.motivation, keyAchievements: formData.keyAchievements, dreamScenario: formData.dreamScenario };
+        case 7: return { blockers: formData.blockers };
+        case 8: return { confidenceLevel: formData.confidenceLevel };
+        case 9: return {
           shortTermGoal: formData.shortTermGoal, longTermGoal: formData.longTermGoal,
           preferredPace: formData.preferredPace, availableHoursPerWeek: formData.availableHoursPerWeek,
           trainingBudget: formData.trainingBudget, location: formData.location,
@@ -240,8 +244,10 @@ export function OnboardingFlow({ initialData }: OnboardingFlowProps) {
           />
         );
       case 4:
-        return <StepAmbitions targetRole={formData.targetRole} targetSector={formData.targetSector} formData={formData} aiContent={aiInsights.ambitions} onFieldChange={handleFieldChange} onAiUpdate={(c) => updateAiInsight("ambitions", c)} />;
+        return <StepTechnical value={formData.technicalAppetite} onChange={(v) => handleFieldChange("technicalAppetite", v)} />;
       case 5:
+        return <StepAmbitions targetRole={formData.targetRole} targetSector={formData.targetSector} formData={formData} aiContent={aiInsights.ambitions} onFieldChange={handleFieldChange} onAiUpdate={(c) => updateAiInsight("ambitions", c)} />;
+      case 6:
         return (
           <StepSkills
             selected={formData.topSkills}
@@ -253,7 +259,7 @@ export function OnboardingFlow({ initialData }: OnboardingFlowProps) {
             onAiUpdate={(c) => updateAiInsight("skills", c)}
           />
         );
-      case 6:
+      case 7:
         return (
           <StepMotivation
             motivation={formData.motivation}
@@ -265,11 +271,11 @@ export function OnboardingFlow({ initialData }: OnboardingFlowProps) {
             onAiUpdate={(c) => updateAiInsight("motivation", c)}
           />
         );
-      case 7:
-        return <StepBlockers selected={formData.blockers} onToggle={(blocker) => dispatch({ type: "TOGGLE_BLOCKER", blocker })} />;
       case 8:
-        return <StepConfidence level={formData.confidenceLevel} formData={formData} aiContent={aiInsights.confidence} onChange={(level) => handleFieldChange("confidenceLevel", level)} onAiUpdate={(c) => updateAiInsight("confidence", c)} />;
+        return <StepBlockers selected={formData.blockers} onToggle={(blocker) => dispatch({ type: "TOGGLE_BLOCKER", blocker })} />;
       case 9:
+        return <StepConfidence level={formData.confidenceLevel} formData={formData} aiContent={aiInsights.confidence} onChange={(level) => handleFieldChange("confidenceLevel", level)} onAiUpdate={(c) => updateAiInsight("confidence", c)} />;
+      case 10:
         return (
           <StepAvailability
             availableHoursPerWeek={formData.availableHoursPerWeek}
@@ -286,7 +292,7 @@ export function OnboardingFlow({ initialData }: OnboardingFlowProps) {
             onReorderPriorities={(priorities) => dispatch({ type: "REORDER_PRIORITIES", priorities })}
           />
         );
-      case 10:
+      case 11:
         return <StepSummary formData={formData} aiContent={typeof aiInsights.summary === "string" ? aiInsights.summary : null} onAiUpdate={(c) => updateAiInsight("summary", c)} />;
       default:
         return null;

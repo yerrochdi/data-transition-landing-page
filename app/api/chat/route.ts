@@ -67,6 +67,7 @@ Expérience : ${o.experienceYears || "?"} ans
 Formation : ${o.educationLevel || "Non précisée"}
 Certifications : ${o.certifications?.length ? o.certifications.join(", ") : "Aucune"}
 Expérience data/IA : ${o.hasDataTraining ? "Oui" : "Non, part de zéro"}
+Appétence technique : ${(o as Record<string, unknown>).technicalAppetite === "no-code" ? "NO-CODE — ne veut pas coder, uniquement outils visuels" : (o as Record<string, unknown>).technicalAppetite === "low-code" ? "LOW-CODE — SQL basique et Excel OK, pas de Python" : (o as Record<string, unknown>).technicalAppetite === "code" ? "CODE — motivé technique" : "FLEXIBLE"}
 
 OBJECTIF : Devenir ${o.targetRole || "?"} dans le secteur ${o.targetSector || "?"}
 Motivation : ${motivationLabel}
@@ -105,7 +106,7 @@ COMPORTEMENT :
 - Sois concis (max 200 mots sauf si on te demande un plan détaillé)
 - Sois actionnable : chaque réponse doit contenir AU MOINS une action concrète
 - Mentionne son rôle cible et son secteur quand c'est pertinent
-- Adapte le niveau technique à son profil (débutant data → pas de jargon ML)
+- Adapte le niveau technique à son APPÉTENCE TECHNIQUE déclarée : si "no-code", JAMAIS de Python/R/code, propose uniquement Tableau/Power BI/Looker/Make. Si "low-code", SQL + Excel avancé OK mais pas de Python avancé. Si "code", outils techniques OK.
 - Si la confiance est basse (≤4), sois encourageant et bienveillant
 - Si la confiance est haute (≥8), challenge-le pour aller plus loin
 - Utilise le tutoiement

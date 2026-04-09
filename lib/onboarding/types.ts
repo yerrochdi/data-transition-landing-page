@@ -17,7 +17,10 @@ export interface OnboardingFormData {
   certifications: string[];
   hasDataTraining: boolean;
 
-  // Step 4: Ambitions (AI-powered)
+  // Step 4: Technical appetite
+  technicalAppetite: "no-code" | "low-code" | "code" | "flexible";
+
+  // Step 5: Ambitions (AI-powered)
   targetRole: string;
   targetSector: string;
 
@@ -71,6 +74,7 @@ export const initialFormData: OnboardingFormData = {
   educationLevel: "",
   certifications: [],
   hasDataTraining: false,
+  technicalAppetite: "flexible",
   targetRole: "",
   targetSector: "",
   topSkills: [],

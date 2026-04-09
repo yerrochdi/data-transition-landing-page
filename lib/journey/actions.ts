@@ -60,12 +60,14 @@ function buildDefaultPhases(onboarding: {
   blockers: string[];
   educationLevel: string | null;
   trainingBudget: string | null;
+  technicalAppetite: string | null;
 } | null): { slug: string; number: string; title: string; description: string; tasks: { title: string; description: string }[] }[] {
   const target = onboarding?.targetRole || "Data Analyst";
   const sector = onboarding?.targetSector || onboarding?.currentSector || "votre secteur";
   const currentRole = onboarding?.currentRole || "votre rôle actuel";
   const hasData = onboarding?.hasDataTraining ?? false;
   const budget = onboarding?.trainingBudget || "low";
+  const techAppetite = onboarding?.technicalAppetite || "flexible";
 
   return [
     {
@@ -83,8 +85,18 @@ function buildDefaultPhases(onboarding: {
       slug: "fondations",
       number: "02",
       title: "Fondations Data",
-      description: `Acquérir les bases techniques pour évoluer vers ${target}.`,
-      tasks: hasData ? [
+      description: `Acquérir les bases ${techAppetite === "no-code" ? "outils visuels" : techAppetite === "low-code" ? "SQL et outils BI" : "techniques"} pour évoluer vers ${target}.`,
+      tasks: techAppetite === "no-code" ? [
+        { title: "Maîtriser Excel / Google Sheets avancé", description: "Tableaux croisés dynamiques, RECHERCHEV, formules conditionnelles. Tutoriel gratuit : Google Sheets Training Center." },
+        { title: "Découvrir un outil de data viz", description: `${budget === "none" || budget === "low" ? "Tableau Public (gratuit) ou Google Looker Studio (gratuit)." : "Power BI Desktop (gratuit) ou Tableau Desktop (essai 14j)."} Créez un premier dashboard.` },
+        { title: "Créer un tableau de bord métier", description: `Prenez des données de votre domaine (${sector}) et créez un dashboard avec 3 KPIs et des insights.` },
+        { title: "Apprendre le data storytelling", description: "Comment raconter une histoire avec des données. Cours gratuit : Google Data Analytics (Coursera, module Visualisation)." },
+      ] : techAppetite === "low-code" ? [
+        { title: "Apprendre les bases SQL", description: `${budget === "none" || budget === "low" ? "Cours gratuit : Mode Analytics SQL Tutorial ou W3Schools SQL." : "DataCamp — Introduction to SQL (4h, interactif)."}` },
+        { title: "Maîtriser Excel / Sheets avancé", description: "RECHERCHEV, tableaux croisés dynamiques, Power Query. Indispensable pour un Data Analyst." },
+        { title: "Premiers pas en data viz", description: `${budget === "none" || budget === "low" ? "Google Looker Studio (gratuit)" : "Power BI ou Tableau"}. Créez un dashboard à partir de données ${sector}.` },
+        { title: "Comprendre les statistiques de base", description: "Khan Academy — Statistiques descriptives (gratuit, 2-3h). Moyenne, médiane, écart-type." },
+      ] : hasData ? [
         { title: "Réviser les fondamentaux SQL", description: "Faites 3 exercices SQL sur HackerRank ou DataCamp (30 min)." },
         { title: "Projet Python mini", description: `Analysez un dataset de votre domaine (${sector}) avec pandas en 2h.` },
         { title: "Tableau de bord avec un outil BI", description: "Créez un dashboard simple avec Power BI ou Tableau à partir de données ouvertes." },
@@ -156,6 +168,7 @@ async function seedJourneyForUser(userId: string): Promise<void> {
     blockers: user.onboarding.blockers,
     educationLevel: user.onboarding.educationLevel,
     trainingBudget: user.onboarding.trainingBudget,
+    technicalAppetite: user.onboarding.technicalAppetite,
   } : null;
 
   const defaultPhases = buildDefaultPhases(onboarding);
