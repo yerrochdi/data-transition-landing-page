@@ -407,3 +407,165 @@ export async function toggleTask(taskProgressId: string): Promise<{ success: boo
     return { success: false, error: "Erreur lors de la mise à jour" };
   }
 }
+
+// ─── Task Session Helpers ─────────────────────────────────────────
+
+export interface TaskWithContext {
+  id: string;
+  title: string;
+  description: string;
+  phase: { title: string; number: string };
+  taskProgressId: string | null;
+  taskStatus: "LOCKED" | "IN_PROGRESS" | "DONE";
+  session: {
+    id: string;
+    status: "LESSON" | "QUIZ" | "FEEDBACK" | "COMPLETED";
+    lessonContent: string | null;
+    quizQuestions: unknown;
+    quizAnswers: unknown;
+    quizScore: number | null;
+    feedbackContent: string | null;
+  } | null;
+}
+
+export async function getTaskWithContext(taskId: string): Promise<TaskWithContext | null> {
+  const userId = await getCurrentUserId();
+  if (!userId) return null;
+
+  const task = await prisma.journeyTask.findUnique({
+    where: { id: taskId },
+    include: {
+      phase: true,
+    },
+  });
+
+  if (!task) return null;
+
+  // Get user's progress for this phase
+  const userProgress = await prisma.journeyProgress.findFirst({
+    where: { userId, phaseId: task.phaseId },
+    include: {
+      tasks: { where: { taskId } },
+    },
+  });
+
+  const taskProgress = userProgress?.tasks[0];
+
+  // Get existing session
+  const session = await prisma.taskSession.findUnique({
+    where: { userId_taskId: { userId, taskId } },
+  });
+
+  return {
+    id: task.id,
+    title: task.title,
+    description: task.description,
+    phase: { title: task.phase.title, number: task.phase.number },
+    taskProgressId: taskProgress?.id ?? null,
+    taskStatus: taskProgress?.status ?? "LOCKED",
+    session: session
+      ? {
+          id: session.id,
+          status: session.status,
+          lessonContent: session.lessonContent,
+          quizQuestions: session.quizQuestions,
+          quizAnswers: session.quizAnswers,
+          quizScore: session.quizScore,
+          feedbackContent: session.feedbackContent,
+        }
+      : null,
+  };
+}
+
+export async function saveSessionProgress(
+  taskId: string,
+  data: {
+    status?: "LESSON" | "QUIZ" | "FEEDBACK" | "COMPLETED";
+    lessonContent?: string;
+    quizQuestions?: unknown;
+    quizAnswers?: unknown;
+    quizScore?: number;
+    feedbackContent?: string;
+  }
+): Promise<{ success: boolean; error?: string }> {
+  const userId = await getCurrentUserId();
+  if (!userId) return { success: false, error: "Non authentifié" };
+
+  try {
+    await prisma.taskSession.upsert({
+      where: { userId_taskId: { userId, taskId } },
+      create: {
+        userId,
+        taskId,
+        status: data.status || "LESSON",
+        lessonContent: data.lessonContent,
+        quizQuestions: data.quizQuestions as never,
+        quizAnswers: data.quizAnswers as never,
+        quizScore: data.quizScore,
+        feedbackContent: data.feedbackContent,
+        lessonCompletedAt: data.status === "QUIZ" ? new Date() : undefined,
+        quizCompletedAt: data.status === "FEEDBACK" ? new Date() : undefined,
+      },
+      update: {
+        ...data,
+        quizQuestions: data.quizQuestions as never,
+        quizAnswers: data.quizAnswers as never,
+        lessonCompletedAt: data.status === "QUIZ" ? new Date() : undefined,
+        quizCompletedAt: data.status === "FEEDBACK" ? new Date() : undefined,
+      },
+    });
+
+    return { success: true };
+  } catch (e) {
+    console.error("Save session error:", e);
+    return { success: false, error: "Erreur de sauvegarde" };
+  }
+}
+
+export async function completeTaskSession(
+  taskId: string
+): Promise<{ success: boolean; error?: string }> {
+  const userId = await getCurrentUserId();
+  if (!userId) return { success: false, error: "Non authentifié" };
+
+  try {
+    // Mark session as completed
+    await prisma.taskSession.update({
+      where: { userId_taskId: { userId, taskId } },
+      data: { status: "COMPLETED" },
+    });
+
+    // Find the task progress and mark it as DONE
+    const task = await prisma.journeyTask.findUnique({
+      where: { id: taskId },
+      include: {
+        phase: {
+          include: {
+            progress: {
+              where: { userId },
+              include: { tasks: true },
+            },
+          },
+        },
+      },
+    });
+
+    if (!task) return { success: false, error: "Tâche introuvable" };
+
+    const userProgress = task.phase.progress[0];
+    if (!userProgress) return { success: false, error: "Progression introuvable" };
+
+    const taskProgress = userProgress.tasks.find((tp) => tp.taskId === taskId);
+    if (!taskProgress) return { success: false, error: "Task progress introuvable" };
+
+    // Toggle the task to DONE (reuse the existing logic)
+    if (taskProgress.status !== "DONE") {
+      await toggleTask(taskProgress.id);
+    }
+
+    return { success: true };
+  } catch (e) {
+    console.error("Complete session error:", e);
+    return { success: false, error: "Erreur lors de la complétion" };
+  }
+}

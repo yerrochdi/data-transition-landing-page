@@ -131,8 +131,10 @@ export async function getDashboardData(): Promise<DashboardData | null> {
       include: {
         tasks: {
           include: {
-            taskProgress: {
-              where: { userId: dbUser.id },
+            progress: {
+              where: {
+                journeyProgress: { userId: dbUser.id },
+              },
               take: 1,
             },
           },
@@ -161,7 +163,7 @@ export async function getDashboardData(): Promise<DashboardData | null> {
 
         for (const task of phase.tasks) {
           totalTasks++;
-          const tp = task.taskProgress[0];
+          const tp = task.progress[0];
           if (tp?.status === "DONE") {
             completedTasks++;
           } else if (isActive && !nextTaskTitle && tp?.status === "IN_PROGRESS") {

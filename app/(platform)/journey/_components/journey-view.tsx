@@ -15,6 +15,7 @@ import {
   ArrowRight,
   MessageSquare,
   ExternalLink,
+  GraduationCap,
 } from "lucide-react";
 import { cn } from "@/lib/utils";
 import { toggleTask } from "@/lib/journey/actions";
@@ -28,12 +29,14 @@ function TaskItem({
   onToggle,
   isPending,
   onAskCopilot,
+  router,
 }: {
   task: JourneyTaskData;
   phaseStatus: string;
   onToggle: (taskProgressId: string) => void;
   isPending: boolean;
   onAskCopilot: (taskTitle: string) => void;
+  router: ReturnType<typeof useRouter>;
 }) {
   const isDone = task.status === "DONE";
   const isLocked = task.status === "LOCKED";
@@ -96,6 +99,13 @@ function TaskItem({
         {/* Action buttons */}
         {!isDone && !isLocked && (
           <div className="flex items-center gap-2 flex-wrap">
+            <button
+              onClick={() => router.push(`/journey/task/${task.id}`)}
+              className="inline-flex items-center gap-1.5 text-[10px] font-bold text-primary bg-primary/10 hover:bg-primary/20 px-3 py-1.5 rounded-lg transition-colors"
+            >
+              <GraduationCap className="w-3 h-3" />
+              Commencer la session
+            </button>
             {canToggle && (
               <button
                 onClick={() => onToggle(task.taskProgressId!)}
@@ -103,7 +113,7 @@ function TaskItem({
                 className="inline-flex items-center gap-1.5 text-[10px] font-bold text-emerald-400 bg-emerald-500/10 hover:bg-emerald-500/20 px-3 py-1.5 rounded-lg transition-colors"
               >
                 <Check className="w-3 h-3" />
-                Marquer termine
+                Marquer terminé
               </button>
             )}
             <button
@@ -116,9 +126,20 @@ function TaskItem({
             {hasLink && (
               <span className="inline-flex items-center gap-1 text-[10px] text-muted-foreground">
                 <ExternalLink className="w-3 h-3" />
-                Ressource mentionnee dans la description
+                Ressource mentionnée dans la description
               </span>
             )}
+          </div>
+        )}
+        {isDone && (
+          <div className="flex items-center gap-2 flex-wrap">
+            <button
+              onClick={() => router.push(`/journey/task/${task.id}`)}
+              className="inline-flex items-center gap-1.5 text-[10px] font-bold text-muted-foreground bg-surface-container hover:bg-surface-container-high px-3 py-1.5 rounded-lg transition-colors"
+            >
+              <GraduationCap className="w-3 h-3" />
+              Revoir la session
+            </button>
           </div>
         )}
       </div>
@@ -135,6 +156,7 @@ function PhaseCard({
   onToggleTask,
   onAskCopilot,
   isPending,
+  router,
 }: {
   phase: JourneyPhaseData;
   isExpanded: boolean;
@@ -142,6 +164,7 @@ function PhaseCard({
   onToggleTask: (taskProgressId: string) => void;
   onAskCopilot: (taskTitle: string) => void;
   isPending: boolean;
+  router: ReturnType<typeof useRouter>;
 }) {
   const isCompleted = phase.status === "COMPLETED";
   const isActive = phase.status === "ACTIVE";
@@ -244,6 +267,7 @@ function PhaseCard({
               onToggle={onToggleTask}
               onAskCopilot={onAskCopilot}
               isPending={isPending}
+              router={router}
             />
           ))}
         </div>
@@ -425,14 +449,21 @@ export function JourneyView({ initialData }: { initialData: JourneyData }) {
             </h3>
             <p className="text-xs text-muted-foreground mb-4">{nextTask.description}</p>
             <div className="flex items-center gap-3 flex-wrap">
+              <button
+                onClick={() => router.push(`/journey/task/${nextTask.id}`)}
+                className="inline-flex items-center gap-2 gradient-primary text-primary-foreground px-5 py-2.5 rounded-xl text-xs font-bold hover:scale-[1.02] transition-transform"
+              >
+                <GraduationCap className="w-3.5 h-3.5" />
+                Commencer la session
+              </button>
               {nextTask.taskProgressId && (
                 <button
                   onClick={() => handleToggleTask(nextTask.taskProgressId!)}
                   disabled={isPending}
-                  className="inline-flex items-center gap-2 gradient-primary text-primary-foreground px-5 py-2.5 rounded-xl text-xs font-bold hover:scale-[1.02] transition-transform"
+                  className="inline-flex items-center gap-2 bg-emerald-500/10 text-emerald-400 px-5 py-2.5 rounded-xl text-xs font-bold hover:bg-emerald-500/20 transition-colors"
                 >
                   <Check className="w-3.5 h-3.5" />
-                  J&apos;ai termine cette tache
+                  Déjà fait — valider
                 </button>
               )}
               <button
@@ -440,7 +471,7 @@ export function JourneyView({ initialData }: { initialData: JourneyData }) {
                 className="inline-flex items-center gap-2 bg-surface-container-lowest ghost-border px-5 py-2.5 rounded-xl text-xs font-bold text-muted-foreground hover:text-foreground transition-colors"
               >
                 <MessageSquare className="w-3.5 h-3.5" />
-                Demander de l&apos;aide au Copilot
+                Aide du Copilot
               </button>
             </div>
           </div>
@@ -466,6 +497,7 @@ export function JourneyView({ initialData }: { initialData: JourneyData }) {
             onToggleTask={handleToggleTask}
             onAskCopilot={handleAskCopilot}
             isPending={isPending}
+            router={router}
           />
         ))}
       </div>

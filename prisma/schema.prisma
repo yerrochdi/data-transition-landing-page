@@ -34,6 +34,7 @@ model User {
   profile             UserProfile?
   onboarding          OnboardingResponse?
   journeyProgress     JourneyProgress[]
+  taskSessions        TaskSession[]
   agentConversations  AgentConversation[]
   bookmarks           OpportunityBookmark[]
   analyticsSnapshots  AnalyticsSnapshot[]
@@ -173,6 +174,7 @@ model JourneyTask {
 
   phase    JourneyPhase      @relation(fields: [phaseId], references: [id], onDelete: Cascade)
   progress JourneyTaskProgress[]
+  sessions TaskSession[]
 
   @@map("journey_tasks")
 }
@@ -215,6 +217,43 @@ model JourneyTaskProgress {
 
   @@unique([journeyProgressId, taskId])
   @@map("journey_task_progress")
+}
+
+// ============================================================
+// AI-Driven Task Sessions
+// ============================================================
+
+model TaskSession {
+  id                String        @id @default(uuid())
+  userId            String
+  taskId            String
+
+  status            SessionStatus @default(LESSON)
+  lessonContent     String?       @db.Text
+  lessonCompletedAt DateTime?
+
+  quizQuestions     Json?         // [{question, options, correctIndex, explanation}]
+  quizAnswers       Json?         // [{questionIndex, selectedIndex, correct}]
+  quizScore         Int?
+  quizCompletedAt   DateTime?
+
+  feedbackContent   String?       @db.Text
+
+  createdAt         DateTime      @default(now())
+  updatedAt         DateTime      @updatedAt
+
+  user User        @relation(fields: [userId], references: [id], onDelete: Cascade)
+  task JourneyTask @relation(fields: [taskId], references: [id], onDelete: Cascade)
+
+  @@unique([userId, taskId])
+  @@map("task_sessions")
+}
+
+enum SessionStatus {
+  LESSON
+  QUIZ
+  FEEDBACK
+  COMPLETED
 }
 
 enum TaskStatus {

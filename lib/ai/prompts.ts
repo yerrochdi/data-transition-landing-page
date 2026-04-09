@@ -237,3 +237,130 @@ Avec une estimation de probabilité de succès (pourcentage réaliste entre 65% 
 
 Sois réaliste mais encourageant. Maximum 300 mots.`;
 }
+
+// ============================================================
+// Task Session Prompts (AI-Driven Learning)
+// ============================================================
+
+interface SessionProfile {
+  currentRole: string;
+  targetRole: string;
+  currentSector: string;
+  targetSector: string;
+  technicalAppetite: string;
+  confidenceLevel: number;
+  experienceYears: number | null;
+}
+
+export function buildLessonPrompt(
+  taskTitle: string,
+  taskDescription: string,
+  phaseTitle: string,
+  profile: SessionProfile
+): string {
+  const techLevel = profile.technicalAppetite === "no-code"
+    ? "L'utilisateur NE VEUT PAS coder. Explique avec des outils visuels, des analogies métier, des exemples concrets sans code."
+    : profile.technicalAppetite === "low-code"
+    ? "L'utilisateur accepte SQL basique et Excel avancé mais pas de Python. Reste accessible."
+    : profile.technicalAppetite === "code"
+    ? "L'utilisateur est motivé pour le technique. Tu peux montrer des exemples de code simples."
+    : "Adapte le niveau technique au profil.";
+
+  return `Tu es un formateur expert en transition de carrière vers la data/IA.
+
+PROFIL DE L'APPRENANT :
+- Rôle actuel : ${profile.currentRole} (${profile.experienceYears || "quelques"} ans)
+- Secteur : ${profile.currentSector}
+- Objectif : devenir ${profile.targetRole} dans ${profile.targetSector}
+- Appétence technique : ${profile.technicalAppetite}
+- Confiance : ${profile.confidenceLevel}/10
+
+CONSIGNE TECHNIQUE : ${techLevel}
+
+PHASE : ${phaseTitle}
+TÂCHE : ${taskTitle}
+DESCRIPTION : ${taskDescription}
+
+Génère une micro-leçon personnalisée et engageante. Structure :
+
+**Pourquoi c'est important pour vous**
+2-3 phrases qui connectent ce sujet au parcours spécifique de l'apprenant (mentionne son rôle actuel et son objectif).
+
+**L'essentiel à retenir**
+Les concepts clés expliqués simplement, avec des exemples concrets du secteur ${profile.currentSector}. Utilise des analogies avec son métier de ${profile.currentRole} pour rendre ça intuitif.
+
+**En pratique**
+2-3 actions concrètes que l'apprenant peut faire maintenant. Sois très spécifique (noms d'outils, de sites, durées estimées).
+
+**Le conseil d'expert**
+Un insight surprenant ou une astuce que seul un expert connaît.
+
+Règles :
+- Maximum 500 mots
+- Tutoiement
+- Ton encourageant mais pas condescendant
+- TOUJOURS en français
+- Adapte TOUT au niveau technique déclaré
+- N'utilise AUCUN caractère chinois`;
+}
+
+export function buildQuizPrompt(
+  taskTitle: string,
+  lessonContent: string,
+  profile: SessionProfile
+): string {
+  return `Tu viens de donner cette leçon sur "${taskTitle}" :
+
+${lessonContent}
+
+PROFIL : ${profile.currentRole} → ${profile.targetRole} | Technique : ${profile.technicalAppetite}
+
+Génère EXACTEMENT 4 questions à choix multiples pour valider la compréhension.
+
+Règles :
+- Questions en français
+- Adaptées au niveau technique (${profile.technicalAppetite})
+- Mix : 2 questions de compréhension, 1 question pratique (mise en situation métier), 1 question "piège" subtile
+- Chaque question a 4 options
+- Les options doivent être plausibles (pas de réponses évidemment fausses)
+
+Retourne UNIQUEMENT du JSON valide, sans markdown, sans \`\`\`, sans texte autour :
+[
+  {
+    "question": "La question ici",
+    "options": ["Option A", "Option B", "Option C", "Option D"],
+    "correctIndex": 0,
+    "explanation": "Explication courte de pourquoi c'est la bonne réponse"
+  }
+]`;
+}
+
+export function buildFeedbackPrompt(
+  taskTitle: string,
+  score: number,
+  totalQuestions: number,
+  wrongAnswers: { question: string; userAnswer: string; correctAnswer: string; explanation: string }[],
+  profile: SessionProfile
+): string {
+  const wrongDetails = wrongAnswers.length > 0
+    ? wrongAnswers.map((w, i) => `${i + 1}. Question : "${w.question}" — Tu as répondu "${w.userAnswer}" au lieu de "${w.correctAnswer}". ${w.explanation}`).join("\n")
+    : "Aucune erreur !";
+
+  return `L'apprenant vient de terminer le quiz sur "${taskTitle}".
+
+Score : ${score}% (${totalQuestions - wrongAnswers.length}/${totalQuestions} bonnes réponses)
+${wrongAnswers.length > 0 ? `\nErreurs :\n${wrongDetails}` : ""}
+
+Profil : ${profile.currentRole} → ${profile.targetRole} | Confiance : ${profile.confidenceLevel}/10
+
+${score >= 60 ? `Le score est suffisant pour valider. Félicite chaleureusement et encourage à continuer.` : `Le score est insuffisant (< 60%). Encourage sans juger, explique brièvement les erreurs, et suggère de relire la leçon.`}
+
+Génère un feedback personnalisé :
+1. ${score >= 60 ? "Célèbre la réussite" : "Rassure et encourage"} (1-2 phrases)
+2. ${wrongAnswers.length > 0 ? "Pour chaque erreur, une explication simple en 1 phrase" : "Souligne la maîtrise parfaite"}
+3. ${score >= 60 ? "Donne un aperçu motivant de la prochaine étape" : "Suggère de revoir la leçon et réessayer"}
+
+${profile.confidenceLevel <= 4 ? "IMPORTANT : La confiance est basse — sois particulièrement bienveillant et encourageant." : ""}
+
+Maximum 150 mots. Tutoiement. Français uniquement. Aucun caractère chinois.`;
+}
