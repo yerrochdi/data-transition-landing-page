@@ -34,18 +34,23 @@ export function StepAmbitions({
   const [roles, setRoles] = useState<SuggestedRole[]>([]);
   const hasTriggered = useRef(false);
 
-  // Parse roles from AI content — handles markdown code blocks
+  // Parse roles from AI content — handles markdown code blocks and surrounding text
   useEffect(() => {
     if (!aiContent) {
       setRoles([]);
       return;
     }
     try {
-      // Strip markdown code block if present (```json ... ```)
       let cleaned = aiContent.trim();
+      // Strip markdown code block if present (```json ... ```)
       cleaned = cleaned.replace(/^```(?:json)?\s*/i, "").replace(/\s*```\s*$/, "");
+      // Try to extract JSON array from surrounding text
+      const arrayMatch = cleaned.match(/\[[\s\S]*\]/);
+      if (arrayMatch) {
+        cleaned = arrayMatch[0];
+      }
       const parsed = JSON.parse(cleaned);
-      if (Array.isArray(parsed)) {
+      if (Array.isArray(parsed) && parsed.length > 0) {
         setRoles(parsed);
       }
     } catch {
@@ -264,6 +269,44 @@ export function StepAmbitions({
               </p>
             </div>
           )}
+        </div>
+      )}
+
+      {/* AI responded but JSON parse failed — show fallback */}
+      {!loading && !error && roles.length === 0 && aiContent && (
+        <div className="bg-surface-container-high/70 p-4 rounded-xl light-streak space-y-4">
+          <p className="text-xs text-muted-foreground">
+            Les suggestions IA n&apos;ont pas pu être chargées. Vous pouvez réessayer ou saisir manuellement.
+          </p>
+          <button
+            onClick={() => {
+              hasTriggered.current = false;
+              onAiUpdate("");
+              setRoles([]);
+              generate();
+            }}
+            className="flex items-center gap-2 text-xs text-primary font-bold hover:underline"
+          >
+            <RefreshCw className="w-3 h-3" />
+            Réessayer
+          </button>
+          <div className="space-y-3 pt-3 border-t border-border/10">
+            <p className="text-xs text-muted-foreground">Ou saisissez manuellement :</p>
+            <input
+              type="text"
+              value={targetRole}
+              onChange={(e) => onFieldChange("targetRole", e.target.value)}
+              placeholder="Ex: Data Analyst Finance"
+              className="w-full bg-surface-container-lowest rounded-xl p-4 text-sm text-foreground placeholder:text-muted-foreground focus:outline-none focus:ring-2 focus:ring-primary/50"
+            />
+            <input
+              type="text"
+              value={targetSector}
+              onChange={(e) => onFieldChange("targetSector", e.target.value)}
+              placeholder="Ex: FinTech"
+              className="w-full bg-surface-container-lowest rounded-xl p-4 text-sm text-foreground placeholder:text-muted-foreground focus:outline-none focus:ring-2 focus:ring-primary/50"
+            />
+          </div>
         </div>
       )}
 
