@@ -88,14 +88,25 @@ function buildSuggestions(data: NonNullable<Awaited<ReturnType<typeof getDashboa
   return suggestions;
 }
 
-export default async function AgentsPage() {
+export default async function AgentsPage({
+  searchParams,
+}: {
+  searchParams: Promise<{ q?: string }>;
+}) {
   const data = await getDashboardData();
 
   if (!data) {
     redirect("/login");
   }
 
+  const params = await searchParams;
   const suggestions = buildSuggestions(data);
 
-  return <CopilotChat suggestions={suggestions} userName={data.user.firstName} />;
+  return (
+    <CopilotChat
+      suggestions={suggestions}
+      userName={data.user.firstName}
+      initialQuery={params.q || null}
+    />
+  );
 }

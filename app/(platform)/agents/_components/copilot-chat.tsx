@@ -41,6 +41,7 @@ export interface SuggestionData {
 interface CopilotChatProps {
   suggestions: SuggestionData[];
   userName: string;
+  initialQuery?: string | null;
 }
 
 // ─── Icon Map ─────────────────────────────────────────────────────
@@ -140,7 +141,7 @@ function MessageBubble({ message, isStreaming }: { message: Message; isStreaming
 
 // ─── Main Component ───────────────────────────────────────────────
 
-export function CopilotChat({ suggestions, userName }: CopilotChatProps) {
+export function CopilotChat({ suggestions, userName, initialQuery }: CopilotChatProps) {
   const [messages, setMessages] = useState<Message[]>([]);
   const [input, setInput] = useState("");
   const [isStreaming, setIsStreaming] = useState(false);
@@ -175,6 +176,18 @@ export function CopilotChat({ suggestions, userName }: CopilotChatProps) {
     textarea.style.height = "auto";
     textarea.style.height = `${Math.min(textarea.scrollHeight, 150)}px`;
   }, [input]);
+
+  // Auto-send initial query from URL param (e.g., from Journey "Ask Copilot")
+  const hasAutoSent = useRef(false);
+  useEffect(() => {
+    if (initialQuery && !hasAutoSent.current && messages.length === 0) {
+      hasAutoSent.current = true;
+      // Small delay to let the component mount
+      const timer = setTimeout(() => sendMessage(initialQuery), 300);
+      return () => clearTimeout(timer);
+    }
+    // eslint-disable-next-line react-hooks/exhaustive-deps
+  }, [initialQuery]);
 
   const sendMessage = async (content: string) => {
     if (!content.trim() || isStreaming) return;

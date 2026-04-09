@@ -62,12 +62,21 @@ export interface DashboardOnboarding {
   completedAt: Date | null;
 }
 
+export interface JourneySummary {
+  overallProgress: number;
+  completedTasks: number;
+  totalTasks: number;
+  activePhaseTitle: string | null;
+  nextTaskTitle: string | null;
+}
+
 export interface DashboardData {
   user: DashboardUser;
   profile: DashboardProfile | null;
   onboarding: DashboardOnboarding | null;
   streakDays: number;
   dailyTip: string;
+  journey: JourneySummary;
 }
 
 export async function getDashboardData(): Promise<DashboardData | null> {
@@ -107,6 +116,71 @@ export async function getDashboardData(): Promise<DashboardData | null> {
 
   // Generate daily tip based on profile
   const dailyTip = generateDailyTip(dbUser.onboarding, dbUser.profile);
+
+  // Fetch journey summary for next actions
+  let journey: JourneySummary = {
+    overallProgress: 0,
+    completedTasks: 0,
+    totalTasks: 0,
+    activePhaseTitle: null,
+    nextTaskTitle: null,
+  };
+
+  try {
+    const phases = await prisma.journeyPhase.findMany({
+      include: {
+        tasks: {
+          include: {
+            taskProgress: {
+              where: { userId: dbUser.id },
+              take: 1,
+            },
+          },
+          orderBy: { order: "asc" },
+        },
+      },
+      orderBy: { order: "asc" },
+    });
+
+    if (phases.length > 0) {
+      let totalTasks = 0;
+      let completedTasks = 0;
+      let activePhaseTitle: string | null = null;
+      let nextTaskTitle: string | null = null;
+
+      for (const phase of phases) {
+        // Find user progress for this phase
+        const phaseProgress = await prisma.journeyProgress.findFirst({
+          where: { userId: dbUser.id, phaseId: phase.id },
+        });
+
+        const isActive = phaseProgress?.status === "ACTIVE";
+        if (isActive && !activePhaseTitle) {
+          activePhaseTitle = phase.title;
+        }
+
+        for (const task of phase.tasks) {
+          totalTasks++;
+          const tp = task.taskProgress[0];
+          if (tp?.status === "DONE") {
+            completedTasks++;
+          } else if (isActive && !nextTaskTitle && tp?.status === "IN_PROGRESS") {
+            nextTaskTitle = task.title;
+          }
+        }
+      }
+
+      journey = {
+        overallProgress: totalTasks > 0 ? Math.round((completedTasks / totalTasks) * 100) : 0,
+        completedTasks,
+        totalTasks,
+        activePhaseTitle,
+        nextTaskTitle,
+      };
+    }
+  } catch {
+    // Journey not seeded yet — that's fine
+  }
 
   return {
     user: {
@@ -166,6 +240,7 @@ export async function getDashboardData(): Promise<DashboardData | null> {
       : null,
     streakDays,
     dailyTip,
+    journey,
   };
 }
 

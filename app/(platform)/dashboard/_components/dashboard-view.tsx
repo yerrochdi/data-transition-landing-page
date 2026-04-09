@@ -27,6 +27,8 @@ import { ReadinessBreakdown } from "./readiness-breakdown";
 import { SkillGaps } from "./skill-gaps";
 import { StreakTip } from "./streak-tip";
 import { Achievements } from "./achievements";
+import { WelcomeModal } from "./welcome-modal";
+import { NextActions } from "./next-actions";
 import { cn } from "@/lib/utils";
 
 interface DashboardViewProps {
@@ -34,7 +36,7 @@ interface DashboardViewProps {
 }
 
 export function DashboardView({ data }: DashboardViewProps) {
-  const { user, profile, onboarding, streakDays, dailyTip } = data;
+  const { user, profile, onboarding, streakDays, dailyTip, journey } = data;
 
   const careerScore = profile?.careerScore ?? 0;
   const readinessScore = profile?.readinessScore ?? 0;
@@ -51,6 +53,16 @@ export function DashboardView({ data }: DashboardViewProps) {
 
   return (
     <div className="space-y-8">
+      {/* Welcome Modal — shows once after first onboarding */}
+      {hasCompletedOnboarding && (
+        <WelcomeModal
+          userName={user.firstName}
+          targetRole={targetRole ?? null}
+          careerScore={careerScore}
+          readinessScore={readinessScore}
+        />
+      )}
+
       {/* ═══════════════════════════════════════════════════════════
           HERO — Score + Role Transition + KPIs
           ═══════════════════════════════════════════════════════════ */}
@@ -211,6 +223,21 @@ export function DashboardView({ data }: DashboardViewProps) {
           ═══════════════════════════════════════════════════════════ */}
       {hasCompletedOnboarding && (
         <StreakTip streakDays={streakDays} dailyTip={dailyTip} />
+      )}
+
+      {/* ═══════════════════════════════════════════════════════════
+          NEXT ACTIONS — What to do now
+          ═══════════════════════════════════════════════════════════ */}
+      {hasCompletedOnboarding && (
+        <NextActions
+          targetRole={targetRole ?? null}
+          skillGaps={skillGaps}
+          overallJourneyProgress={journey.overallProgress}
+          activePhaseTitle={journey.activePhaseTitle}
+          nextTaskTitle={journey.nextTaskTitle}
+          completedTasks={journey.completedTasks}
+          totalTasks={journey.totalTasks}
+        />
       )}
 
       {/* ═══════════════════════════════════════════════════════════

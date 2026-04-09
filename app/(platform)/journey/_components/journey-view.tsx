@@ -1,6 +1,7 @@
 "use client";
 
 import { useState, useTransition } from "react";
+import { useRouter } from "next/navigation";
 import {
   Check,
   Play,
@@ -11,6 +12,9 @@ import {
   Sparkles,
   Trophy,
   Flame,
+  ArrowRight,
+  MessageSquare,
+  ExternalLink,
 } from "lucide-react";
 import { cn } from "@/lib/utils";
 import { toggleTask } from "@/lib/journey/actions";
@@ -23,15 +27,20 @@ function TaskItem({
   phaseStatus,
   onToggle,
   isPending,
+  onAskCopilot,
 }: {
   task: JourneyTaskData;
   phaseStatus: string;
   onToggle: (taskProgressId: string) => void;
   isPending: boolean;
+  onAskCopilot: (taskTitle: string) => void;
 }) {
   const isDone = task.status === "DONE";
   const isLocked = task.status === "LOCKED";
   const canToggle = !isLocked && task.taskProgressId && !isPending;
+
+  // Extract links from description (detect known platforms)
+  const hasLink = /(?:DataCamp|Coursera|Khan Academy|HackerRank|Kaggle|LinkedIn|Power BI|Tableau|Google|W3Schools|Mode Analytics)/i.test(task.description);
 
   return (
     <div
@@ -76,8 +85,42 @@ function TaskItem({
               +5 XP
             </span>
           )}
+          {!isDone && !isLocked && (
+            <span className="text-[9px] font-bold text-primary/60 bg-primary/5 px-2 py-0.5 rounded-full shrink-0">
+              +5 XP
+            </span>
+          )}
         </div>
-        <p className="text-xs text-muted-foreground leading-relaxed">{task.description}</p>
+        <p className="text-xs text-muted-foreground leading-relaxed mb-2">{task.description}</p>
+
+        {/* Action buttons */}
+        {!isDone && !isLocked && (
+          <div className="flex items-center gap-2 flex-wrap">
+            {canToggle && (
+              <button
+                onClick={() => onToggle(task.taskProgressId!)}
+                disabled={isPending}
+                className="inline-flex items-center gap-1.5 text-[10px] font-bold text-emerald-400 bg-emerald-500/10 hover:bg-emerald-500/20 px-3 py-1.5 rounded-lg transition-colors"
+              >
+                <Check className="w-3 h-3" />
+                Marquer termine
+              </button>
+            )}
+            <button
+              onClick={() => onAskCopilot(task.title)}
+              className="inline-flex items-center gap-1.5 text-[10px] font-bold text-blue-400 bg-blue-500/10 hover:bg-blue-500/20 px-3 py-1.5 rounded-lg transition-colors"
+            >
+              <MessageSquare className="w-3 h-3" />
+              Aide du Copilot
+            </button>
+            {hasLink && (
+              <span className="inline-flex items-center gap-1 text-[10px] text-muted-foreground">
+                <ExternalLink className="w-3 h-3" />
+                Ressource mentionnee dans la description
+              </span>
+            )}
+          </div>
+        )}
       </div>
     </div>
   );
@@ -90,12 +133,14 @@ function PhaseCard({
   isExpanded,
   onToggleExpand,
   onToggleTask,
+  onAskCopilot,
   isPending,
 }: {
   phase: JourneyPhaseData;
   isExpanded: boolean;
   onToggleExpand: () => void;
   onToggleTask: (taskProgressId: string) => void;
+  onAskCopilot: (taskTitle: string) => void;
   isPending: boolean;
 }) {
   const isCompleted = phase.status === "COMPLETED";
@@ -197,6 +242,7 @@ function PhaseCard({
               task={task}
               phaseStatus={phase.status}
               onToggle={onToggleTask}
+              onAskCopilot={onAskCopilot}
               isPending={isPending}
             />
           ))}
@@ -209,6 +255,7 @@ function PhaseCard({
 // ─── Main View ────────────────────────────────────────────────────
 
 export function JourneyView({ initialData }: { initialData: JourneyData }) {
+  const router = useRouter();
   const [data, setData] = useState(initialData);
   const [expandedPhases, setExpandedPhases] = useState<Set<string>>(() => {
     // Auto-expand active phase
@@ -216,6 +263,12 @@ export function JourneyView({ initialData }: { initialData: JourneyData }) {
     return new Set(active ? [active.id] : []);
   });
   const [isPending, startTransition] = useTransition();
+
+  const handleAskCopilot = (taskTitle: string) => {
+    // Navigate to copilot with pre-filled question
+    const query = encodeURIComponent(`Aide-moi avec cette tache : "${taskTitle}". Comment je fais concretement ?`);
+    router.push(`/agents?q=${query}`);
+  };
 
   const toggleExpand = (phaseId: string) => {
     setExpandedPhases((prev) => {
@@ -355,6 +408,45 @@ export function JourneyView({ initialData }: { initialData: JourneyData }) {
         </div>
       </div>
 
+      {/* Next Task Banner */}
+      {activePhase && (() => {
+        const nextTask = activePhase.tasks.find((t) => t.status === "IN_PROGRESS");
+        if (!nextTask) return null;
+        return (
+          <div className="bg-gradient-to-r from-primary/10 via-surface-container-high to-primary/5 rounded-2xl border border-primary/20 p-6 mb-8">
+            <div className="flex items-center gap-2 mb-3">
+              <div className="w-2 h-2 rounded-full bg-primary animate-pulse" />
+              <span className="text-[10px] uppercase tracking-widest text-primary font-bold">
+                Votre prochaine action
+              </span>
+            </div>
+            <h3 className="font-headline text-lg font-bold text-foreground mb-1">
+              {nextTask.title}
+            </h3>
+            <p className="text-xs text-muted-foreground mb-4">{nextTask.description}</p>
+            <div className="flex items-center gap-3 flex-wrap">
+              {nextTask.taskProgressId && (
+                <button
+                  onClick={() => handleToggleTask(nextTask.taskProgressId!)}
+                  disabled={isPending}
+                  className="inline-flex items-center gap-2 gradient-primary text-primary-foreground px-5 py-2.5 rounded-xl text-xs font-bold hover:scale-[1.02] transition-transform"
+                >
+                  <Check className="w-3.5 h-3.5" />
+                  J&apos;ai termine cette tache
+                </button>
+              )}
+              <button
+                onClick={() => handleAskCopilot(nextTask.title)}
+                className="inline-flex items-center gap-2 bg-surface-container-lowest ghost-border px-5 py-2.5 rounded-xl text-xs font-bold text-muted-foreground hover:text-foreground transition-colors"
+              >
+                <MessageSquare className="w-3.5 h-3.5" />
+                Demander de l&apos;aide au Copilot
+              </button>
+            </div>
+          </div>
+        );
+      })()}
+
       {/* Phases Timeline */}
       <div className="relative pl-10 md:pl-16 space-y-6">
         {/* Vertical Line */}
@@ -372,6 +464,7 @@ export function JourneyView({ initialData }: { initialData: JourneyData }) {
             isExpanded={expandedPhases.has(phase.id)}
             onToggleExpand={() => toggleExpand(phase.id)}
             onToggleTask={handleToggleTask}
+            onAskCopilot={handleAskCopilot}
             isPending={isPending}
           />
         ))}
