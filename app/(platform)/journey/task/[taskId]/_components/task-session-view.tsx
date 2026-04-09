@@ -11,18 +11,189 @@ import {
   Loader2,
   RefreshCw,
   Sparkles,
+  Target,
   Trophy,
   XCircle,
   GraduationCap,
   Zap,
 } from "lucide-react";
 import { cn } from "@/lib/utils";
-import { renderMarkdownBlock } from "@/lib/utils/render-markdown";
+import { renderInlineMarkdown } from "@/lib/utils/render-markdown";
 import {
   saveSessionProgress,
   completeTaskSession,
 } from "@/lib/journey/actions";
 import type { TaskWithContext } from "@/lib/journey/actions";
+
+// ─── Section Icons ────────────────────────────────────────────────
+
+const SECTION_ICONS: Record<string, React.ElementType> = {
+  "pourquoi": Target,
+  "important": Target,
+  "essentiel": BookOpen,
+  "retenir": BookOpen,
+  "pratique": Zap,
+  "action": Zap,
+  "conseil": Sparkles,
+  "expert": Sparkles,
+  "astuce": Sparkles,
+};
+
+const SECTION_COLORS: Record<string, string> = {
+  "pourquoi": "from-blue-500/15 to-indigo-500/10 border-blue-500/20",
+  "important": "from-blue-500/15 to-indigo-500/10 border-blue-500/20",
+  "essentiel": "from-purple-500/15 to-violet-500/10 border-purple-500/20",
+  "retenir": "from-purple-500/15 to-violet-500/10 border-purple-500/20",
+  "pratique": "from-emerald-500/15 to-green-500/10 border-emerald-500/20",
+  "action": "from-emerald-500/15 to-green-500/10 border-emerald-500/20",
+  "conseil": "from-amber-500/15 to-orange-500/10 border-amber-500/20",
+  "expert": "from-amber-500/15 to-orange-500/10 border-amber-500/20",
+  "astuce": "from-amber-500/15 to-orange-500/10 border-amber-500/20",
+};
+
+const SECTION_ICON_COLORS: Record<string, string> = {
+  "pourquoi": "text-blue-400",
+  "important": "text-blue-400",
+  "essentiel": "text-purple-400",
+  "retenir": "text-purple-400",
+  "pratique": "text-emerald-400",
+  "action": "text-emerald-400",
+  "conseil": "text-amber-400",
+  "expert": "text-amber-400",
+  "astuce": "text-amber-400",
+};
+
+function getSectionMeta(title: string) {
+  const lower = title.toLowerCase();
+  for (const key of Object.keys(SECTION_ICONS)) {
+    if (lower.includes(key)) {
+      return {
+        Icon: SECTION_ICONS[key],
+        color: SECTION_COLORS[key],
+        iconColor: SECTION_ICON_COLORS[key],
+      };
+    }
+  }
+  return {
+    Icon: BookOpen,
+    color: "from-primary/10 to-primary/5 border-primary/20",
+    iconColor: "text-primary",
+  };
+}
+
+// ─── Lesson Content Renderer ──────────────────────────────────────
+
+function renderLessonContent(text: string): React.ReactNode {
+  // Split content into sections by **Title** patterns
+  // Match both standalone **Title** and inline **Title** at start of text
+  const sectionPattern = /\*\*([^*]+)\*\*\s*:?\s*/g;
+  const sections: { title: string; content: string }[] = [];
+  let lastIndex = 0;
+  let lastTitle = "";
+  const matches = [...text.matchAll(sectionPattern)];
+
+  if (matches.length === 0) {
+    // No sections found, render as plain text
+    return (
+      <div className="bg-surface-container rounded-2xl border border-border/30 p-5">
+        {text.split("\n").filter(l => l.trim()).map((line, i) => (
+          <p key={i} className="text-sm text-muted-foreground leading-relaxed mb-2">
+            {renderInlineMarkdown(line.trim())}
+          </p>
+        ))}
+      </div>
+    );
+  }
+
+  for (const match of matches) {
+    if (lastTitle && match.index !== undefined) {
+      const content = text.slice(lastIndex, match.index).trim();
+      if (content) {
+        sections.push({ title: lastTitle, content });
+      }
+    }
+    lastTitle = match[1].trim();
+    lastIndex = (match.index ?? 0) + match[0].length;
+  }
+  // Last section
+  if (lastTitle) {
+    const content = text.slice(lastIndex).trim();
+    if (content) {
+      sections.push({ title: lastTitle, content });
+    }
+  }
+
+  if (sections.length === 0) return null;
+
+  return (
+    <div className="space-y-4">
+      {sections.map((section, i) => {
+        const { Icon, color, iconColor } = getSectionMeta(section.title);
+        return (
+          <div
+            key={i}
+            className={cn(
+              "rounded-2xl border bg-gradient-to-br p-5",
+              color
+            )}
+          >
+            {/* Section Header */}
+            <div className="flex items-center gap-2.5 mb-3">
+              <div className={cn("w-7 h-7 rounded-lg bg-background/50 flex items-center justify-center", iconColor)}>
+                <Icon className="w-4 h-4" />
+              </div>
+              <h3 className="font-headline text-sm font-bold text-foreground">
+                {section.title}
+              </h3>
+            </div>
+
+            {/* Section Content */}
+            <div className="space-y-2 pl-[38px]">
+              {section.content.split("\n").filter(l => l.trim()).map((line, j) => {
+                const trimmed = line.trim();
+
+                // Numbered items
+                if (/^\d+[\.\)]\s/.test(trimmed)) {
+                  const num = trimmed.match(/^(\d+)/)?.[1] || "1";
+                  const content = trimmed.replace(/^\d+[\.\)]\s*/, "");
+                  return (
+                    <div key={j} className="flex gap-3 items-start">
+                      <span className="w-5 h-5 rounded-full bg-background/60 text-foreground text-[10px] font-bold flex items-center justify-center shrink-0 mt-0.5">
+                        {num}
+                      </span>
+                      <span className="text-sm text-muted-foreground leading-relaxed">
+                        {renderInlineMarkdown(content)}
+                      </span>
+                    </div>
+                  );
+                }
+
+                // List items
+                if (trimmed.startsWith("- ") || trimmed.startsWith("• ")) {
+                  return (
+                    <div key={j} className="flex gap-2.5 items-start">
+                      <div className="w-1.5 h-1.5 rounded-full bg-foreground/30 mt-2 shrink-0" />
+                      <span className="text-sm text-muted-foreground leading-relaxed">
+                        {renderInlineMarkdown(trimmed.substring(2))}
+                      </span>
+                    </div>
+                  );
+                }
+
+                // Regular paragraph
+                return (
+                  <p key={j} className="text-sm text-muted-foreground leading-relaxed">
+                    {renderInlineMarkdown(trimmed)}
+                  </p>
+                );
+              })}
+            </div>
+          </div>
+        );
+      })}
+    </div>
+  );
+}
 
 // ─── Types ────────────────────────────────────────────────────────
 
@@ -84,10 +255,10 @@ function LessonStep({
       {/* Content */}
       <div
         ref={contentRef}
-        className="flex-1 overflow-y-auto bg-surface-container-low rounded-2xl ghost-border p-6 mb-4"
+        className="flex-1 overflow-y-auto p-1 mb-4"
       >
         {content ? (
-          <div className="space-y-1">{renderMarkdownBlock(content)}</div>
+          renderLessonContent(content)
         ) : error ? (
           <div className="flex flex-col items-center justify-center h-full text-center">
             <XCircle className="w-10 h-10 text-red-400 mb-3" />
@@ -444,7 +615,13 @@ function FeedbackStep({
       {/* Feedback content */}
       <div className="flex-1 overflow-y-auto bg-surface-container-low rounded-2xl ghost-border p-6 mb-4">
         {content ? (
-          <div className="space-y-1">{renderMarkdownBlock(content)}</div>
+          <div className="space-y-2">
+            {content.split("\n").filter(l => l.trim()).map((line, i) => (
+              <p key={i} className="text-sm text-muted-foreground leading-relaxed">
+                {renderInlineMarkdown(line.trim())}
+              </p>
+            ))}
+          </div>
         ) : error ? (
           <p className="text-sm text-red-400 text-center">{error}</p>
         ) : (
