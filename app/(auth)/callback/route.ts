@@ -20,13 +20,27 @@ export async function GET(request: Request) {
         const existingByEmail = await prisma.user.findUnique({ where: { email } });
 
         if (existingByEmail && existingByEmail.supabaseId !== data.user.id) {
-          // Email exists with a different supabaseId — update it to link to this auth user
+          // New Supabase account with same email — reset user to fresh state
+          // Clean up old data first
+          await prisma.journeyTaskProgress.deleteMany({
+            where: { journeyProgress: { userId: existingByEmail.id } },
+          });
+          await prisma.journeyProgress.deleteMany({ where: { userId: existingByEmail.id } });
+          await prisma.taskSession.deleteMany({ where: { userId: existingByEmail.id } });
+          await prisma.activity.deleteMany({ where: { userId: existingByEmail.id } });
+          await prisma.userProfile.deleteMany({ where: { userId: existingByEmail.id } });
+          await prisma.onboardingResponse.deleteMany({ where: { userId: existingByEmail.id } });
+
           await prisma.user.update({
             where: { email },
             data: {
               supabaseId: data.user.id,
               lastActiveAt: new Date(),
-              avatarUrl: meta?.avatar_url || existingByEmail.avatarUrl,
+              firstName: meta?.first_name || meta?.full_name?.split(" ")[0] || existingByEmail.firstName,
+              lastName: meta?.last_name || meta?.full_name?.split(" ").slice(1).join(" ") || existingByEmail.lastName,
+              avatarUrl: meta?.avatar_url || null,
+              plan: "FREE",
+              onboardingCompleted: false,
             },
           });
         } else {

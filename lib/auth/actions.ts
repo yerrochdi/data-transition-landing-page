@@ -43,9 +43,23 @@ export async function signUp(formData: FormData) {
       const existingByEmail = await prisma.user.findUnique({ where: { email } });
 
       if (existingByEmail && existingByEmail.supabaseId !== data.user.id) {
+        // New Supabase account with same email — reset to fresh state
+        await prisma.journeyTaskProgress.deleteMany({
+          where: { journeyProgress: { userId: existingByEmail.id } },
+        });
+        await prisma.journeyProgress.deleteMany({ where: { userId: existingByEmail.id } });
+        await prisma.taskSession.deleteMany({ where: { userId: existingByEmail.id } });
+        await prisma.activity.deleteMany({ where: { userId: existingByEmail.id } });
+        await prisma.userProfile.deleteMany({ where: { userId: existingByEmail.id } });
+        await prisma.onboardingResponse.deleteMany({ where: { userId: existingByEmail.id } });
+
         await prisma.user.update({
           where: { email },
-          data: { supabaseId: data.user.id },
+          data: {
+            supabaseId: data.user.id,
+            plan: "FREE",
+            onboardingCompleted: false,
+          },
         });
       } else {
         await prisma.user.upsert({
