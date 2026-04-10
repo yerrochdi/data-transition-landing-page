@@ -32,6 +32,7 @@ import {
   saveOnboardingStep,
   completeOnboarding,
 } from "@/lib/onboarding/actions";
+import { createCheckoutSession } from "@/lib/billing/actions";
 
 import { StepSituation } from "./step-situation";
 import { StepLinkedIn } from "./step-linkedin";
@@ -135,8 +136,18 @@ export function OnboardingFlow({ initialData }: OnboardingFlowProps) {
         formData,
         typeof aiInsights.summary === "string" ? aiInsights.summary : aiInsights.ambitions,
         aiInsights.skills
-      ).then((result) => {
+      ).then(async (result) => {
         if (result.success) {
+          // Check if user chose Pro plan during signup
+          const chosenPlan = localStorage.getItem("nextmove_chosen_plan");
+          if (chosenPlan === "pro") {
+            localStorage.removeItem("nextmove_chosen_plan");
+            const checkout = await createCheckoutSession();
+            if (checkout.url) {
+              window.location.href = checkout.url;
+              return;
+            }
+          }
           router.push("/dashboard");
         } else {
           setCompleting(false);

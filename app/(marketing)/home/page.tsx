@@ -340,7 +340,7 @@ export default function HomePage() {
               ))}
             </div>
             <Link
-              href="/signup"
+              href="/signup?plan=pro"
               className="block text-center gradient-primary text-primary-foreground px-6 py-3.5 rounded-xl text-sm font-bold hover:scale-[1.02] transition-transform shadow-lg shadow-primary/20"
             >
               <span className="flex items-center justify-center gap-2">

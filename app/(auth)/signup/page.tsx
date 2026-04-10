@@ -1,11 +1,22 @@
 "use client";
 
-import { useState } from "react";
+import { useState, useEffect } from "react";
+import { useSearchParams } from "next/navigation";
 import Link from "next/link";
-import { Loader2, Sparkles, Mail, CheckCircle } from "lucide-react";
+import { Loader2, Sparkles, Mail, CheckCircle, Crown } from "lucide-react";
 import { signUp, signInWithGoogle } from "@/lib/auth/actions";
 
 export default function SignupPage() {
+  const searchParams = useSearchParams();
+  const planParam = searchParams.get("plan");
+  const isPro = planParam === "pro";
+
+  // Store plan choice for after onboarding
+  useEffect(() => {
+    if (isPro) {
+      localStorage.setItem("nextmove_chosen_plan", "pro");
+    }
+  }, [isPro]);
   const [error, setError] = useState<string | null>(null);
   const [loading, setLoading] = useState(false);
   const [confirmEmail, setConfirmEmail] = useState(false);
@@ -77,15 +88,17 @@ export default function SignupPage() {
   return (
     <div>
       <div className="text-center mb-8">
-        <div className="inline-flex items-center gap-2 bg-primary/10 px-4 py-1.5 rounded-full border border-primary/20 mb-4">
-          <Sparkles className="w-4 h-4 text-primary" />
-          <span className="text-xs font-bold text-primary">Commencez gratuitement</span>
+        <div className={`inline-flex items-center gap-2 px-4 py-1.5 rounded-full border mb-4 ${isPro ? "bg-primary/10 border-primary/30" : "bg-primary/10 border-primary/20"}`}>
+          {isPro ? <Crown className="w-4 h-4 text-primary" /> : <Sparkles className="w-4 h-4 text-primary" />}
+          <span className="text-xs font-bold text-primary">
+            {isPro ? "Plan Pro — 19€/mois" : "Commencez gratuitement"}
+          </span>
         </div>
         <h1 className="font-headline text-3xl font-extrabold text-foreground mb-2">
           Créer votre compte
         </h1>
         <p className="text-sm text-muted-foreground">
-          Lancez votre diagnostic IA en 5 minutes
+          {isPro ? "Diagnostic IA + accès complet après paiement" : "Lancez votre diagnostic IA en 5 minutes"}
         </p>
       </div>
 
