@@ -11,6 +11,9 @@ import {
   Bot,
   BookOpen,
   Settings,
+  Crown,
+  Zap,
+  Users,
 } from "lucide-react";
 import { cn } from "@/lib/utils";
 
@@ -23,12 +26,14 @@ const iconMap: Record<string, React.ElementType> = {
   Bot,
   BookOpen,
   Settings,
+  Users,
 };
 
 const navItems = [
   { label: "Dashboard", href: "/dashboard", icon: "LayoutDashboard" },
   { label: "Immersive Path", href: "/journey", icon: "GitBranch" },
   { label: "Copilot IA", href: "/agents", icon: "Bot" },
+  { label: "Communauté", href: "/feed", icon: "Users" },
   { label: "Skill Roadmap", href: "/analytics", icon: "TrendingUp" },
   { label: "Job Market", href: "/opportunities", icon: "Briefcase" },
   { label: "Resources", href: "/resources", icon: "BookOpen" },
@@ -90,6 +95,23 @@ export function AppSidebar({ user }: AppSidebarProps) {
           })}
         </div>
       </div>
+
+      {/* Upgrade CTA */}
+      {user.plan === "FREE" && (
+        <Link
+          href="/upgrade"
+          className="flex items-center gap-3 p-4 bg-gradient-to-r from-primary/10 to-amber-500/10 border border-primary/20 rounded-2xl hover:border-primary/40 transition-colors group"
+        >
+          <div className="w-9 h-9 rounded-xl bg-primary/20 flex items-center justify-center">
+            <Crown className="w-4.5 h-4.5 text-primary" />
+          </div>
+          <div className="flex-1">
+            <p className="text-xs font-bold text-foreground">Passer au Pro</p>
+            <p className="text-[10px] text-muted-foreground">Parcours complet + IA illimitée</p>
+          </div>
+          <Zap className="w-4 h-4 text-primary group-hover:scale-110 transition-transform" />
+        </Link>
+      )}
 
       {/* Progress Card */}
       <div className="glass-panel p-6 rounded-2xl light-streak">

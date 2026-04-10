@@ -2,15 +2,15 @@
 
 import Link from "next/link";
 import { usePathname } from "next/navigation";
-import { Home, Bot, GitBranch, Briefcase, Rss } from "lucide-react";
+import { Home, Bot, GitBranch, Users, Rss } from "lucide-react";
 import { cn } from "@/lib/utils";
 
 const items = [
   { label: "Home", href: "/dashboard", icon: Home },
   { label: "Copilot", href: "/agents", icon: Bot },
   { label: "Path", href: "/journey", icon: GitBranch },
-  { label: "Market", href: "/opportunities", icon: Briefcase },
-  { label: "Feed", href: "/resources", icon: Rss },
+  { label: "Feed", href: "/feed", icon: Users },
+  { label: "Actus", href: "/resources", icon: Rss },
 ];
 
 export function MobileNav() {

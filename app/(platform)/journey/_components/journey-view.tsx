@@ -16,6 +16,8 @@ import {
   MessageSquare,
   ExternalLink,
   GraduationCap,
+  Crown,
+  Zap,
 } from "lucide-react";
 import { cn } from "@/lib/utils";
 import { toggleTask } from "@/lib/journey/actions";
@@ -278,7 +280,15 @@ function PhaseCard({
 
 // ─── Main View ────────────────────────────────────────────────────
 
-export function JourneyView({ initialData }: { initialData: JourneyData }) {
+export function JourneyView({
+  initialData,
+  maxPhases = Infinity,
+  plan = "FREE",
+}: {
+  initialData: JourneyData;
+  maxPhases?: number;
+  plan?: string;
+}) {
   const router = useRouter();
   const [data, setData] = useState(initialData);
   const [expandedPhases, setExpandedPhases] = useState<Set<string>>(() => {
@@ -488,18 +498,52 @@ export function JourneyView({ initialData }: { initialData: JourneyData }) {
           />
         </div>
 
-        {data.phases.map((phase) => (
-          <PhaseCard
-            key={phase.id}
-            phase={phase}
-            isExpanded={expandedPhases.has(phase.id)}
-            onToggleExpand={() => toggleExpand(phase.id)}
-            onToggleTask={handleToggleTask}
-            onAskCopilot={handleAskCopilot}
-            isPending={isPending}
-            router={router}
-          />
-        ))}
+        {data.phases.map((phase, index) => {
+          const isPremiumLocked = index >= maxPhases && plan === "FREE";
+
+          if (isPremiumLocked && index === maxPhases) {
+            // Show upgrade wall once, at the first locked phase
+            return (
+              <div key="upgrade-wall" className="relative">
+                <div className="absolute -left-4 md:-left-8 top-6 w-8 md:w-16 flex justify-center">
+                  <div className="w-10 h-10 rounded-full bg-gradient-to-br from-primary/20 to-amber-500/20 flex items-center justify-center z-10">
+                    <Crown className="w-4 h-4 text-primary" />
+                  </div>
+                </div>
+                <div className="p-6 rounded-2xl bg-gradient-to-br from-primary/5 via-surface-container-low to-amber-500/5 border border-primary/20 text-center">
+                  <h3 className="font-headline text-lg font-bold text-foreground mb-2">
+                    Débloque les phases {maxPhases + 1} à {data.phases.length}
+                  </h3>
+                  <p className="text-sm text-muted-foreground mb-4 max-w-md mx-auto">
+                    Passe au Pro pour accéder au parcours complet et accélérer ta transition.
+                  </p>
+                  <a
+                    href="/upgrade"
+                    className="inline-flex items-center gap-2 gradient-primary text-primary-foreground px-6 py-3 rounded-xl text-sm font-bold hover:scale-[1.02] transition-transform shadow-lg shadow-primary/20"
+                  >
+                    <Zap className="w-4 h-4" />
+                    Passer au Pro — 19€/mois
+                  </a>
+                </div>
+              </div>
+            );
+          }
+
+          if (isPremiumLocked) return null;
+
+          return (
+            <PhaseCard
+              key={phase.id}
+              phase={phase}
+              isExpanded={expandedPhases.has(phase.id)}
+              onToggleExpand={() => toggleExpand(phase.id)}
+              onToggleTask={handleToggleTask}
+              onAskCopilot={handleAskCopilot}
+              isPending={isPending}
+              router={router}
+            />
+          );
+        })}
       </div>
     </div>
   );

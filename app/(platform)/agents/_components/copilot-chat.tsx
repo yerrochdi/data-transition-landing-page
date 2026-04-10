@@ -42,6 +42,9 @@ interface CopilotChatProps {
   suggestions: SuggestionData[];
   userName: string;
   initialQuery?: string | null;
+  dailyUsage?: number;
+  dailyLimit?: number;
+  plan?: string;
 }
 
 // ─── Icon Map ─────────────────────────────────────────────────────
@@ -141,12 +144,14 @@ function MessageBubble({ message, isStreaming }: { message: Message; isStreaming
 
 // ─── Main Component ───────────────────────────────────────────────
 
-export function CopilotChat({ suggestions, userName, initialQuery }: CopilotChatProps) {
+export function CopilotChat({ suggestions, userName, initialQuery, dailyUsage = 0, dailyLimit = Infinity, plan = "FREE" }: CopilotChatProps) {
   const [messages, setMessages] = useState<Message[]>([]);
   const [input, setInput] = useState("");
   const [isStreaming, setIsStreaming] = useState(false);
   const [error, setError] = useState<string | null>(null);
   const [showScrollDown, setShowScrollDown] = useState(false);
+  const [messagesSent, setMessagesSent] = useState(dailyUsage);
+  const isAtLimit = dailyLimit !== Infinity && messagesSent >= dailyLimit;
   const messagesEndRef = useRef<HTMLDivElement>(null);
   const scrollContainerRef = useRef<HTMLDivElement>(null);
   const inputRef = useRef<HTMLTextAreaElement>(null);
@@ -191,7 +196,9 @@ export function CopilotChat({ suggestions, userName, initialQuery }: CopilotChat
 
   const sendMessage = async (content: string) => {
     if (!content.trim() || isStreaming) return;
+    if (isAtLimit) return;
 
+    setMessagesSent((prev) => prev + 1);
     setError(null);
     const userMessage: Message = {
       id: crypto.randomUUID(),
@@ -356,35 +363,55 @@ export function CopilotChat({ suggestions, userName, initialQuery }: CopilotChat
         </div>
       )}
 
-      <form onSubmit={handleSubmit} className="shrink-0 mt-3">
-        <div className="flex items-end gap-2 bg-surface-container-low rounded-2xl ghost-border p-2 focus-within:border-primary/30 transition-colors">
-          <textarea
-            ref={inputRef}
-            value={input}
-            onChange={(e) => setInput(e.target.value)}
-            onKeyDown={handleKeyDown}
-            placeholder="Pose ta question..."
-            rows={1}
-            disabled={isStreaming}
-            className="flex-1 bg-transparent text-sm text-foreground placeholder:text-muted-foreground/50 resize-none focus:outline-none px-3 py-2 max-h-[150px]"
-          />
-          <button
-            type="submit"
-            disabled={!input.trim() || isStreaming}
-            className={cn(
-              "w-10 h-10 rounded-xl flex items-center justify-center shrink-0 transition-all",
-              input.trim() && !isStreaming
-                ? "gradient-primary text-primary-foreground hover:scale-105 shadow-lg shadow-primary/20"
-                : "bg-surface-container text-muted-foreground cursor-not-allowed"
-            )}
+      {isAtLimit ? (
+        <div className="shrink-0 mt-3 p-4 bg-gradient-to-r from-primary/10 to-amber-500/10 border border-primary/20 rounded-2xl text-center">
+          <p className="text-sm font-bold text-foreground mb-1">
+            Limite atteinte — {dailyLimit} messages/jour
+          </p>
+          <p className="text-xs text-muted-foreground mb-3">
+            Passe au Pro pour un accès illimité au Copilot IA.
+          </p>
+          <a
+            href="/upgrade"
+            className="inline-flex items-center gap-2 gradient-primary text-primary-foreground px-5 py-2.5 rounded-xl text-xs font-bold hover:scale-[1.02] transition-transform"
           >
-            {isStreaming ? <Loader2 className="w-4 h-4 animate-spin" /> : <Send className="w-4 h-4" />}
-          </button>
+            Passer au Pro — 19€/mois
+          </a>
         </div>
-        <p className="text-[9px] text-muted-foreground/40 text-center mt-1.5">
-          Copilot NextMove — propulsé par Moonshot AI · Les réponses peuvent contenir des erreurs
-        </p>
-      </form>
+      ) : (
+        <form onSubmit={handleSubmit} className="shrink-0 mt-3">
+          <div className="flex items-end gap-2 bg-surface-container-low rounded-2xl ghost-border p-2 focus-within:border-primary/30 transition-colors">
+            <textarea
+              ref={inputRef}
+              value={input}
+              onChange={(e) => setInput(e.target.value)}
+              onKeyDown={handleKeyDown}
+              placeholder="Pose ta question..."
+              rows={1}
+              disabled={isStreaming}
+              className="flex-1 bg-transparent text-sm text-foreground placeholder:text-muted-foreground/50 resize-none focus:outline-none px-3 py-2 max-h-[150px]"
+            />
+            <button
+              type="submit"
+              disabled={!input.trim() || isStreaming}
+              className={cn(
+                "w-10 h-10 rounded-xl flex items-center justify-center shrink-0 transition-all",
+                input.trim() && !isStreaming
+                  ? "gradient-primary text-primary-foreground hover:scale-105 shadow-lg shadow-primary/20"
+                  : "bg-surface-container text-muted-foreground cursor-not-allowed"
+              )}
+            >
+              {isStreaming ? <Loader2 className="w-4 h-4 animate-spin" /> : <Send className="w-4 h-4" />}
+            </button>
+          </div>
+          <p className="text-[9px] text-muted-foreground/40 text-center mt-1.5">
+            {dailyLimit !== Infinity
+              ? `${messagesSent}/${dailyLimit} messages aujourd'hui · `
+              : ""}
+            Copilot NextMove — propulsé par Moonshot AI
+          </p>
+        </form>
+      )}
     </div>
   );
 }
