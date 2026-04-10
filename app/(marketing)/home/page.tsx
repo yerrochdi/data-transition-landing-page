@@ -15,6 +15,10 @@ import {
   Star,
   ChevronRight,
   Users,
+  Check,
+  Lock,
+  Crown,
+  Infinity,
 } from "lucide-react";
 
 function FeatureCard({
@@ -244,6 +248,106 @@ export default function HomePage() {
             <AgentShowcase name="CV Optimizer" role="Personal Branding Specialist" color="#22c55e" />
             <AgentShowcase name="Mindset Coach" role="Performance & Confidence Advisor" color="#f59e0b" />
             <AgentShowcase name="NextMove Copilot" role="Global Orchestrator" color="#4be277" />
+          </div>
+        </div>
+      </section>
+
+      {/* Pricing */}
+      <section className="py-24 px-6 md:px-12 max-w-5xl mx-auto">
+        <div className="text-center mb-16">
+          <span className="text-[10px] font-headline font-bold uppercase tracking-[0.2em] text-primary mb-2 block">
+            Tarifs
+          </span>
+          <h2 className="font-headline text-3xl md:text-4xl font-extrabold text-foreground mb-4">
+            Commencez gratuitement, évoluez à votre rythme
+          </h2>
+          <p className="text-muted-foreground max-w-lg mx-auto">
+            Le diagnostic et la Phase 1 sont entièrement gratuits. Passez au Pro quand vous êtes prêt à accélérer.
+          </p>
+        </div>
+
+        <div className="grid grid-cols-1 md:grid-cols-2 gap-8 max-w-3xl mx-auto">
+          {/* Free */}
+          <div className="bg-surface-container-low p-8 rounded-2xl ghost-border">
+            <h3 className="font-headline text-xl font-bold text-foreground mb-2">Free</h3>
+            <p className="text-sm text-muted-foreground mb-6">Idéal pour découvrir la plateforme</p>
+            <div className="mb-8">
+              <span className="text-4xl font-headline font-black text-foreground">0€</span>
+              <span className="text-muted-foreground"> /mois</span>
+            </div>
+            <div className="space-y-3 mb-8">
+              {[
+                { text: "Diagnostic IA complet", ok: true },
+                { text: "Phase 1 — Diagnostic", ok: true },
+                { text: "3 sessions IA / jour", ok: true },
+                { text: "5 messages Copilot / jour", ok: true },
+                { text: "Top 3 opportunités", ok: true },
+                { text: "Phases 2 à 5 du parcours", ok: false },
+                { text: "IA illimitée", ok: false },
+              ].map((f, i) => (
+                <div key={i} className="flex items-center gap-2.5">
+                  {f.ok ? (
+                    <Check className="w-4 h-4 text-emerald-400 shrink-0" />
+                  ) : (
+                    <Lock className="w-4 h-4 text-muted-foreground/30 shrink-0" />
+                  )}
+                  <span className={f.ok ? "text-sm text-foreground" : "text-sm text-muted-foreground/40 line-through"}>
+                    {f.text}
+                  </span>
+                </div>
+              ))}
+            </div>
+            <Link
+              href="/signup"
+              className="block text-center bg-surface-container-lowest ghost-border px-6 py-3.5 rounded-xl text-sm font-bold text-foreground hover:bg-surface-container transition-colors"
+            >
+              Commencer gratuitement
+            </Link>
+          </div>
+
+          {/* Pro */}
+          <div className="relative bg-gradient-to-br from-surface-container-low to-primary/5 p-8 rounded-2xl border-2 border-primary/30">
+            <div className="absolute -top-3 left-1/2 -translate-x-1/2">
+              <span className="gradient-primary text-primary-foreground text-[10px] font-bold px-4 py-1.5 rounded-full shadow-lg shadow-primary/20">
+                Recommandé
+              </span>
+            </div>
+            <h3 className="font-headline text-xl font-bold text-foreground mb-2 flex items-center gap-2">
+              <Crown className="w-5 h-5 text-primary" />
+              Pro
+            </h3>
+            <p className="text-sm text-muted-foreground mb-6">Accès complet pour accélérer votre transition</p>
+            <div className="mb-8">
+              <span className="text-4xl font-headline font-black text-foreground">19€</span>
+              <span className="text-muted-foreground"> /mois</span>
+            </div>
+            <div className="space-y-3 mb-8">
+              {[
+                { text: "Tout le plan Free", highlight: false },
+                { text: "Parcours complet (5 phases)", highlight: true },
+                { text: "Sessions IA illimitées", highlight: true },
+                { text: "Copilot illimité 24/7", highlight: true },
+                { text: "Toutes les opportunités matchées", highlight: true },
+                { text: "Feed communautaire", highlight: false },
+                { text: "Support prioritaire", highlight: false },
+              ].map((f, i) => (
+                <div key={i} className="flex items-center gap-2.5">
+                  <Check className={`w-4 h-4 shrink-0 ${f.highlight ? "text-primary" : "text-emerald-400"}`} />
+                  <span className={`text-sm ${f.highlight ? "text-foreground font-bold" : "text-foreground"}`}>
+                    {f.text}
+                  </span>
+                </div>
+              ))}
+            </div>
+            <Link
+              href="/signup"
+              className="block text-center gradient-primary text-primary-foreground px-6 py-3.5 rounded-xl text-sm font-bold hover:scale-[1.02] transition-transform shadow-lg shadow-primary/20"
+            >
+              <span className="flex items-center justify-center gap-2">
+                <Zap className="w-4 h-4" />
+                Démarrer le Pro — 19€/mois
+              </span>
+            </Link>
           </div>
         </div>
       </section>
