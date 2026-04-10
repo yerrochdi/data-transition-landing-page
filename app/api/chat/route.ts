@@ -3,6 +3,7 @@ import { createClient } from "@/lib/supabase/server";
 import { prisma } from "@/lib/db";
 import { ai } from "@/lib/ai/client";
 import { SYSTEM_PROMPT } from "@/lib/ai/prompts";
+import { checkCopilotLimit, trackCopilotUsage } from "@/lib/billing/rate-limit";
 
 interface ChatMessage {
   role: "user" | "assistant";
@@ -145,6 +146,8 @@ export async function POST(request: NextRequest) {
     const dbUser = await prisma.user.findUnique({
       where: { supabaseId: user.id },
       select: {
+        id: true,
+        plan: true,
         firstName: true,
         onboarding: true,
         profile: {
@@ -157,13 +160,24 @@ export async function POST(request: NextRequest) {
       },
     });
 
-    const profileContext = dbUser
-      ? buildProfileContext({
-          firstName: dbUser.firstName,
-          onboarding: dbUser.onboarding,
-          profile: dbUser.profile,
-        })
-      : "Aucun profil disponible.";
+    if (!dbUser) {
+      return new Response("Utilisateur introuvable", { status: 404 });
+    }
+
+    // ── Server-side rate limit ──
+    const limitCheck = await checkCopilotLimit(dbUser.id, dbUser.plan);
+    if (!limitCheck.allowed) {
+      return Response.json(
+        { error: "Limite quotidienne atteinte", used: limitCheck.used, limit: limitCheck.limit },
+        { status: 429 }
+      );
+    }
+
+    const profileContext = buildProfileContext({
+      firstName: dbUser.firstName,
+      onboarding: dbUser.onboarding,
+      profile: dbUser.profile,
+    });
 
     // Build messages array for the AI
     const aiMessages = [
@@ -199,6 +213,9 @@ export async function POST(request: NextRequest) {
         }
       },
     });
+
+    // Track usage after successful stream creation
+    trackCopilotUsage(dbUser.id).catch(console.error);
 
     return new Response(readable, {
       headers: {

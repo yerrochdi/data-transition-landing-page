@@ -432,6 +432,17 @@ export async function getTaskWithContext(taskId: string): Promise<TaskWithContex
   const userId = await getCurrentUserId();
   if (!userId) return null;
 
+  // Check phase access (free users = Phase 1 only)
+  const user = await prisma.user.findUnique({
+    where: { id: userId },
+    select: { plan: true },
+  });
+  if (user) {
+    const { checkPhaseAccess } = await import("@/lib/billing/rate-limit");
+    const phaseCheck = await checkPhaseAccess(userId, user.plan, taskId);
+    if (!phaseCheck.allowed) return null;
+  }
+
   const task = await prisma.journeyTask.findUnique({
     where: { id: taskId },
     include: {

@@ -4,17 +4,19 @@ const globalForStripe = globalThis as unknown as {
   stripe: Stripe | undefined;
 };
 
-function createStripeClient() {
+export function getStripe(): Stripe {
+  if (globalForStripe.stripe) return globalForStripe.stripe;
+
   const key = process.env.STRIPE_SECRET_KEY;
   if (!key) {
     throw new Error("STRIPE_SECRET_KEY is not configured");
   }
-  return new Stripe(key);
-}
 
-export const stripe =
-  globalForStripe.stripe ?? createStripeClient();
+  const client = new Stripe(key);
 
-if (process.env.NODE_ENV !== "production") {
-  globalForStripe.stripe = stripe;
+  if (process.env.NODE_ENV !== "production") {
+    globalForStripe.stripe = client;
+  }
+
+  return client;
 }

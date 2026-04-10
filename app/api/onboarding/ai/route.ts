@@ -1,5 +1,6 @@
 import { NextRequest } from "next/server";
 import { createClient } from "@/lib/supabase/server";
+import { prisma } from "@/lib/db";
 import { ai } from "@/lib/ai/client";
 import {
   SYSTEM_PROMPT,
@@ -31,6 +32,35 @@ export async function POST(request: NextRequest) {
 
   if (!user) {
     return new Response("Non authentifié", { status: 401 });
+  }
+
+  // ── Server-side rate limit: max 20 onboarding AI calls per day ──
+  const dbUser = await prisma.user.findUnique({
+    where: { supabaseId: user.id },
+    select: { id: true },
+  });
+
+  if (dbUser) {
+    const today = new Date();
+    today.setHours(0, 0, 0, 0);
+    const onboardingCallsToday = await prisma.activity.count({
+      where: {
+        userId: dbUser.id,
+        type: "AGENT_INTERACTION",
+        title: "Onboarding AI",
+        createdAt: { gte: today },
+      },
+    });
+    if (onboardingCallsToday >= 20) {
+      return Response.json(
+        { error: "Trop de requêtes IA aujourd'hui" },
+        { status: 429 }
+      );
+    }
+    // Track usage
+    await prisma.activity.create({
+      data: { userId: dbUser.id, type: "AGENT_INTERACTION", title: "Onboarding AI" },
+    });
   }
 
   // Check API key

@@ -7,6 +7,7 @@ import {
   buildQuizPrompt,
   buildFeedbackPrompt,
 } from "@/lib/ai/prompts";
+import { checkSessionLimit, checkPhaseAccess } from "@/lib/billing/rate-limit";
 
 // ─── Profile loader ─────────────────────────────────────────────
 
@@ -32,7 +33,7 @@ async function getSessionProfile(userId: string) {
 
 // ─── Auth helper ─────────────────────────────────────────────────
 
-async function getDbUserId(): Promise<string | null> {
+async function getDbUser(): Promise<{ id: string; plan: string } | null> {
   const supabase = await createClient();
   const {
     data: { user },
@@ -40,16 +41,16 @@ async function getDbUserId(): Promise<string | null> {
   if (!user) return null;
   const dbUser = await prisma.user.findUnique({
     where: { supabaseId: user.id },
-    select: { id: true },
+    select: { id: true, plan: true },
   });
-  return dbUser?.id ?? null;
+  return dbUser ?? null;
 }
 
 // ─── POST handler ────────────────────────────────────────────────
 
 export async function POST(request: NextRequest) {
-  const userId = await getDbUserId();
-  if (!userId) {
+  const dbUser = await getDbUser();
+  if (!dbUser) {
     return new Response("Non authentifié", { status: 401 });
   }
 
@@ -78,6 +79,18 @@ export async function POST(request: NextRequest) {
       return new Response("Paramètres manquants", { status: 400 });
     }
 
+    // ── Server-side rate limits ──
+    // Check daily session limit (only on lesson start = new session)
+    if (step === "lesson") {
+      const sessionCheck = await checkSessionLimit(dbUser.id, dbUser.plan);
+      if (!sessionCheck.allowed) {
+        return Response.json(
+          { error: "Limite de sessions atteinte", used: sessionCheck.used, limit: sessionCheck.limit },
+          { status: 429 }
+        );
+      }
+    }
+
     // Load task with phase context
     const task = await prisma.journeyTask.findUnique({
       where: { id: taskId },
@@ -88,7 +101,16 @@ export async function POST(request: NextRequest) {
       return new Response("Tâche introuvable", { status: 404 });
     }
 
-    const profile = await getSessionProfile(userId);
+    // Check phase access (free users can only access Phase 1)
+    const phaseCheck = await checkPhaseAccess(dbUser.id, dbUser.plan, taskId);
+    if (!phaseCheck.allowed) {
+      return Response.json(
+        { error: "Phase réservée aux membres Pro" },
+        { status: 403 }
+      );
+    }
+
+    const profile = await getSessionProfile(dbUser.id);
     if (!profile) {
       return new Response("Profil non trouvé", { status: 404 });
     }

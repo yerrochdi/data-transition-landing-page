@@ -2,7 +2,7 @@
 
 import { createClient } from "@/lib/supabase/server";
 import { prisma } from "@/lib/db";
-import { stripe } from "./stripe";
+import { getStripe } from "./stripe";
 
 // ─── Helpers ────────────────────────────────────────────────────
 
@@ -70,7 +70,7 @@ export async function createCheckoutSession(): Promise<{
   }
 
   try {
-    const session = await stripe.checkout.sessions.create({
+    const session = await getStripe().checkout.sessions.create({
       mode: "subscription",
       payment_method_types: ["card"],
       customer_email: user.email,
@@ -99,7 +99,7 @@ export async function createPortalSession(): Promise<{
 
   try {
     // Find Stripe customer by email
-    const customers = await stripe.customers.list({
+    const customers = await getStripe().customers.list({
       email: user.email,
       limit: 1,
     });
@@ -108,7 +108,7 @@ export async function createPortalSession(): Promise<{
       return { url: null, error: "Aucun abonnement trouvé" };
     }
 
-    const session = await stripe.billingPortal.sessions.create({
+    const session = await getStripe().billingPortal.sessions.create({
       customer: customers.data[0].id,
       return_url: `${process.env.NEXT_PUBLIC_APP_URL}/settings`,
     });

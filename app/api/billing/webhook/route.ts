@@ -1,5 +1,5 @@
 import { NextRequest } from "next/server";
-import { stripe } from "@/lib/billing/stripe";
+import { getStripe } from "@/lib/billing/stripe";
 import { prisma } from "@/lib/db";
 import type Stripe from "stripe";
 
@@ -14,7 +14,7 @@ export async function POST(request: NextRequest) {
   let event: Stripe.Event;
 
   try {
-    event = stripe.webhooks.constructEvent(
+    event = getStripe().webhooks.constructEvent(
       body,
       signature,
       process.env.STRIPE_WEBHOOK_SECRET
@@ -55,7 +55,7 @@ export async function POST(request: NextRequest) {
         const subscription = event.data.object as Stripe.Subscription;
         const customerEmail =
           typeof subscription.customer === "string"
-            ? (await stripe.customers.retrieve(subscription.customer) as Stripe.Customer).email
+            ? (await getStripe().customers.retrieve(subscription.customer) as Stripe.Customer).email
             : null;
 
         if (customerEmail) {
