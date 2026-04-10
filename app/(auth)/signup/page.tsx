@@ -1,12 +1,12 @@
 "use client";
 
-import { useState, useEffect } from "react";
+import { Suspense, useState, useEffect } from "react";
 import { useSearchParams } from "next/navigation";
 import Link from "next/link";
 import { Loader2, Sparkles, Mail, CheckCircle, Crown } from "lucide-react";
 import { signUp, signInWithGoogle } from "@/lib/auth/actions";
 
-export default function SignupPage() {
+function SignupForm() {
   const searchParams = useSearchParams();
   const planParam = searchParams.get("plan");
   const isPro = planParam === "pro";
@@ -17,6 +17,7 @@ export default function SignupPage() {
       localStorage.setItem("nextmove_chosen_plan", "pro");
     }
   }, [isPro]);
+
   const [error, setError] = useState<string | null>(null);
   const [loading, setLoading] = useState(false);
   const [confirmEmail, setConfirmEmail] = useState(false);
@@ -220,5 +221,13 @@ export default function SignupPage() {
         </Link>
       </p>
     </div>
+  );
+}
+
+export default function SignupPage() {
+  return (
+    <Suspense>
+      <SignupForm />
+    </Suspense>
   );
 }
