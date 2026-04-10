@@ -11,6 +11,7 @@ export async function signUp(formData: FormData) {
   const password = formData.get("password") as string;
   const firstName = formData.get("firstName") as string;
   const lastName = formData.get("lastName") as string;
+  const chosenPlan = formData.get("chosenPlan") as string | null;
 
   const siteUrl =
     process.env.NEXT_PUBLIC_SITE_URL ||
@@ -18,12 +19,16 @@ export async function signUp(formData: FormData) {
       ? `https://${process.env.VERCEL_URL}`
       : "http://localhost:3000");
 
+  const callbackUrl = chosenPlan === "pro"
+    ? `${siteUrl}/callback?plan=pro`
+    : `${siteUrl}/callback`;
+
   const { data, error } = await supabase.auth.signUp({
     email,
     password,
     options: {
-      data: { first_name: firstName, last_name: lastName },
-      emailRedirectTo: `${siteUrl}/callback`,
+      data: { first_name: firstName, last_name: lastName, chosen_plan: chosenPlan || "free" },
+      emailRedirectTo: callbackUrl,
     },
   });
 

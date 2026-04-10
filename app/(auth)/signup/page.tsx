@@ -1,6 +1,6 @@
 "use client";
 
-import { Suspense, useState, useEffect } from "react";
+import { Suspense, useState } from "react";
 import { useSearchParams } from "next/navigation";
 import Link from "next/link";
 import { Loader2, Sparkles, Mail, CheckCircle, Crown } from "lucide-react";
@@ -10,13 +10,6 @@ function SignupForm() {
   const searchParams = useSearchParams();
   const planParam = searchParams.get("plan");
   const isPro = planParam === "pro";
-
-  // Store plan choice for after onboarding
-  useEffect(() => {
-    if (isPro) {
-      localStorage.setItem("nextmove_chosen_plan", "pro");
-    }
-  }, [isPro]);
 
   const [error, setError] = useState<string | null>(null);
   const [loading, setLoading] = useState(false);
@@ -129,6 +122,7 @@ function SignupForm() {
 
       {/* Email form */}
       <form action={handleSubmit} className="space-y-4">
+        <input type="hidden" name="chosenPlan" value={isPro ? "pro" : "free"} />
         <div className="grid grid-cols-2 gap-4">
           <div>
             <label className="text-xs font-bold text-muted-foreground uppercase tracking-widest mb-2 block">

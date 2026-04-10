@@ -71,9 +71,10 @@ const iconMap: Record<string, React.ElementType> = {
 
 interface OnboardingFlowProps {
   initialData?: Partial<OnboardingFormData> | null;
+  chosenPlan?: "pro" | "free";
 }
 
-export function OnboardingFlow({ initialData }: OnboardingFlowProps) {
+export function OnboardingFlow({ initialData, chosenPlan = "free" }: OnboardingFlowProps) {
   const router = useRouter();
   const [formData, dispatch] = useReducer(
     formReducer,
@@ -138,10 +139,8 @@ export function OnboardingFlow({ initialData }: OnboardingFlowProps) {
         aiInsights.skills
       ).then(async (result) => {
         if (result.success) {
-          // Check if user chose Pro plan during signup
-          const chosenPlan = localStorage.getItem("nextmove_chosen_plan");
+          // If user chose Pro plan during signup → redirect to Stripe Checkout
           if (chosenPlan === "pro") {
-            localStorage.removeItem("nextmove_chosen_plan");
             const checkout = await createCheckoutSession();
             if (checkout.url) {
               window.location.href = checkout.url;
