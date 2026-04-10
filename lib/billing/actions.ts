@@ -76,8 +76,8 @@ export async function createCheckoutSession(): Promise<{
       customer_email: user.email,
       metadata: { userId: user.id },
       line_items: [{ price: priceId, quantity: 1 }],
-      success_url: `${process.env.NEXT_PUBLIC_APP_URL}/dashboard?upgraded=true`,
-      cancel_url: `${process.env.NEXT_PUBLIC_APP_URL}/upgrade`,
+      success_url: `${process.env.NEXT_PUBLIC_SITE_URL}/dashboard?upgraded=true`,
+      cancel_url: `${process.env.NEXT_PUBLIC_SITE_URL}/upgrade`,
       allow_promotion_codes: true,
     });
 
@@ -110,7 +110,7 @@ export async function createPortalSession(): Promise<{
 
     const session = await getStripe().billingPortal.sessions.create({
       customer: customers.data[0].id,
-      return_url: `${process.env.NEXT_PUBLIC_APP_URL}/settings`,
+      return_url: `${process.env.NEXT_PUBLIC_SITE_URL}/settings`,
     });
 
     return { url: session.url };
