@@ -318,8 +318,9 @@ export default function HomePage() {
             </h3>
             <p className="text-sm text-muted-foreground mb-6">Accès complet pour accélérer votre transition</p>
             <div className="mb-8">
-              <span className="text-4xl font-headline font-black text-foreground">19€</span>
+              <span className="text-4xl font-headline font-black text-foreground">49€</span>
               <span className="text-muted-foreground"> /mois</span>
+              <p className="text-xs text-muted-foreground mt-1">ou 390€/an (-33%)</p>
             </div>
             <div className="space-y-3 mb-8">
               {[
@@ -345,7 +346,7 @@ export default function HomePage() {
             >
               <span className="flex items-center justify-center gap-2">
                 <Zap className="w-4 h-4" />
-                Démarrer le Pro — 19€/mois
+                Démarrer le Pro — 49€/mois
               </span>
             </Link>
           </div>

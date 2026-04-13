@@ -1,7 +1,39 @@
 "use client";
 
+import { useState } from "react";
 import { GraduationCap, Award, BookOpen, Check } from "lucide-react";
 import { cn } from "@/lib/utils";
+
+const DATA_EXPERIENCE_LEVELS = [
+  {
+    value: "discovery",
+    label: "Découverte",
+    description:
+      "Je n'ai pas encore travaillé avec des données. Tout est nouveau pour moi.",
+    hasDataTraining: false,
+  },
+  {
+    value: "beginner",
+    label: "Initié",
+    description:
+      "J'utilise Excel/Sheets régulièrement, j'ai fait quelques analyses ou dashboards.",
+    hasDataTraining: true,
+  },
+  {
+    value: "intermediate",
+    label: "Confirmé",
+    description:
+      "Je travaille avec des outils data (SQL, Power BI, Python…) dans mon poste actuel.",
+    hasDataTraining: true,
+  },
+  {
+    value: "expert",
+    label: "Expert",
+    description:
+      "La data/IA est mon métier. Je cherche à évoluer vers un rôle plus senior ou stratégique.",
+    hasDataTraining: true,
+  },
+] as const;
 
 interface StepEducationProps {
   educationLevel: string;
@@ -42,6 +74,21 @@ export function StepEducation({
   onFieldChange,
   onToggleCertification,
 }: StepEducationProps) {
+  const [selectedDataLevel, setSelectedDataLevel] = useState<string | null>(
+    () => {
+      // No way to recover the exact level from a boolean, so leave unselected
+      // until the user picks one in this session.
+      return null;
+    }
+  );
+
+  function handleDataLevelSelect(
+    level: (typeof DATA_EXPERIENCE_LEVELS)[number]
+  ) {
+    setSelectedDataLevel(level.value);
+    onFieldChange("hasDataTraining", level.hasDataTraining);
+  }
+
   return (
     <div className="space-y-8">
       {/* Education Level */}
@@ -105,48 +152,40 @@ export function StepEducation({
         </div>
       </div>
 
-      {/* Data Training */}
+      {/* Data Experience Level */}
       <div>
         <label className="flex items-center gap-2 text-sm font-bold text-foreground mb-3">
           <BookOpen className="w-4 h-4 text-primary" />
-          Expérience avec la data/IA
+          Niveau d&apos;expérience data/IA
         </label>
-        <div className="grid grid-cols-1 sm:grid-cols-2 gap-2">
-          <button
-            onClick={() => onFieldChange("hasDataTraining", true)}
-            className={cn(
-              "p-4 rounded-xl text-left transition-all",
-              hasDataTraining
-                ? "bg-primary/10 border-2 border-primary/40"
-                : "bg-surface-container-lowest ghost-border hover:bg-surface-container"
-            )}
-          >
-            <p className={cn("text-sm font-bold", hasDataTraining ? "text-primary" : "text-foreground")}>
-              Oui, j&apos;ai déjà touché à la data
-            </p>
-            <p className="text-[10px] text-muted-foreground">
-              Cours en ligne, projets perso, Excel avancé, SQL, Python...
-            </p>
-          </button>
-          <button
-            onClick={() => onFieldChange("hasDataTraining", false)}
-            className={cn(
-              "p-4 rounded-xl text-left transition-all",
-              !hasDataTraining && educationLevel
-                ? "bg-primary/10 border-2 border-primary/40"
-                : "bg-surface-container-lowest ghost-border hover:bg-surface-container"
-            )}
-          >
-            <p className={cn(
-              "text-sm font-bold",
-              !hasDataTraining && educationLevel ? "text-primary" : "text-foreground"
-            )}>
-              Non, je pars de zéro
-            </p>
-            <p className="text-[10px] text-muted-foreground">
-              Pas d&apos;expérience technique en data — c&apos;est OK, on commence ensemble
-            </p>
-          </button>
+        <div className="grid grid-cols-1 sm:grid-cols-2 gap-3">
+          {DATA_EXPERIENCE_LEVELS.map((level) => {
+            const isSelected = selectedDataLevel === level.value;
+            return (
+              <button
+                key={level.value}
+                onClick={() => handleDataLevelSelect(level)}
+                className={cn(
+                  "p-4 rounded-xl text-left transition-all",
+                  isSelected
+                    ? "bg-primary/10 border-2 border-primary/40 shadow-lg shadow-primary/10"
+                    : "bg-surface-container-lowest ghost-border hover:bg-surface-container"
+                )}
+              >
+                <p
+                  className={cn(
+                    "text-sm font-bold",
+                    isSelected ? "text-primary" : "text-foreground"
+                  )}
+                >
+                  {level.label}
+                </p>
+                <p className="text-xs text-muted-foreground mt-1">
+                  {level.description}
+                </p>
+              </button>
+            );
+          })}
         </div>
       </div>
     </div>

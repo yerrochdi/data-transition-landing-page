@@ -85,7 +85,7 @@ function SignupForm() {
         <div className={`inline-flex items-center gap-2 px-4 py-1.5 rounded-full border mb-4 ${isPro ? "bg-primary/10 border-primary/30" : "bg-primary/10 border-primary/20"}`}>
           {isPro ? <Crown className="w-4 h-4 text-primary" /> : <Sparkles className="w-4 h-4 text-primary" />}
           <span className="text-xs font-bold text-primary">
-            {isPro ? "Plan Pro — 19€/mois" : "Commencez gratuitement"}
+            {isPro ? "Plan Pro — 49€/mois" : "Commencez gratuitement"}
           </span>
         </div>
         <h1 className="font-headline text-3xl font-extrabold text-foreground mb-2">

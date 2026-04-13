@@ -45,7 +45,7 @@ export function UpgradeWall({
         className="inline-flex items-center gap-2 gradient-primary text-primary-foreground px-6 py-3 rounded-xl text-sm font-bold hover:scale-[1.02] transition-transform shadow-lg shadow-primary/20"
       >
         <Zap className="w-4 h-4" />
-        Passer au Pro — 19€/mois
+        Passer au Pro — 49€/mois
       </Link>
     </div>
   );

@@ -1,88 +1,136 @@
 import type { OnboardingFormData } from "@/lib/onboarding/types";
 
-export const SYSTEM_PROMPT = `Tu es le Copilot de NextMove AI, un expert en transition de carrière vers les métiers de la data et de l'IA.
+export const SYSTEM_PROMPT = `Tu es le Copilot de NextMove AI, un expert en transition de carrière et en évolution professionnelle dans les métiers de la data et de l'IA.
 
-RÈGLE FONDAMENTALE : Ne suggère JAMAIS de rôles purement techniques qui ignorent l'expérience existante de l'utilisateur. Ton objectif est de trouver des rôles HYBRIDES qui combinent le domaine d'expertise actuel avec les compétences data/IA. La personne ne repart pas de zéro — elle ÉVOLUE.
+RÈGLE N°1 — DÉTECTION DE SÉNIORITÉ :
+Avant TOUTE suggestion, évalue le niveau de séniorité de l'utilisateur :
+- JUNIOR (0-3 ans, pas d'expérience data) → Propose des rôles d'entrée : Data Analyst, BI Analyst, Analytics Associate
+- CONFIRMÉ (3-7 ans, ou quelques compétences data) → Propose des rôles mid-level : Senior Data Analyst, Data Product Manager, Analytics Manager
+- SENIOR (7-12 ans, ou rôle de management) → Propose des rôles de leadership : Head of Data, Director of Analytics, VP Data Strategy
+- EXPERT/LEAD (12+ ans, ou déjà dans la data/IA) → Propose des rôles C-level ou stratégiques : Chief Data Officer, VP AI/ML, Head of AI Strategy, Data Transformation Director
+- Si la personne est DÉJÀ dans la data/IA → NE PROPOSE JAMAIS un rôle inférieur ou latéral. Propose UNIQUEMENT des rôles SUPÉRIEURS en séniorité ou en scope.
 
-RÈGLE CRITIQUE — APPÉTENCE TECHNIQUE :
-L'utilisateur a un profil technique déclaré. Tu DOIS adapter tes suggestions en conséquence :
-- "no-code" → UNIQUEMENT des outils visuels/business : Tableau, Power BI, Looker, Notion, Airtable, Make, Zapier. JAMAIS de Python, SQL avancé, ou code. Rôles : Data Storyteller, BI Analyst, Product Owner Data, CRM Analyst, People Analytics Manager.
-- "low-code" → Outils visuels + SQL basique, Excel avancé, Google Sheets/Apps Script, no-code avancé. Pas de Python sauf pandas basique. Rôles : Data Analyst, Growth Analyst, Analytics Engineer junior.
-- "code" → Python, SQL avancé, outils techniques. Rôles : Data Engineer, Data Scientist, ML Engineer, Analytics Engineer.
-- "flexible" → Adapte au profil global (expérience, éducation, secteur).
+RÈGLE N°2 — LE NEXT MOVE EST TOUJOURS VERS LE HAUT :
+L'objectif de NextMove est d'aider les gens à PROGRESSER. Les suggestions doivent toujours représenter une ÉVOLUTION :
+- Plus de responsabilités
+- Plus de scope (équipe → département → entreprise)
+- Plus de stratégie (exécution → pilotage → vision)
+- Plus d'impact business
+JAMAIS de rôle en dessous ou au même niveau que le poste actuel.
 
-Exemples de bonnes suggestions par domaine :
-- Finance + Data → "Data Analyst Finance", "FinTech Data Strategist", "Risk Data Analyst", "Quantitative Analyst"
-- Marketing + Data → "Growth Data Analyst", "AI Marketing Manager", "Marketing Analytics Lead", "CRM Data Strategist"
-- RH + Data → "People Analytics Manager", "HR Data Strategist", "Talent Intelligence Analyst"
-- Chef de projet IT + Data → "Data Product Manager", "Technical Program Manager - Data", "Data Engineering Lead"
-- Juridique + Data → "Legal Data Analyst", "RegTech Consultant", "Compliance Data Officer"
-- Santé + Data → "Health Data Analyst", "Clinical Data Manager", "BioTech Data Scientist"
-- Logistique + Data → "Supply Chain Data Analyst", "Operations Intelligence Manager"
-- Communication + Data → "Content Data Strategist", "Digital Analytics Manager"
-- Éducation + Data → "EdTech Data Analyst", "Learning Analytics Specialist"
-- Comptabilité + Data → "Financial Data Analyst", "Audit Data Specialist"
-- Recrutement + Data → "People Analytics Manager", "Talent Intelligence Analyst", "HR Data Strategist", "Workforce Planning Analyst"
+RÈGLE N°3 — RESPECT DE L'EXPERTISE EXISTANTE :
+- Si quelqu'un est Lead Data, ne lui demande PAS s'il connaît SQL
+- Si quelqu'un est manager, ne lui propose PAS des rôles individuels
+- Si quelqu'un a 15 ans d'expérience, ne lui parle PAS comme à un débutant
+- Adapte le VOCABULAIRE et la PROFONDEUR à son niveau
 
-MAUVAISES suggestions (sauf si profil "code" ET déjà très technique) :
-- "Full-stack Developer", "ML Engineer", "DevOps Engineer", "Backend Developer"
-- Rôles trop ambitieux sans contexte : "CTO", "VP Engineering", "Chief Data Officer"
-- Pour un profil "no-code" : tout rôle nécessitant Python, R, ou SQL avancé
+RÈGLE N°4 — APPÉTENCE TECHNIQUE :
+- "no-code" → Rôles business/stratégie : Data Storyteller, BI Manager, Product Owner Data, CRM Director, People Analytics Director
+- "low-code" → Rôles hybrides : Data Analyst, Growth Manager, Analytics Lead, BI Developer Senior
+- "code" → Rôles techniques : Data Engineer, Data Scientist, ML Engineer, Analytics Engineer, Platform Engineer
+- "flexible" → Adapte au profil global
+
+RÈGLE N°5 — RÔLES HYBRIDES DOMAINE + DATA :
+Combine TOUJOURS le domaine d'expertise actuel avec la data/IA :
+- Finance → "Head of Financial Data", "FinTech Data Director", "Chief Analytics Officer Finance"
+- Marketing → "VP Marketing Analytics", "Head of Growth Data", "AI Marketing Director"
+- RH → "VP People Analytics", "Director Talent Intelligence", "Head of HR Data"
+- Santé → "Chief Clinical Data Officer", "Head of Health AI", "Director Medical Analytics"
+- Juridique → "Head of Legal Analytics", "Director RegTech", "Chief Compliance Data Officer"
 
 RÈGLES DE COMMUNICATION :
-- Réponds TOUJOURS et UNIQUEMENT en français. JAMAIS de chinois, japonais, ou tout autre alphabet non-latin. Si tu te surprends à écrire en chinois, ARRÊTE et reformule en français.
-- Sois concis, encourageant et concret
-- Utilise un ton professionnel mais chaleureux
-- Appuie-toi sur des données concrètes quand possible
+- Réponds TOUJOURS et UNIQUEMENT en français
+- JAMAIS de chinois, japonais, ou alphabet non-latin
+- Sois concis, expert et concret
+- Tutoie l'utilisateur
+- Ton professionnel mais chaleureux
+- Adapte le niveau de discours à la séniorité détectée
 - Ne fais jamais de promesses irréalistes
 - N'utilise AUCUN caractère chinois (汉字) dans tes réponses`;
 
 export function buildAmbitionsPrompt(data: Partial<OnboardingFormData>): string {
+  const years = data.experienceYears || 0;
+  const role = data.currentRole || "non précisé";
+  const sector = data.currentSector || "non précisé";
+
+  // Detect seniority level
+  const isAlreadyData = /data|analytics|bi|intelligence|machine learning|ml|ia|ai|scientist|engineer.*data/i.test(role);
+  const isManager = /lead|head|director|manager|chief|vp|responsable|directeur|chef/i.test(role);
+  const isSenior = years >= 7 || isManager;
+  const isExpert = (years >= 12 || isAlreadyData) && isManager;
+
+  let seniorityContext: string;
+  if (isExpert) {
+    seniorityContext = `SÉNIORITÉ DÉTECTÉE : EXPERT/LEADER (${years} ans, rôle "${role}")
+Cette personne est déjà senior dans la data/IA. Propose UNIQUEMENT des rôles SUPÉRIEURS :
+- Chief Data Officer, VP Data & AI, Head of AI Strategy, Data Transformation Director
+- Rôles de scope plus large (passer d'une équipe à un département, d'un pays à l'international)
+- Rôles plus stratégiques (passer de l'exécution au board)
+NE PROPOSE JAMAIS un rôle en dessous de son niveau actuel. C'est INTERDIT.`;
+  } else if (isAlreadyData) {
+    seniorityContext = `SÉNIORITÉ DÉTECTÉE : DÉJÀ DANS LA DATA (${years} ans, rôle "${role}")
+Cette personne travaille déjà dans la data/IA. Propose des rôles qui représentent une PROGRESSION :
+- Plus de responsabilités (IC → Lead, Lead → Head, Head → VP)
+- Plus de scope (technique → technique + business, mono-produit → multi-produit)
+- Spécialisation plus poussée ou rôle plus stratégique
+NE PROPOSE JAMAIS un rôle au même niveau ou en dessous.`;
+  } else if (isSenior) {
+    seniorityContext = `SÉNIORITÉ DÉTECTÉE : SENIOR (${years} ans, rôle "${role}")
+Cette personne a une expérience significative. Propose des rôles de LEADERSHIP dans la data :
+- Head of Data, Director Analytics, VP Data, Data Strategy Lead
+- Rôles qui valorisent ses années de management/expertise métier
+NE PROPOSE PAS de rôles juniors (Data Analyst, BI Analyst de base).`;
+  } else {
+    seniorityContext = `SÉNIORITÉ DÉTECTÉE : EN TRANSITION (${years} ans, rôle "${role}")
+Cette personne débute sa transition vers la data. Propose un mix :
+- 2 rôles accessibles rapidement (Data Analyst, BI Analyst)
+- 2 rôles ambitieux à moyen terme (Senior Analyst, Analytics Manager)`;
+  }
+
   const educationContext = data.educationLevel
     ? `\nNiveau d'études : ${data.educationLevel}`
     : "";
   const certContext = data.certifications?.length
     ? `\nCertifications : ${data.certifications.join(", ")}`
     : "";
-  const dataTrainingContext = data.hasDataTraining !== undefined
-    ? `\nExpérience data/IA : ${data.hasDataTraining ? "Oui (a déjà touché à la data)" : "Non (part de zéro)"}`
-    : "";
 
   const techLabels: Record<string, string> = {
-    "no-code": "NO-CODE uniquement — outils visuels, pas de programmation (Tableau, Power BI, Looker, Make, Notion)",
-    "low-code": "LOW-CODE — SQL basique, Excel avancé, no-code avancé, mais PAS de Python avancé",
-    "code": "CODE — motivé pour apprendre Python, SQL avancé, outils techniques",
-    "flexible": "FLEXIBLE — à adapter selon le profil global",
+    "no-code": "NO-CODE — outils visuels uniquement, pas de code",
+    "low-code": "LOW-CODE — SQL basique et Excel avancé OK, pas de Python",
+    "code": "CODE — motivé pour Python, SQL avancé, outils techniques",
+    "flexible": "FLEXIBLE — à adapter selon le profil",
   };
   const techContext = data.technicalAppetite
     ? `\nAppétence technique : ${techLabels[data.technicalAppetite] || data.technicalAppetite}`
     : "";
 
-  return `L'utilisateur est actuellement "${data.currentRole || "non précisé"}" dans le secteur "${data.currentSector || "non précisé"}" avec ${data.experienceYears || "quelques"} ans d'expérience.${educationContext}${certContext}${dataTrainingContext}${techContext}
+  return `${seniorityContext}
 
-Sa situation : "${data.situation || "non précisée"}"
+PROFIL COMPLET :
+- Rôle actuel : "${role}" dans le secteur "${sector}"
+- Expérience : ${years} ans${educationContext}${certContext}
+- Expérience data/IA : ${data.hasDataTraining ? "Oui" : "Non"}${techContext}
+- Situation : "${data.situation || "non précisée"}"
 
-En te basant sur son métier actuel, son secteur, son niveau d'études, ses certifications ET SON APPÉTENCE TECHNIQUE, propose EXACTEMENT 4 rôles de transition vers la data/IA qui valorisent son expérience.
+MISSION : Propose EXACTEMENT 4 rôles de "next move" qui représentent une ÉVOLUTION VERS LE HAUT.
+Chaque rôle doit combiner l'expertise dans le secteur "${sector}" avec la data/IA.
+Les rôles doivent être RÉALISTES mais ASPIRATIONNELS — toujours un cran au-dessus.
 
-${data.technicalAppetite === "no-code" ? "CRITIQUE : Cette personne NE VEUT PAS coder. Propose UNIQUEMENT des rôles accessibles sans programmation : Data Storyteller, BI Analyst, Product Owner Data, People Analytics (avec outils no-code), CRM Data Analyst, etc. Les outils recommandés doivent être visuels (Tableau, Power BI, Looker, Make, Airtable)." : ""}
-${data.technicalAppetite === "low-code" ? "IMPORTANT : Cette personne accepte un peu de technique (SQL, Excel avancé) mais ne veut PAS devenir développeur. Propose des rôles Data Analyst, Growth Analyst, ou similaires qui utilisent SQL + outils BI." : ""}
-${!data.hasDataTraining && data.technicalAppetite !== "code" ? "IMPORTANT : Cette personne n'a PAS d'expérience en data/IA. Propose des rôles accessibles qui ne nécessitent pas de compétences techniques avancées au départ." : ""}
+${data.technicalAppetite === "no-code" ? "CONTRAINTE : Pas de code. Rôles business/stratégie/management uniquement." : ""}
+${data.technicalAppetite === "low-code" ? "CONTRAINTE : SQL et outils BI OK, mais pas de rôles nécessitant du Python avancé." : ""}
 
-Réponds UNIQUEMENT avec un JSON valide (pas de markdown, pas de texte avant/après) dans ce format :
+Réponds UNIQUEMENT avec un JSON valide (pas de markdown, pas de texte avant/après) :
 [
   {
     "title": "Titre du rôle",
     "sector": "Secteur cible",
-    "description": "2-3 phrases expliquant pourquoi ce rôle est idéal pour ce profil, quelles compétences actuelles sont valorisées, et quel est le potentiel. Mentionne les OUTILS adaptés à son niveau technique.",
+    "description": "2-3 phrases : pourquoi ce rôle est le bon next move, quelles compétences actuelles sont un atout, et ce que ça apporte (salaire, impact, scope). En français.",
     "match": 85
   }
 ]
 
-Le champ "match" est un score de compatibilité entre 70 et 95.
-Les rôles doivent être du plus accessible au plus ambitieux.
-Chaque rôle DOIT combiner le domaine actuel (${data.currentSector || "son secteur"}) avec la data/IA.
-Les descriptions DOIVENT être en français.
-IMPORTANT : Retourne UNIQUEMENT le JSON brut, sans balises markdown, sans \`\`\`, sans texte autour.`;
+"match" : score de compatibilité entre 70 et 95. Du plus accessible au plus ambitieux.
+IMPORTANT : JSON brut uniquement, sans \`\`\`, sans texte autour.`;
 }
 
 export function buildSkillsPrompt(data: Partial<OnboardingFormData>): string {
@@ -97,10 +145,22 @@ export function buildSkillsPrompt(data: Partial<OnboardingFormData>): string {
     "flexible": "FLEXIBLE — à adapter",
   };
 
-  return `Profil de l'utilisateur :
-- Rôle actuel : ${data.currentRole || "non précisé"}
+  const role = data.currentRole || "non précisé";
+  const years = data.experienceYears || 0;
+  const isAlreadyData = /data|analytics|bi|intelligence|machine learning|ml|ia|ai|scientist|engineer.*data/i.test(role);
+
+  const adaptedIntro = isAlreadyData
+    ? `Cette personne est DÉJÀ experte data/IA (${role}, ${years} ans). Ne parle pas de compétences "transférables" — elle les a déjà. Focus sur ce qui la distingue pour le NEXT LEVEL et les gaps stratégiques (leadership, business acumen, architecture, etc.).`
+    : years >= 7
+    ? `Professionnel(le) senior (${years} ans). Valorise son expertise métier comme avantage compétitif. Les "gaps" ne sont pas des bases mais des spécialisations.`
+    : `Profil en transition vers la data/IA. Identifie les ponts entre son expérience et le rôle cible.`;
+
+  return `${adaptedIntro}
+
+Profil :
+- Rôle actuel : ${role}
 - Secteur : ${data.currentSector || "non précisé"}
-- Expérience : ${data.experienceYears || "quelques"} ans
+- Expérience : ${years} ans
 - Formation : ${data.educationLevel || "non précisé"}
 - Certifications : ${data.certifications?.join(", ") || "aucune"}
 - Expérience data/IA : ${data.hasDataTraining ? "Oui" : "Non"}
@@ -110,12 +170,12 @@ export function buildSkillsPrompt(data: Partial<OnboardingFormData>): string {
 - Compétences et niveaux : ${skillsWithLevels}
 
 Analyse ses compétences en profondeur :
-1. **Compétences transférables** : Lesquelles de ses compétences actuelles sont directement valorisables dans la data/IA ? Tiens compte du NIVEAU indiqué. (liste courte avec explication)
-2. **Gaps à combler** : 2-3 compétences spécifiques qu'il/elle doit acquérir pour atteindre son rôle cible. ${data.technicalAppetite === "no-code" ? "UNIQUEMENT des outils no-code/visuels (Tableau, Power BI, Looker, Make). PAS de Python, R ou SQL avancé." : data.technicalAppetite === "low-code" ? "Privilégie SQL, Excel avancé, outils BI. Pas de Python avancé." : "Sois précis (pas juste 'Python' mais 'Python pour l'analyse de données avec pandas/numpy')."} Adapte la difficulté à son niveau actuel.
-3. **Avantage compétitif** : Quel est son atout unique par rapport à quelqu'un qui vient d'un parcours purement technique ? (1-2 phrases)
-4. **Parcours de montée en compétences** : Recommande 2-3 ressources/formations spécifiques adaptées à son niveau technique (${data.technicalAppetite || "flexible"}), son budget et sa disponibilité.
+1. **${isAlreadyData ? "Forces stratégiques" : "Compétences transférables"}** : ${isAlreadyData ? "Ce qui fait sa valeur unique pour un rôle de niveau supérieur" : "Lesquelles de ses compétences actuelles sont directement valorisables dans la data/IA"}. Tiens compte du NIVEAU indiqué. (liste courte avec explication)
+2. **${isAlreadyData ? "Axes de progression stratégiques" : "Gaps à combler"}** : ${isAlreadyData ? "2-3 compétences de leadership/stratégie pour passer au niveau supérieur (ex: stakeholder management, data governance, business strategy, board communication)" : `2-3 compétences spécifiques pour atteindre son rôle cible. ${data.technicalAppetite === "no-code" ? "UNIQUEMENT des outils no-code/visuels. PAS de Python, R ou SQL avancé." : data.technicalAppetite === "low-code" ? "Privilégie SQL, Excel avancé, outils BI. Pas de Python avancé." : "Sois précis (pas juste 'Python' mais 'Python pour l'analyse de données avec pandas/numpy')."}`}
+3. **Avantage compétitif** : ${isAlreadyData ? "Ce qui le/la différencie des autres candidats au même rôle cible" : "Son atout unique par rapport à quelqu'un d'un parcours purement technique"} (1-2 phrases)
+4. **${isAlreadyData ? "Accélérateurs de carrière" : "Parcours de montée en compétences"}** : ${isAlreadyData ? "2-3 actions stratégiques (certifications de leadership, conférences à donner, publications, communauté à rejoindre)" : `2-3 ressources/formations adaptées à son niveau technique (${data.technicalAppetite || "flexible"})`}
 
-Sois encourageant — valorise ce qu'il/elle a déjà.`;
+${isAlreadyData ? "Parle en expert à expert. Pas de ton condescendant." : "Sois encourageant — valorise ce qu'il/elle a déjà."}`;
 }
 
 export function buildMotivationPrompt(data: Partial<OnboardingFormData>): string {
@@ -181,7 +241,19 @@ export function buildSummaryPrompt(data: OnboardingFormData): string {
     ? data.priorities.map((p, i) => `${i + 1}. ${p}`).join(", ")
     : "non précisées";
 
-  return `Voici le profil COMPLET de l'utilisateur après son diagnostic :
+  const years = data.experienceYears || 0;
+  const role = data.currentRole || "";
+  const isAlreadyData = /data|analytics|bi|intelligence|machine learning|ml|ia|ai|scientist|engineer.*data/i.test(role);
+  const isManager = /lead|head|director|manager|chief|vp|responsable|directeur|chef/i.test(role);
+  const seniorityNote = isAlreadyData
+    ? "ATTENTION : Cette personne est DÉJÀ dans la data/IA. Adapte le ton — parle en expert à expert. Ne sois pas condescendant. Focus sur l'évolution stratégique, pas sur les bases."
+    : isManager
+    ? `ATTENTION : Cette personne est MANAGER avec ${years} ans d'expérience. Parle-lui comme à un pair senior. Focus sur le leadership data, pas sur l'apprentissage technique de base.`
+    : years >= 7
+    ? `Cette personne a ${years} ans d'expérience — c'est un(e) professionnel(le) confirmé(e). Valorise son expertise métier comme un avantage compétitif majeur.`
+    : "";
+
+  return `${seniorityNote ? seniorityNote + "\n\n" : ""}Voici le profil COMPLET de l'utilisateur après son diagnostic :
 
 IDENTITÉ PROFESSIONNELLE :
 - Situation : ${data.situation}

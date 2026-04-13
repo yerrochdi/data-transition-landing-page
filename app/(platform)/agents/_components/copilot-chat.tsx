@@ -375,7 +375,7 @@ export function CopilotChat({ suggestions, userName, initialQuery, dailyUsage = 
             href="/upgrade"
             className="inline-flex items-center gap-2 gradient-primary text-primary-foreground px-5 py-2.5 rounded-xl text-xs font-bold hover:scale-[1.02] transition-transform"
           >
-            Passer au Pro — 19€/mois
+            Passer au Pro — 49€/mois
           </a>
         </div>
       ) : (

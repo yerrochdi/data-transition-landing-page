@@ -162,9 +162,10 @@ export function UpgradeView({
 
           <div className="mb-6">
             <span className="text-3xl font-headline font-black text-foreground">
-              19€
+              49€
             </span>
             <span className="text-sm text-muted-foreground"> /mois</span>
+            <p className="text-xs text-muted-foreground mt-1">ou 390€/an (-33%)</p>
           </div>
 
           <div className="space-y-3 mb-6">
@@ -201,7 +202,7 @@ export function UpgradeView({
               ) : (
                 <>
                   <Zap className="w-4 h-4" />
-                  Passer au Pro — 19€/mois
+                  Passer au Pro — 49€/mois
                 </>
               )}
             </button>
