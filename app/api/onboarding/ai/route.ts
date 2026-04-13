@@ -83,6 +83,41 @@ export async function POST(request: NextRequest) {
     const userPrompt = promptBuilder(data);
     const model = step === "summary" ? "moonshot-v1-32k" : "moonshot-v1-8k";
 
+    // Ambitions step needs valid JSON — use non-streaming mode
+    if (step === "ambitions") {
+      const completion = await ai.chat.completions.create({
+        model,
+        messages: [
+          { role: "system", content: SYSTEM_PROMPT },
+          { role: "user", content: userPrompt },
+        ],
+        max_tokens: 512,
+        temperature: 0.7,
+        stream: false,
+      });
+
+      let text = completion.choices[0]?.message?.content || "";
+      // Strip markdown code blocks
+      text = text.replace(/^```(?:json)?\s*/i, "").replace(/\s*```\s*$/, "");
+      // Extract JSON array
+      const arrayMatch = text.match(/\[[\s\S]*\]/);
+      if (arrayMatch) {
+        text = arrayMatch[0];
+      }
+      // Validate JSON
+      try {
+        JSON.parse(text);
+      } catch {
+        console.error("AI returned invalid JSON for ambitions:", text.slice(0, 500));
+        return new Response("Réponse IA invalide", { status: 502 });
+      }
+
+      return new Response(text, {
+        headers: { "Content-Type": "application/json; charset=utf-8" },
+      });
+    }
+
+    // Other steps: stream the response
     const stream = await ai.chat.completions.create({
       model,
       messages: [

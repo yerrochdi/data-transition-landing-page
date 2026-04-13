@@ -75,19 +75,8 @@ export function StepAmbitions({
         throw new Error(await res.text());
       }
 
-      if (!res.body) throw new Error("Pas de réponse");
-
-      const reader = res.body.getReader();
-      const decoder = new TextDecoder();
-      let accumulated = "";
-
-      while (true) {
-        const { done, value } = await reader.read();
-        if (done) break;
-        accumulated += decoder.decode(value, { stream: true });
-      }
-
-      onAiUpdate(accumulated);
+      const text = await res.text();
+      onAiUpdate(text);
     } catch (e) {
       setError(e instanceof Error ? e.message : "Erreur inattendue");
     } finally {
