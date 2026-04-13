@@ -2,9 +2,16 @@
 
 import Link from "next/link";
 import { usePathname } from "next/navigation";
-import { Search, LogOut, Crown } from "lucide-react";
+import { LogOut, Crown } from "lucide-react";
 import { cn } from "@/lib/utils";
-import { topNav } from "@/lib/mock-data";
+
+const topNav = [
+  { href: "/journey", label: "Parcours" },
+  { href: "/opportunities", label: "Opportunités" },
+  { href: "/resources", label: "Ressources" },
+  { href: "/agents", label: "Copilot" },
+  { href: "/feed", label: "Feed" },
+];
 import { signOut } from "@/lib/auth/actions";
 import { APP_NAME } from "@/lib/constants";
 
@@ -58,9 +65,6 @@ export function Topbar({ user }: TopbarProps) {
             <span className="text-[10px] font-bold text-primary uppercase tracking-widest">Pro</span>
           </div>
         )}
-        <button className="p-2 rounded-full hover:bg-surface-container-high transition-all">
-          <Search className="w-5 h-5 text-muted-foreground" />
-        </button>
         <form action={signOut}>
           <button
             type="submit"

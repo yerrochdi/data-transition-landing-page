@@ -211,7 +211,7 @@ function buildResources(opts: {
     readTime: "15 min",
     isFree: true,
     isRecommended: true,
-    url: "#",
+    url: "https://www.welcometothejungle.com/fr/articles/reconversion-professionnelle-data",
   });
 
   // ─── Portfolio ────────────────────────────────────────────────
@@ -223,7 +223,7 @@ function buildResources(opts: {
     readTime: "5 min",
     isFree: true,
     isRecommended: opts.currentPhase === "Spécialisation" || opts.currentPhase === "Positionnement",
-    url: "#",
+    url: "https://github.com/sajal2692/data-science-portfolio",
   });
 
   // ─── Interview prep ───────────────────────────────────────────
@@ -235,7 +235,7 @@ function buildResources(opts: {
     readTime: "20 min",
     isFree: true,
     isRecommended: opts.currentPhase === "Positionnement" || opts.currentPhase === "Lancement",
-    url: "#",
+    url: "https://www.interviewquery.com/p/data-analyst-interview-questions",
   });
 
   // ─── LinkedIn ─────────────────────────────────────────────────
@@ -247,7 +247,7 @@ function buildResources(opts: {
     readTime: "10 min",
     isFree: true,
     isRecommended: opts.currentPhase === "Positionnement",
-    url: "#",
+    url: "https://www.linkedin.com/pulse/how-optimize-your-linkedin-profile-data-career",
   });
 
   // ─── Success stories ──────────────────────────────────────────
@@ -259,7 +259,7 @@ function buildResources(opts: {
     readTime: "8 min",
     isFree: true,
     isRecommended: false,
-    url: "#",
+    url: "https://www.switchup.org/blog/career-change-to-data-science-stories",
   });
 
   add({
@@ -270,7 +270,7 @@ function buildResources(opts: {
     readTime: "12 min",
     isFree: true,
     isRecommended: false,
-    url: "#",
+    url: "https://www.mckinsey.com/capabilities/quantumblack/our-insights/the-state-of-ai",
   });
 
   // Sort: recommended first, then by category

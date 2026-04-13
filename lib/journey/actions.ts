@@ -310,6 +310,7 @@ export async function toggleTask(taskProgressId: string): Promise<{ success: boo
     const taskProgress = await prisma.journeyTaskProgress.findUnique({
       where: { id: taskProgressId },
       include: {
+        task: { select: { title: true } },
         journeyProgress: {
           include: {
             tasks: true,
@@ -334,6 +335,18 @@ export async function toggleTask(taskProgressId: string): Promise<{ success: boo
       },
     });
 
+    // Track task completion activity
+    if (newStatus === "DONE") {
+      await prisma.activity.create({
+        data: {
+          userId,
+          type: "TASK_COMPLETED",
+          title: taskProgress.task.title,
+          description: `Phase : ${taskProgress.journeyProgress.phase.title}`,
+        },
+      }).catch(() => {}); // Non-blocking
+    }
+
     // Recalculate phase progress
     const allTasksInPhase = taskProgress.journeyProgress.tasks;
     const updatedTasks = allTasksInPhase.map((t) =>
@@ -353,9 +366,18 @@ export async function toggleTask(taskProgressId: string): Promise<{ success: boo
       },
     });
 
-    // If phase completed, unlock next phase
+    // If phase completed, track activity and unlock next phase
     if (phaseCompleted) {
       const currentPhase = taskProgress.journeyProgress.phase;
+
+      await prisma.activity.create({
+        data: {
+          userId,
+          type: "PHASE_COMPLETED",
+          title: currentPhase.title,
+          description: `Phase ${currentPhase.order} terminée !`,
+        },
+      }).catch(() => {});
       const nextPhase = await prisma.journeyPhase.findFirst({
         where: { order: currentPhase.order + 1 },
       });

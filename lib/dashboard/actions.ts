@@ -98,21 +98,8 @@ export async function getDashboardData(): Promise<DashboardData | null> {
   if (!dbUser) return null;
 
   // Compute streak: consecutive days the user has been active
-  const now = new Date();
-  const lastActive = dbUser.lastActiveAt;
-  const diffMs = now.getTime() - lastActive.getTime();
-  const diffHours = diffMs / (1000 * 60 * 60);
-
-  // If last active was today or yesterday, count as streak
-  // For v1, we use a simple heuristic: days since account creation (capped at actual activity)
-  const daysSinceCreation = Math.floor((now.getTime() - dbUser.createdAt.getTime()) / (1000 * 60 * 60 * 24));
-  const streakDays = diffHours <= 48 ? Math.max(daysSinceCreation, 1) : 1;
-
-  // Update lastActiveAt
-  await prisma.user.update({
-    where: { id: dbUser.id },
-    data: { lastActiveAt: now },
-  }).catch(() => {}); // Non-blocking
+  const { updateStreak } = await import("@/lib/streak/helpers");
+  const streakDays = await updateStreak(dbUser.id);
 
   // Generate daily tip based on profile
   const dailyTip = generateDailyTip(dbUser.onboarding, dbUser.profile);

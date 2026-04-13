@@ -141,12 +141,8 @@ export async function getAnalyticsData(): Promise<AnalyticsData | null> {
   const journeyProgress = totalTasks > 0 ? Math.round((completedTasks / totalTasks) * 100) : 0;
 
   // ── Streak ──
-  const now = new Date();
-  const lastActive = dbUser.lastActiveAt;
-  const diffMs = now.getTime() - lastActive.getTime();
-  const diffHours = diffMs / (1000 * 60 * 60);
-  const daysSinceCreation = Math.floor((now.getTime() - dbUser.createdAt.getTime()) / (1000 * 60 * 60 * 24));
-  const streakDays = diffHours <= 48 ? Math.max(daysSinceCreation, 1) : 1;
+  const { updateStreak } = await import("@/lib/streak/helpers");
+  const streakDays = await updateStreak(dbUser.id);
 
   return {
     careerScore: profile?.careerScore ?? 0,

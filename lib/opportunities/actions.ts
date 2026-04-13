@@ -19,6 +19,7 @@ export interface Opportunity {
   matchScore: number;
   aiReason: string;
   salary?: string;
+  searchUrl: string;
 }
 
 export interface OpportunitiesData {
@@ -56,14 +57,24 @@ function buildOpportunities(opts: {
   const readiness = opts.readinessScore;
 
   let id = 0;
-  const add = (o: Omit<Opportunity, "id">) => {
-    opportunities.push({ ...o, id: `opp-${++id}` });
+  const buildSearchUrl = (title: string, loc: string, type: OpportunityType): string => {
+    if (type === "formation") {
+      return `https://www.coursera.org/search?query=${encodeURIComponent(title)}`;
+    }
+    return `https://www.linkedin.com/jobs/search/?keywords=${encodeURIComponent(title)}&location=${encodeURIComponent(loc)}&f_WT=${loc.toLowerCase().includes("remote") ? "2" : ""}`;
+  };
+  const add = (o: Omit<Opportunity, "id" | "searchUrl">) => {
+    opportunities.push({
+      ...o,
+      id: `opp-${++id}`,
+      searchUrl: buildSearchUrl(o.title, o.location, o.type),
+    });
   };
 
   // ─── CDI / Postes cibles ──────────────────────────────────────
   add({
     title: `${target} Junior`,
-    company: `Entreprise ${sector}`,
+    company: `Entreprises du secteur ${sector}`,
     location: isRemote ? `${location} (Remote)` : location,
     remote: isRemote,
     type: "job",
@@ -76,7 +87,7 @@ function buildOpportunities(opts: {
 
   add({
     title: `${target} — ${sector}`,
-    company: `Cabinet de conseil Data`,
+    company: `Cabinets de conseil Data`,
     location: `Paris ${isRemote ? "(Hybride)" : ""}`,
     remote: isRemote,
     type: "job",
@@ -89,7 +100,7 @@ function buildOpportunities(opts: {
 
   add({
     title: `${target} Confirmé`,
-    company: `Scale-up ${sector}`,
+    company: `Scale-ups du secteur ${sector}`,
     location: isRemote ? `Full Remote` : `Lyon`,
     remote: true,
     type: "job",
@@ -105,7 +116,7 @@ function buildOpportunities(opts: {
   // ─── Freelance ────────────────────────────────────────────────
   add({
     title: `Mission freelance : Dashboard ${sector}`,
-    company: "Client direct",
+    company: "Clients directs",
     location: "Full Remote",
     remote: true,
     type: "freelance",
@@ -118,7 +129,7 @@ function buildOpportunities(opts: {
 
   add({
     title: `Analyse de données ${sector} — Projet court`,
-    company: "Startup",
+    company: "Startups Data",
     location: "Remote / Paris",
     remote: true,
     type: "freelance",

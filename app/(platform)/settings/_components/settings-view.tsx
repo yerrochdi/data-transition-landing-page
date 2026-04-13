@@ -22,6 +22,7 @@ import {
 import { cn } from "@/lib/utils";
 import { updateProfile, deleteAccount, resetOnboarding } from "@/lib/settings/actions";
 import { signOut } from "@/lib/auth/actions";
+import { createPortalSession } from "@/lib/billing/actions";
 import type { SettingsData } from "@/lib/settings/actions";
 
 // ─── Section Card ─────────────────────────────────────────────────
@@ -241,13 +242,24 @@ export function SettingsView({ data }: { data: SettingsData }) {
               <p className="text-xs text-muted-foreground">{data.user.email}</p>
             </div>
           </div>
-          <div className="flex items-center gap-3">
+          <div className="flex items-center gap-3 flex-wrap">
             <div className="flex items-center gap-1.5 px-3 py-1.5 rounded-full bg-primary/10">
               <Crown className="w-3.5 h-3.5 text-primary" />
               <span className="text-xs font-bold text-primary">
                 {data.user.plan === "PREMIUM" ? "Premium" : data.user.plan === "ENTERPRISE" ? "Enterprise" : "Free"}
               </span>
             </div>
+            {data.user.plan === "PREMIUM" && (
+              <button
+                onClick={async () => {
+                  const result = await createPortalSession();
+                  if (result.url) window.location.href = result.url;
+                }}
+                className="flex items-center gap-1.5 px-3 py-1.5 rounded-full bg-primary/10 text-xs font-bold text-primary hover:bg-primary/20 transition-colors"
+              >
+                Gérer mon abonnement
+              </button>
+            )}
             <div className="flex items-center gap-1.5 px-3 py-1.5 rounded-full bg-surface-container ghost-border">
               <Calendar className="w-3 h-3 text-muted-foreground" />
               <span className="text-[10px] text-muted-foreground">Membre depuis {memberSince}</span>

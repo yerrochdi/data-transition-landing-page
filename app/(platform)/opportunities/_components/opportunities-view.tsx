@@ -12,6 +12,8 @@ import {
   ArrowRight,
   TrendingUp,
   Zap,
+  ExternalLink,
+  Info,
 } from "lucide-react";
 import { cn } from "@/lib/utils";
 import type { OpportunitiesData, OpportunityType, Opportunity } from "@/lib/opportunities/actions";
@@ -99,13 +101,24 @@ function OpportunityCard({ opportunity }: { opportunity: Opportunity }) {
       </div>
 
       {/* AI Reason */}
-      <div className="bg-surface-container-high/50 p-3 rounded-xl">
+      <div className="bg-surface-container-high/50 p-3 rounded-xl mb-3">
         <div className="flex items-center gap-1.5 mb-1">
           <Sparkles className="w-3 h-3 text-primary" />
           <span className="text-[9px] uppercase tracking-widest text-primary font-bold">Pourquoi ce match</span>
         </div>
         <p className="text-[11px] text-muted-foreground leading-relaxed">{opportunity.aiReason}</p>
       </div>
+
+      {/* Search button */}
+      <a
+        href={opportunity.searchUrl}
+        target="_blank"
+        rel="noopener noreferrer"
+        className="inline-flex items-center gap-2 px-4 py-2 rounded-xl bg-primary/10 text-primary text-xs font-bold hover:bg-primary/20 transition-colors"
+      >
+        <ExternalLink className="w-3.5 h-3.5" />
+        {opportunity.type === "formation" ? "Voir sur Coursera" : "Rechercher sur LinkedIn"}
+      </a>
     </div>
   );
 }
@@ -152,6 +165,15 @@ export function OpportunitiesView({ data }: { data: OpportunitiesData }) {
           </div>
         </div>
       </header>
+
+      {/* AI Suggestions banner */}
+      <div className="flex items-start gap-3 bg-primary/5 border border-primary/15 rounded-xl p-4 mb-6">
+        <Info className="w-4 h-4 text-primary shrink-0 mt-0.5" />
+        <p className="text-xs text-muted-foreground leading-relaxed">
+          Ces opportunités sont des <span className="text-primary font-bold">suggestions IA personnalisées</span> basées sur votre profil.
+          Cliquez sur &quot;Rechercher sur LinkedIn&quot; pour trouver des offres similaires sur le marché.
+        </p>
+      </div>
 
       {/* Readiness context */}
       <div className="bg-surface-container-high/70 backdrop-blur-sm p-5 rounded-2xl light-streak mb-6">
