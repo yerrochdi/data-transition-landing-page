@@ -88,6 +88,60 @@ export async function createCheckoutSession(): Promise<{
   }
 }
 
+// ─── Verify payment & activate Premium (called after Stripe redirect) ──
+
+export async function verifyAndActivatePremium(): Promise<{
+  activated: boolean;
+  plan: string;
+}> {
+  const user = await getCurrentUser();
+  if (!user) return { activated: false, plan: "FREE" };
+
+  // Already premium
+  if (user.plan === "PREMIUM") return { activated: false, plan: "PREMIUM" };
+
+  try {
+    // Check if user has an active subscription in Stripe
+    const customers = await getStripe().customers.list({
+      email: user.email,
+      limit: 1,
+    });
+
+    if (customers.data.length > 0) {
+      const subscriptions = await getStripe().subscriptions.list({
+        customer: customers.data[0].id,
+        status: "active",
+        limit: 1,
+      });
+
+      if (subscriptions.data.length > 0) {
+        await prisma.user.update({
+          where: { id: user.id },
+          data: { plan: "PREMIUM" },
+        });
+
+        // Log activity
+        await prisma.activity.create({
+          data: {
+            userId: user.id,
+            type: "MILESTONE",
+            title: "Passage au plan Premium",
+            description: "Abonnement Premium activé — accès illimité débloqué !",
+            icon: "Crown",
+          },
+        });
+
+        return { activated: true, plan: "PREMIUM" };
+      }
+    }
+
+    return { activated: false, plan: "FREE" };
+  } catch (e) {
+    console.error("Verify premium error:", e);
+    return { activated: false, plan: user.plan };
+  }
+}
+
 // ─── Manage Subscription (Customer Portal) ──────────────────────
 
 export async function createPortalSession(): Promise<{

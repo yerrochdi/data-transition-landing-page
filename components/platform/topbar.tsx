@@ -2,7 +2,7 @@
 
 import Link from "next/link";
 import { usePathname } from "next/navigation";
-import { Search, LogOut } from "lucide-react";
+import { Search, LogOut, Crown } from "lucide-react";
 import { cn } from "@/lib/utils";
 import { topNav } from "@/lib/mock-data";
 import { signOut } from "@/lib/auth/actions";
@@ -52,6 +52,12 @@ export function Topbar({ user }: TopbarProps) {
 
       {/* Actions */}
       <div className="flex items-center gap-3">
+        {user.plan === "PREMIUM" && (
+          <div className="hidden md:flex items-center gap-1.5 px-3 py-1 rounded-full bg-primary/10 border border-primary/20">
+            <Crown className="w-3 h-3 text-primary" />
+            <span className="text-[10px] font-bold text-primary uppercase tracking-widest">Pro</span>
+          </div>
+        )}
         <button className="p-2 rounded-full hover:bg-surface-container-high transition-all">
           <Search className="w-5 h-5 text-muted-foreground" />
         </button>
