@@ -31,9 +31,10 @@ export async function POST(request: NextRequest) {
         const userId = session.metadata?.userId;
 
         if (userId) {
-          await prisma.user.update({
+          const user = await prisma.user.update({
             where: { id: userId },
             data: { plan: "PREMIUM" },
+            select: { email: true, firstName: true },
           });
 
           // Log activity
@@ -46,6 +47,13 @@ export async function POST(request: NextRequest) {
               icon: "Crown",
             },
           });
+
+          // Send upgrade confirmation email (non-blocking)
+          import("@/lib/email/send").then(({ sendEmail }) =>
+            import("@/lib/email/templates").then(({ upgradeEmail }) =>
+              sendEmail(user.email, "Bienvenue dans le plan Pro NextMove ✨", upgradeEmail(user.firstName))
+            )
+          ).catch(console.error);
         }
         break;
       }

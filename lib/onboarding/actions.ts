@@ -174,10 +174,18 @@ export async function completeOnboarding(
     });
 
     // Mark onboarding as completed
-    await prisma.user.update({
+    const updatedUser = await prisma.user.update({
       where: { id: userId },
       data: { onboardingCompleted: true },
+      select: { email: true, firstName: true },
     });
+
+    // Send welcome email (non-blocking)
+    import("@/lib/email/send").then(({ sendEmail }) =>
+      import("@/lib/email/templates").then(({ welcomeEmail }) =>
+        sendEmail(updatedUser.email, "Bienvenue sur NextMove AI 🎯", welcomeEmail(updatedUser.firstName, data.targetRole || null))
+      )
+    ).catch(console.error);
 
     return { success: true };
   } catch (e) {
