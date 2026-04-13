@@ -303,7 +303,7 @@ export function OnboardingFlow({ initialData, chosenPlan = "free" }: OnboardingF
           />
         );
       case 11:
-        return <StepSummary formData={formData} aiContent={typeof aiInsights.summary === "string" ? aiInsights.summary : null} onAiUpdate={(c) => updateAiInsight("summary", c)} />;
+        return <StepSummary formData={formData} aiContent={typeof aiInsights.summary === "string" ? aiInsights.summary : null} onAiUpdate={(c) => updateAiInsight("summary", c)} chosenPlan={chosenPlan} />;
       default:
         return null;
     }
@@ -443,7 +443,7 @@ export function OnboardingFlow({ initialData, chosenPlan = "free" }: OnboardingF
               "Finalisation..."
             ) : isLast ? (
               <>
-                Lancer mon parcours
+                {chosenPlan === "pro" ? "Passer au paiement" : "Lancer mon parcours"}
                 <Sparkles className="w-4 h-4" />
               </>
             ) : (
