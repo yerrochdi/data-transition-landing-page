@@ -15,3 +15,4 @@ node_modules/
 
 # Prisma
 /lib/generated/prisma
+tsconfig.tsbuildinfo
