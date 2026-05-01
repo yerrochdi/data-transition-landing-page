@@ -15,10 +15,55 @@ const jakarta = Plus_Jakarta_Sans({
   variable: "--font-jakarta",
 });
 
+const SITE_URL = "https://nextmove.sh";
+const SITE_NAME = "NextMove AI";
+const SITE_DESCRIPTION =
+  "Votre coach IA pour réussir votre transition vers un métier de la data. Parcours personnalisé, opportunités, copilot intelligent.";
+
 export const metadata: Metadata = {
-  title: "NextMove AI | Your AI-Powered Career Evolution Platform",
-  description:
-    "NextMove is an AI-first platform that accelerates your professional transition with specialized agents, structured pathways, and intelligent guidance.",
+  metadataBase: new URL(SITE_URL),
+  title: {
+    default: `${SITE_NAME} — Votre coach IA pour la transition data`,
+    template: `%s | ${SITE_NAME}`,
+  },
+  description: SITE_DESCRIPTION,
+  keywords: [
+    "reconversion data",
+    "transition data analyst",
+    "data scientist reconversion",
+    "coach IA carrière",
+    "formation data",
+    "parcours data",
+  ],
+  authors: [{ name: "NextMove AI" }],
+  creator: "NextMove AI",
+  alternates: {
+    canonical: SITE_URL,
+  },
+  openGraph: {
+    type: "website",
+    locale: "fr_FR",
+    url: SITE_URL,
+    siteName: SITE_NAME,
+    title: `${SITE_NAME} — Votre coach IA pour la transition data`,
+    description: SITE_DESCRIPTION,
+  },
+  twitter: {
+    card: "summary_large_image",
+    title: `${SITE_NAME} — Votre coach IA pour la transition data`,
+    description: SITE_DESCRIPTION,
+    creator: "@nextmove_ai",
+  },
+  robots: {
+    index: true,
+    follow: true,
+    googleBot: {
+      index: true,
+      follow: true,
+      "max-image-preview": "large",
+      "max-snippet": -1,
+    },
+  },
 };
 
 export const viewport: Viewport = {
