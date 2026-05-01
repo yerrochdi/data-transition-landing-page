@@ -144,7 +144,7 @@ export default async function Image() {
               display: "flex",
             }}
           >
-            ✦ AI-Powered Career Evolution
+            AI-Powered Career Evolution
           </div>
         </div>
       </div>
