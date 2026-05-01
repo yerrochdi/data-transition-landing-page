@@ -18,6 +18,7 @@ export interface Resource {
   isFree: boolean;
   isRecommended: boolean;
   url: string;
+  aiReason?: string;
 }
 
 export interface ResourcesData {
@@ -55,6 +56,7 @@ function buildResources(opts: {
 
   // ─── SQL ──────────────────────────────────────────────────────
   if (gapSet.has("sql") || !opts.hasDataTraining) {
+    const sqlIsGap = gapSet.has("sql");
     add({
       title: "Mode Analytics — SQL Tutorial",
       description: "Cours interactif SQL de zéro à avancé. Gratuit et basé sur des vrais datasets.",
@@ -63,8 +65,11 @@ function buildResources(opts: {
       readTime: "10h",
       platform: "Mode Analytics",
       isFree: true,
-      isRecommended: gapSet.has("sql"),
+      isRecommended: sqlIsGap,
       url: "https://mode.com/sql-tutorial",
+      aiReason: sqlIsGap
+        ? `SQL est identifié comme un gap dans votre profil — compétence essentielle pour ${target}.`
+        : "Vous n'avez pas de formation data préalable : SQL est la base incontournable.",
     });
     add({
       title: "SQLBolt — Apprendre SQL interactif",
@@ -76,11 +81,13 @@ function buildResources(opts: {
       isFree: true,
       isRecommended: false,
       url: "https://sqlbolt.com",
+      aiReason: "Complément pratique pour s'entraîner au SQL directement dans le navigateur.",
     });
   }
 
   // ─── Python ───────────────────────────────────────────────────
   if (gapSet.has("python") || !opts.hasDataTraining) {
+    const pythonIsGap = gapSet.has("python");
     add({
       title: "Kaggle Learn — Python",
       description: "Micro-cours Python orienté data science. Notebooks interactifs.",
@@ -89,8 +96,11 @@ function buildResources(opts: {
       readTime: "5h",
       platform: "Kaggle",
       isFree: true,
-      isRecommended: gapSet.has("python"),
+      isRecommended: pythonIsGap,
       url: "https://www.kaggle.com/learn/python",
+      aiReason: pythonIsGap
+        ? `Python figure dans vos gaps — langage n°1 pour un poste de ${target}.`
+        : "Sans formation data, Python est un fondamental à acquérir rapidement.",
     });
     if (!isLowBudget) {
       add({
@@ -103,6 +113,7 @@ function buildResources(opts: {
         isFree: false,
         isRecommended: false,
         url: "https://www.datacamp.com/courses/intro-to-python-for-data-science",
+        aiReason: "Votre budget formation le permet — DataCamp offre un apprentissage plus structuré.",
       });
     }
   }
@@ -119,6 +130,7 @@ function buildResources(opts: {
       isFree: true,
       isRecommended: true,
       url: "https://public.tableau.com/app/resources/learn",
+      aiReason: `La data visualisation est un gap identifié — compétence clé pour présenter vos analyses en tant que ${target}.`,
     });
     add({
       title: "Power BI — Learning Path Microsoft",
@@ -130,6 +142,7 @@ function buildResources(opts: {
       isFree: true,
       isRecommended: false,
       url: "https://learn.microsoft.com/en-us/training/powerplatform/power-bi",
+      aiReason: `Power BI est très demandé dans le secteur ${sector} — alternative complémentaire à Tableau.`,
     });
   }
 
@@ -145,6 +158,7 @@ function buildResources(opts: {
       isFree: true,
       isRecommended: true,
       url: "https://fr.khanacademy.org/math/statistics-probability",
+      aiReason: `Les statistiques sont dans vos gaps — base théorique indispensable pour ${target}.`,
     });
   }
 
@@ -160,6 +174,7 @@ function buildResources(opts: {
       isFree: true,
       isRecommended: true,
       url: "https://www.coursera.org/specializations/excel",
+      aiReason: `Excel avancé est un gap identifié — outil quotidien dans la plupart des postes ${target}.`,
     });
   }
 
@@ -175,10 +190,13 @@ function buildResources(opts: {
       isFree: true,
       isRecommended: true,
       url: "https://www.kaggle.com/learn/intro-to-machine-learning",
+      aiReason: `Le Machine Learning est dans vos gaps — différenciateur majeur pour un profil ${target}.`,
     });
   }
 
   // ─── Certifications ──────────────────────────────────────────
+  const isAnalyst = target.toLowerCase().includes("analyst");
+  const isScientist = target.toLowerCase().includes("scientist");
   add({
     title: "Google Data Analytics Professional Certificate",
     description: `Certification reconnue mondialement. Parfait pour une transition vers ${target}. Gratuit en audit.`,
@@ -187,8 +205,11 @@ function buildResources(opts: {
     readTime: "6 mois (~10h/sem)",
     platform: "Coursera",
     isFree: true,
-    isRecommended: target.toLowerCase().includes("analyst"),
+    isRecommended: isAnalyst,
     url: "https://www.coursera.org/professional-certificates/google-data-analytics",
+    aiReason: isAnalyst
+      ? `Votre objectif est ${target} — cette certification Google est la référence du marché pour ce rôle.`
+      : `Certification polyvalente qui couvre les fondamentaux data, utile même pour un profil ${target}.`,
   });
   add({
     title: "IBM Data Science Professional Certificate",
@@ -198,8 +219,11 @@ function buildResources(opts: {
     readTime: "5 mois (~8h/sem)",
     platform: "Coursera",
     isFree: true,
-    isRecommended: target.toLowerCase().includes("scientist"),
+    isRecommended: isScientist,
     url: "https://www.coursera.org/professional-certificates/ibm-data-science",
+    aiReason: isScientist
+      ? `Votre cible est ${target} — cette certification IBM couvre exactement les compétences requises.`
+      : `Certification complète (Python, SQL, ML) qui renforce un profil de transition vers ${target}.`,
   });
 
   // ─── Transition carrière ──────────────────────────────────────
@@ -212,9 +236,11 @@ function buildResources(opts: {
     isFree: true,
     isRecommended: true,
     url: "https://www.welcometothejungle.com/fr/articles/reconversion-professionnelle-data",
+    aiReason: `Directement lié à votre transition ${opts.currentRole || "métier actuel"} → ${target}.`,
   });
 
   // ─── Portfolio ────────────────────────────────────────────────
+  const portfolioPhase = opts.currentPhase === "Spécialisation" || opts.currentPhase === "Positionnement";
   add({
     title: `Template portfolio data — secteur ${sector}`,
     description: `Structure de projet portfolio combinant votre expertise ${sector} et la data. Prêt à adapter.`,
@@ -222,11 +248,15 @@ function buildResources(opts: {
     category: "Portfolio",
     readTime: "5 min",
     isFree: true,
-    isRecommended: opts.currentPhase === "Spécialisation" || opts.currentPhase === "Positionnement",
+    isRecommended: portfolioPhase,
     url: "https://github.com/sajal2692/data-science-portfolio",
+    aiReason: portfolioPhase
+      ? `Vous êtes en phase "${opts.currentPhase}" — un portfolio est maintenant essentiel pour vous démarquer.`
+      : `Un portfolio data appliqué au secteur ${sector} valorisera votre double compétence.`,
   });
 
   // ─── Interview prep ───────────────────────────────────────────
+  const interviewPhase = opts.currentPhase === "Positionnement" || opts.currentPhase === "Lancement";
   add({
     title: `Préparer un entretien ${target}`,
     description: `Les 20 questions techniques et comportementales les plus fréquentes pour ${target}. Avec réponses modèles.`,
@@ -234,11 +264,15 @@ function buildResources(opts: {
     category: "Entretien",
     readTime: "20 min",
     isFree: true,
-    isRecommended: opts.currentPhase === "Positionnement" || opts.currentPhase === "Lancement",
+    isRecommended: interviewPhase,
     url: "https://www.interviewquery.com/p/data-analyst-interview-questions",
+    aiReason: interviewPhase
+      ? `Vous êtes en phase "${opts.currentPhase}" — préparez vos entretiens dès maintenant.`
+      : `À garder pour plus tard : les questions types pour un poste de ${target}.`,
   });
 
   // ─── LinkedIn ─────────────────────────────────────────────────
+  const linkedinPhase = opts.currentPhase === "Positionnement";
   add({
     title: "Optimiser son LinkedIn pour la data",
     description: `Comment présenter sa transition ${opts.currentRole || "métier"} → ${target}. Titre, résumé, mots-clés.`,
@@ -246,8 +280,11 @@ function buildResources(opts: {
     category: "Personal Branding",
     readTime: "10 min",
     isFree: true,
-    isRecommended: opts.currentPhase === "Positionnement",
+    isRecommended: linkedinPhase,
     url: "https://www.linkedin.com/pulse/how-optimize-your-linkedin-profile-data-career",
+    aiReason: linkedinPhase
+      ? "Vous êtes en phase Positionnement — votre LinkedIn doit refléter votre nouvelle orientation data."
+      : `Optimiser votre LinkedIn facilitera votre visibilité auprès des recruteurs ${target}.`,
   });
 
   // ─── Success stories ──────────────────────────────────────────
@@ -260,6 +297,7 @@ function buildResources(opts: {
     isFree: true,
     isRecommended: false,
     url: "https://www.switchup.org/blog/career-change-to-data-science-stories",
+    aiReason: `Témoignages de personnes qui ont fait la même transition que vous vers ${target}.`,
   });
 
   add({
@@ -271,6 +309,7 @@ function buildResources(opts: {
     isFree: true,
     isRecommended: false,
     url: "https://www.mckinsey.com/capabilities/quantumblack/our-insights/the-state-of-ai",
+    aiReason: `Vue d'ensemble du marché data/IA dans votre secteur cible (${sector}) — salaires et tendances.`,
   });
 
   // Sort: recommended first, then by category

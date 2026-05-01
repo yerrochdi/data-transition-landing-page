@@ -12,6 +12,7 @@ import {
   Star,
   ExternalLink,
   Gift,
+  Info,
 } from "lucide-react";
 import { cn } from "@/lib/utils";
 import type { ResourcesData, ResourceType } from "@/lib/resources/actions";
@@ -185,6 +186,13 @@ export function ResourcesView({ data }: { data: ResourcesData }) {
                     )}
                   </h3>
                   <p className="text-xs text-muted-foreground mb-2 leading-relaxed">{resource.description}</p>
+
+                  {resource.aiReason && (
+                    <div className="flex items-start gap-1.5 mb-2 bg-primary/5 border border-primary/10 rounded-lg px-2.5 py-1.5">
+                      <Info className="w-3 h-3 text-primary shrink-0 mt-0.5" />
+                      <span className="text-[11px] text-primary/80 leading-snug">{resource.aiReason}</span>
+                    </div>
+                  )}
 
                   <div className="flex items-center gap-3 flex-wrap">
                     {resource.readTime && (
