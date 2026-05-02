@@ -239,21 +239,22 @@ export default function HomePage() {
             Tarifs
           </span>
           <h2 className="font-headline text-3xl md:text-4xl font-extrabold text-foreground mb-4">
-            Commencez gratuitement, évoluez à votre rythme
+            Choisissez votre rythme d&apos;évolution
           </h2>
           <p className="text-muted-foreground max-w-lg mx-auto">
-            Le diagnostic et la Phase 1 sont entièrement gratuits. Passez au Pro quand vous êtes prêt à accélérer.
+            Diagnostic gratuit pour découvrir, Boost pour avancer, Pro pour accélérer. Sans engagement.
           </p>
         </div>
 
-        <div className="grid grid-cols-1 md:grid-cols-2 gap-8 max-w-3xl mx-auto">
+        <div className="grid grid-cols-1 md:grid-cols-3 gap-6 max-w-5xl mx-auto">
           {/* Free */}
-          <div className="bg-surface-container-low p-8 rounded-2xl ghost-border">
+          <div className="bg-surface-container-low p-7 rounded-2xl ghost-border">
             <h3 className="font-headline text-xl font-bold text-foreground mb-2">Free</h3>
-            <p className="text-sm text-muted-foreground mb-6">Idéal pour découvrir la plateforme</p>
+            <p className="text-sm text-muted-foreground mb-6">Découvrir la plateforme</p>
             <div className="mb-8">
               <span className="text-4xl font-headline font-black text-foreground">0€</span>
               <span className="text-muted-foreground"> /mois</span>
+              <p className="text-xs text-muted-foreground mt-1">Sans CB requise</p>
             </div>
             <div className="space-y-3 mb-8">
               {[
@@ -263,7 +264,7 @@ export default function HomePage() {
                 { text: "5 messages Copilot / jour", ok: true },
                 { text: "Top 3 opportunités", ok: true },
                 { text: "Phases 2 à 5 du parcours", ok: false },
-                { text: "IA illimitée", ok: false },
+                { text: "Feed communautaire", ok: false },
               ].map((f, i) => (
                 <div key={i} className="flex items-center gap-2.5">
                   {f.ok ? (
@@ -285,18 +286,58 @@ export default function HomePage() {
             </Link>
           </div>
 
-          {/* Pro */}
-          <div className="relative bg-gradient-to-br from-surface-container-low to-primary/5 p-8 rounded-2xl border-2 border-primary/30">
+          {/* Boost — Recommandé */}
+          <div className="relative bg-gradient-to-br from-surface-container-low to-primary/5 p-7 rounded-2xl border-2 border-primary/40 md:scale-105">
             <div className="absolute -top-3 left-1/2 -translate-x-1/2">
               <span className="gradient-primary text-primary-foreground text-[10px] font-bold px-4 py-1.5 rounded-full shadow-lg shadow-primary/20">
                 Recommandé
               </span>
             </div>
             <h3 className="font-headline text-xl font-bold text-foreground mb-2 flex items-center gap-2">
+              <Zap className="w-5 h-5 text-primary" />
+              Boost
+            </h3>
+            <p className="text-sm text-muted-foreground mb-6">Avancer sereinement</p>
+            <div className="mb-8">
+              <span className="text-4xl font-headline font-black text-foreground">19€</span>
+              <span className="text-muted-foreground"> /mois</span>
+              <p className="text-xs text-muted-foreground mt-1">Garantie 14 jours satisfait ou remboursé</p>
+            </div>
+            <div className="space-y-3 mb-8">
+              {[
+                { text: "Tout le plan Free", highlight: false },
+                { text: "Parcours complet (5 phases)", highlight: true },
+                { text: "20 sessions IA / jour", highlight: true },
+                { text: "30 messages Copilot / jour", highlight: true },
+                { text: "Top 10 opportunités matchées", highlight: false },
+                { text: "Feed communautaire", highlight: false },
+              ].map((f, i) => (
+                <div key={i} className="flex items-center gap-2.5">
+                  <Check className={`w-4 h-4 shrink-0 ${f.highlight ? "text-primary" : "text-emerald-400"}`} />
+                  <span className={`text-sm ${f.highlight ? "text-foreground font-bold" : "text-foreground"}`}>
+                    {f.text}
+                  </span>
+                </div>
+              ))}
+            </div>
+            <Link
+              href="/signup?plan=boost"
+              className="block text-center gradient-primary text-primary-foreground px-6 py-3.5 rounded-xl text-sm font-bold hover:scale-[1.02] transition-transform shadow-lg shadow-primary/20"
+            >
+              <span className="flex items-center justify-center gap-2">
+                <Zap className="w-4 h-4" />
+                Démarrer le Boost — 19€
+              </span>
+            </Link>
+          </div>
+
+          {/* Pro */}
+          <div className="bg-surface-container-low p-7 rounded-2xl ghost-border">
+            <h3 className="font-headline text-xl font-bold text-foreground mb-2 flex items-center gap-2">
               <Crown className="w-5 h-5 text-primary" />
               Pro
             </h3>
-            <p className="text-sm text-muted-foreground mb-6">Accès complet pour accélérer votre transition</p>
+            <p className="text-sm text-muted-foreground mb-6">Accélérer au maximum</p>
             <div className="mb-8">
               <span className="text-4xl font-headline font-black text-foreground">49€</span>
               <span className="text-muted-foreground"> /mois</span>
@@ -304,13 +345,12 @@ export default function HomePage() {
             </div>
             <div className="space-y-3 mb-8">
               {[
-                { text: "Tout le plan Free", highlight: false },
-                { text: "Parcours complet (5 phases)", highlight: true },
+                { text: "Tout le plan Boost", highlight: false },
                 { text: "Sessions IA illimitées", highlight: true },
                 { text: "Copilot illimité 24/7", highlight: true },
-                { text: "Toutes les opportunités matchées", highlight: true },
-                { text: "Feed communautaire", highlight: false },
+                { text: "Toutes les opportunités", highlight: true },
                 { text: "Support prioritaire", highlight: false },
+                { text: "Garantie 14 jours", highlight: false },
               ].map((f, i) => (
                 <div key={i} className="flex items-center gap-2.5">
                   <Check className={`w-4 h-4 shrink-0 ${f.highlight ? "text-primary" : "text-emerald-400"}`} />
@@ -322,12 +362,9 @@ export default function HomePage() {
             </div>
             <Link
               href="/signup?plan=pro"
-              className="block text-center gradient-primary text-primary-foreground px-6 py-3.5 rounded-xl text-sm font-bold hover:scale-[1.02] transition-transform shadow-lg shadow-primary/20"
+              className="block text-center bg-surface-container-lowest ghost-border px-6 py-3.5 rounded-xl text-sm font-bold text-foreground hover:bg-surface-container transition-colors"
             >
-              <span className="flex items-center justify-center gap-2">
-                <Zap className="w-4 h-4" />
-                Démarrer le Pro — 49€/mois
-              </span>
+              Démarrer le Pro — 49€
             </Link>
           </div>
         </div>
