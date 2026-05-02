@@ -99,50 +99,30 @@ export default function HomePage() {
       <section className="pt-32 pb-24 px-6 md:px-12 max-w-6xl mx-auto text-center">
         <div className="inline-flex items-center gap-2 bg-primary/10 px-4 py-1.5 rounded-full border border-primary/20 mb-8">
           <Sparkles className="w-4 h-4 text-primary" />
-          <span className="text-xs font-bold text-primary">AI-Powered Career Evolution</span>
+          <span className="text-xs font-bold text-primary">Pour les cadres en évolution</span>
         </div>
         <h1 className="font-headline text-5xl md:text-7xl font-extrabold tracking-tight text-foreground mb-6 leading-[1.1]">
-          Votre transition
+          Les cadres qui maîtrisent
           <br />
-          <span className="text-primary text-glow">professionnelle,</span>
-          <br />
-          pilotée par l&apos;IA
+          <span className="text-primary text-glow">la data valent 2x plus.</span>
         </h1>
         <p className="text-lg md:text-xl text-muted-foreground max-w-2xl mx-auto mb-10 leading-relaxed">
-          NextMove est la plateforme tout-en-un qui accélère votre évolution de carrière grâce à des agents IA spécialisés, un parcours structuré et un accompagnement intelligent.
+          Découvre comment intégrer la data et l&apos;IA à ton expertise — sans tout recommencer. Diagnostic personnalisé en 3 minutes.
         </p>
         <div className="flex flex-col md:flex-row items-center justify-center gap-4">
           <Link
             href="/signup"
             className="gradient-primary text-primary-foreground px-8 py-4 rounded-xl text-base font-bold flex items-center gap-3 hover:scale-105 transition-transform shadow-[0_10px_40px_rgba(75,226,119,0.3)]"
           >
-            Lancer mon diagnostic gratuit
+            Faire mon diagnostic gratuit
             <ArrowRight className="w-5 h-5" />
           </Link>
-          <Link
-            href="/dashboard"
+          <a
+            href="#pricing"
             className="bg-surface-container-lowest px-8 py-4 rounded-xl text-base font-bold text-muted-foreground ghost-border hover:text-foreground transition-colors"
           >
-            Voir la démo
-          </Link>
-        </div>
-
-        {/* Social Proof */}
-        <div className="mt-16 flex items-center justify-center gap-8 text-muted-foreground">
-          <div className="text-center">
-            <p className="text-2xl font-headline font-extrabold text-foreground">2,400+</p>
-            <p className="text-xs">Transitions accompagnées</p>
-          </div>
-          <div className="w-px h-10 bg-border/20" />
-          <div className="text-center">
-            <p className="text-2xl font-headline font-extrabold text-foreground">94%</p>
-            <p className="text-xs">Taux de satisfaction</p>
-          </div>
-          <div className="w-px h-10 bg-border/20" />
-          <div className="text-center">
-            <p className="text-2xl font-headline font-extrabold text-foreground">6 mois</p>
-            <p className="text-xs">Durée moyenne</p>
-          </div>
+            Voir les formules
+          </a>
         </div>
       </section>
 
@@ -253,7 +233,7 @@ export default function HomePage() {
       </section>
 
       {/* Pricing */}
-      <section className="py-24 px-6 md:px-12 max-w-5xl mx-auto">
+      <section id="pricing" className="py-24 px-6 md:px-12 max-w-5xl mx-auto scroll-mt-20">
         <div className="text-center mb-16">
           <span className="text-[10px] font-headline font-bold uppercase tracking-[0.2em] text-primary mb-2 block">
             Tarifs
