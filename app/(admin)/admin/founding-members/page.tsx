@@ -1,5 +1,5 @@
 import { prisma } from "@/lib/db/prisma";
-import { TOTAL_SEATS } from "@/lib/founding-members/actions";
+import { TOTAL_SEATS } from "@/lib/founding-members/constants";
 import { FoundingMembersAdminView } from "./_components/admin-view";
 
 export const dynamic = "force-dynamic";

@@ -7,13 +7,9 @@ import {
   foundingMemberConfirmation,
   foundingMemberAdminNotification,
 } from "@/lib/email/templates";
+import { TOTAL_SEATS } from "./constants";
 
 const ADMIN_EMAIL = "contact@nextmove.sh";
-
-// Total seats available in the Founding Members program.
-// Update this value to change the cap; the counter on /founding-members
-// computes "remaining" as TOTAL_SEATS - count(ACCEPTED).
-export const TOTAL_SEATS = 30;
 
 const ApplicationSchema = z.object({
   name: z.string().trim().min(2, "Nom requis").max(120),
