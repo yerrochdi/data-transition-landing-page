@@ -7,6 +7,7 @@ import {
   foundingMemberConfirmation,
   foundingMemberAdminNotification,
 } from "@/lib/email/templates";
+import { isAdmin } from "@/lib/auth/admin";
 import { TOTAL_SEATS } from "./constants";
 
 const ADMIN_EMAIL = "contact@nextmove.sh";
@@ -125,6 +126,10 @@ export async function updateFoundingMemberStatus(
   status: "PENDING" | "ACCEPTED" | "REJECTED",
   note?: string
 ): Promise<{ ok: boolean; error?: string }> {
+  if (!(await isAdmin())) {
+    return { ok: false, error: "Accès refusé" };
+  }
+
   if (status === "ACCEPTED") {
     const accepted = await prisma.foundingMemberApplication.count({
       where: { status: "ACCEPTED" },

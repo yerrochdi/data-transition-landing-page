@@ -1,6 +1,9 @@
 import Link from "next/link";
+import { requireAdmin } from "@/lib/auth/admin";
 
-export default function AdminLayout({ children }: { children: React.ReactNode }) {
+export default async function AdminLayout({ children }: { children: React.ReactNode }) {
+  await requireAdmin();
+
   return (
     <div className="min-h-screen bg-background text-foreground font-body">
       {/* Admin Topbar */}
