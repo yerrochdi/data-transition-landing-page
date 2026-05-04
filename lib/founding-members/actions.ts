@@ -79,26 +79,28 @@ export async function submitFoundingMemberApplication(
 
   const firstName = data.name.split(" ")[0] ?? data.name;
 
-  // Best-effort notifications — never block the user response on email failures.
-  void sendEmail(
-    data.email,
-    "Candidature Founding Member reçue ✨",
-    foundingMemberConfirmation(firstName)
-  );
-
-  void sendEmail(
-    ADMIN_EMAIL,
-    `Nouvelle candidature Founding Member — ${data.name}`,
-    foundingMemberAdminNotification({
-      name: application.name,
-      email: application.email,
-      linkedinUrl: application.linkedinUrl,
-      currentRole: application.currentRole,
-      currentCompany: application.currentCompany,
-      situation: application.situation,
-      motivation: application.motivation,
-    })
-  );
+  // Await emails so the serverless function doesn't get killed mid-flight,
+  // but never throw on failure — the application is already saved.
+  await Promise.allSettled([
+    sendEmail(
+      data.email,
+      "Candidature Founding Member reçue ✨",
+      foundingMemberConfirmation(firstName)
+    ),
+    sendEmail(
+      ADMIN_EMAIL,
+      `Nouvelle candidature Founding Member — ${data.name}`,
+      foundingMemberAdminNotification({
+        name: application.name,
+        email: application.email,
+        linkedinUrl: application.linkedinUrl,
+        currentRole: application.currentRole,
+        currentCompany: application.currentCompany,
+        situation: application.situation,
+        motivation: application.motivation,
+      })
+    ),
+  ]);
 
   return { ok: true };
 }
