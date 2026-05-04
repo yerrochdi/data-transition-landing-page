@@ -423,12 +423,12 @@ export default function HomePage() {
           <h2 className="font-headline text-3xl md:text-4xl font-extrabold text-foreground mb-4">
             Choisissez votre rythme d&apos;évolution
           </h2>
-          <p className="text-muted-foreground max-w-lg mx-auto">
-            Diagnostic gratuit pour découvrir, Boost pour avancer, Pro pour accélérer. Sans engagement.
+          <p className="text-muted-foreground max-w-2xl mx-auto">
+            Diagnostic gratuit pour découvrir, Boost pour avancer, Pro pour accélérer, Sprint pour des résultats express. Sans engagement.
           </p>
         </div>
 
-        <div className="grid grid-cols-1 md:grid-cols-3 gap-6 max-w-5xl mx-auto">
+        <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-4 gap-5">
           {/* Free */}
           <div className="bg-surface-container-low p-7 rounded-2xl ghost-border">
             <h3 className="font-headline text-xl font-bold text-foreground mb-2">Free</h3>
@@ -469,7 +469,7 @@ export default function HomePage() {
           </div>
 
           {/* Boost — Recommandé */}
-          <div className="relative bg-gradient-to-br from-surface-container-low to-primary/5 p-7 rounded-2xl border-2 border-primary/40 md:scale-105">
+          <div className="relative bg-gradient-to-br from-surface-container-low to-primary/5 p-7 rounded-2xl border-2 border-primary/40">
             <div className="absolute -top-3 left-1/2 -translate-x-1/2">
               <span className="gradient-primary text-primary-foreground text-[10px] font-bold px-4 py-1.5 rounded-full shadow-lg shadow-primary/20">
                 Recommandé
@@ -547,6 +547,51 @@ export default function HomePage() {
               className="block text-center bg-surface-container-lowest ghost-border px-6 py-3.5 rounded-xl text-sm font-bold text-foreground hover:bg-surface-container transition-colors"
             >
               Démarrer le Pro — 49€
+            </Link>
+          </div>
+
+          {/* Sprint — Résultat express */}
+          <div className="relative bg-surface-container-low p-7 rounded-2xl ghost-border">
+            <div className="absolute -top-3 left-1/2 -translate-x-1/2">
+              <span className="bg-amber-500/15 text-amber-400 border border-amber-500/30 text-[10px] font-bold px-4 py-1.5 rounded-full">
+                Résultat express
+              </span>
+            </div>
+            <h3 className="font-headline text-xl font-bold text-foreground mb-2 flex items-center gap-2">
+              <Sparkles className="w-5 h-5 text-amber-400" />
+              Sprint
+            </h3>
+            <p className="text-sm text-muted-foreground mb-6">Boost intensif sur 30 jours</p>
+            <div className="mb-8">
+              <span className="text-4xl font-headline font-black text-foreground">149€</span>
+              <span className="text-muted-foreground"> unique</span>
+              <p className="text-xs text-muted-foreground mt-1">Garantie 7 jours satisfait ou remboursé</p>
+            </div>
+            <div className="space-y-3 mb-8">
+              {[
+                { text: "Tout le plan Pro pendant 30 jours", highlight: true },
+                { text: "Plan d'attaque personnalisé", highlight: true },
+                { text: "Préparation accélérée entretiens", highlight: false },
+                { text: "Suivi quotidien intensif Copilot", highlight: false },
+                { text: "Sans abonnement", highlight: false },
+                { text: "Sans reconduction", highlight: false },
+              ].map((f, i) => (
+                <div key={i} className="flex items-center gap-2.5">
+                  <Check className={`w-4 h-4 shrink-0 ${f.highlight ? "text-amber-400" : "text-emerald-400"}`} />
+                  <span className={`text-sm ${f.highlight ? "text-foreground font-bold" : "text-foreground"}`}>
+                    {f.text}
+                  </span>
+                </div>
+              ))}
+            </div>
+            <Link
+              href="/signup?plan=sprint"
+              className="block text-center bg-amber-500/10 border border-amber-500/30 text-amber-400 px-6 py-3.5 rounded-xl text-sm font-bold hover:bg-amber-500/15 transition-colors"
+            >
+              <span className="flex items-center justify-center gap-2">
+                <Sparkles className="w-4 h-4" />
+                Démarrer le Sprint — 149€
+              </span>
             </Link>
           </div>
         </div>
