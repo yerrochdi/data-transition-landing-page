@@ -39,6 +39,64 @@ export function welcomeEmail(firstName: string, targetRole: string | null): stri
   `);
 }
 
+export function foundingMemberConfirmation(firstName: string): string {
+  return layout(`
+    <h1 style="color:#fff;font-size:22px;margin:0 0 16px">Candidature reçue ${firstName} ✨</h1>
+    <p>Merci pour ta candidature au programme <strong style="color:#4be277">Founding Members</strong> de NextMove.</p>
+    <p>Voici la suite :</p>
+    <ul style="padding-left:20px;margin:16px 0">
+      <li><strong>Sélection sous 48h</strong> — je relis chaque candidature personnellement</li>
+      <li><strong>Si retenu</strong> — tu reçois un email avec un lien d'activation au tarif Founding Member (9€/mois à vie)</li>
+      <li><strong>Onboarding personnalisé</strong> — un call de 30 min en visio pour démarrer dans les meilleures conditions</li>
+    </ul>
+    <p>En attendant, n'hésite pas à me contacter directement : <a href="mailto:contact@nextmove.sh" style="color:#4be277">contact@nextmove.sh</a></p>
+    <p style="color:#888;font-size:12px;margin-top:24px">À très vite,<br/>Yassine — Fondateur de NextMove</p>
+  `);
+}
+
+export function foundingMemberAdminNotification(application: {
+  name: string;
+  email: string;
+  linkedinUrl: string;
+  currentRole: string;
+  currentCompany: string;
+  situation: string;
+  motivation: string;
+}): string {
+  return layout(`
+    <h1 style="color:#fff;font-size:22px;margin:0 0 16px">Nouvelle candidature Founding Member 🚀</h1>
+    <table style="width:100%;border-collapse:collapse;margin:16px 0">
+      <tr><td style="padding:6px 0;color:#888;width:140px">Nom</td><td style="padding:6px 0;color:#fff"><strong>${application.name}</strong></td></tr>
+      <tr><td style="padding:6px 0;color:#888">Email</td><td style="padding:6px 0;color:#fff"><a href="mailto:${application.email}" style="color:#4be277">${application.email}</a></td></tr>
+      <tr><td style="padding:6px 0;color:#888">LinkedIn</td><td style="padding:6px 0;color:#fff"><a href="${application.linkedinUrl}" style="color:#4be277" target="_blank">${application.linkedinUrl}</a></td></tr>
+      <tr><td style="padding:6px 0;color:#888">Poste</td><td style="padding:6px 0;color:#fff">${application.currentRole}</td></tr>
+      <tr><td style="padding:6px 0;color:#888">Entreprise</td><td style="padding:6px 0;color:#fff">${application.currentCompany}</td></tr>
+    </table>
+    <div style="margin-top:20px">
+      <p style="color:#888;font-size:12px;margin:0 0 4px">Situation actuelle</p>
+      <p style="color:#e0e0e0;background:#0a0a0a;border-radius:8px;padding:12px;margin:0;white-space:pre-wrap">${escapeHtml(application.situation)}</p>
+    </div>
+    <div style="margin-top:16px">
+      <p style="color:#888;font-size:12px;margin:0 0 4px">Motivation</p>
+      <p style="color:#e0e0e0;background:#0a0a0a;border-radius:8px;padding:12px;margin:0;white-space:pre-wrap">${escapeHtml(application.motivation)}</p>
+    </div>
+    <div style="text-align:center;margin:24px 0">
+      <a href="${SITE_URL}/admin/founding-members" style="display:inline-block;background:linear-gradient(135deg,#4be277,#36d068);color:#000;font-weight:bold;font-size:14px;padding:12px 28px;border-radius:12px;text-decoration:none">
+        Gérer les candidatures
+      </a>
+    </div>
+  `);
+}
+
+function escapeHtml(s: string): string {
+  return s
+    .replace(/&/g, "&amp;")
+    .replace(/</g, "&lt;")
+    .replace(/>/g, "&gt;")
+    .replace(/"/g, "&quot;")
+    .replace(/'/g, "&#039;");
+}
+
 export function upgradeEmail(firstName: string): string {
   return layout(`
     <h1 style="color:#fff;font-size:22px;margin:0 0 16px">Bienvenue dans le plan Pro ✨</h1>

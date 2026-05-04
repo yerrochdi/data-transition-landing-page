@@ -2,6 +2,7 @@
 
 import Link from "next/link";
 import Image from "next/image";
+import { FoundingBanner } from "@/components/marketing/founding-banner";
 import {
   ArrowRight,
   Sparkles,
@@ -70,6 +71,7 @@ function AgentShowcase({
 export default function HomePage() {
   return (
     <div>
+      <FoundingBanner />
       {/* Floating Nav */}
       <nav className="fixed top-0 w-full z-50 flex items-center justify-between px-6 md:px-12 h-16 bg-surface/80 backdrop-blur-xl">
         <div className="flex items-center gap-3">
