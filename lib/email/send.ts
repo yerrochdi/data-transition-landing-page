@@ -1,5 +1,5 @@
 const RESEND_API = "https://api.resend.com/emails";
-const FROM = "NextMove AI <onboarding@resend.dev>";
+const FROM = "NextMove AI <contact@nextmove.sh>";
 
 export async function sendEmail(to: string, subject: string, html: string): Promise<boolean> {
   const apiKey = process.env.RESEND_API_KEY;
