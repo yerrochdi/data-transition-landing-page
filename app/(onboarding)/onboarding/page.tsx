@@ -8,7 +8,10 @@ export default async function OnboardingPage({
 }) {
   const { data } = await loadOnboardingProgress();
   const params = await searchParams;
-  const chosenPlan = params.plan === "pro" ? "pro" : "free";
+  const validPlans = ["boost", "pro", "sprint"] as const;
+  const chosenPlan = validPlans.includes(params.plan as typeof validPlans[number])
+    ? (params.plan as "boost" | "pro" | "sprint")
+    : "free";
 
   return <OnboardingFlow initialData={data} chosenPlan={chosenPlan} />;
 }

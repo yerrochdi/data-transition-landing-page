@@ -19,8 +19,9 @@ export async function signUp(formData: FormData) {
       ? `https://${process.env.VERCEL_URL}`
       : "http://localhost:3000");
 
-  const callbackUrl = chosenPlan === "pro"
-    ? `${siteUrl}/callback?plan=pro`
+  const validPaidPlans = ["boost", "pro", "sprint"];
+  const callbackUrl = validPaidPlans.includes(chosenPlan ?? "")
+    ? `${siteUrl}/callback?plan=${chosenPlan}`
     : `${siteUrl}/callback`;
 
   const { data, error } = await supabase.auth.signUp({

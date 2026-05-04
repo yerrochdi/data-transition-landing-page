@@ -9,7 +9,7 @@ interface StepSummaryProps {
   formData: OnboardingFormData;
   aiContent: string | null;
   onAiUpdate: (content: string) => void;
-  chosenPlan?: "pro" | "free";
+  chosenPlan?: "free" | "boost" | "pro" | "sprint";
 }
 
 function CareerScore({ confidence, hasData }: { confidence: number; hasData: boolean }) {
@@ -91,7 +91,7 @@ export function StepSummary({
   onAiUpdate,
   chosenPlan = "free",
 }: StepSummaryProps) {
-  const isPro = chosenPlan === "pro";
+  const isPro = chosenPlan !== "free";
 
   return (
     <div className="space-y-6">

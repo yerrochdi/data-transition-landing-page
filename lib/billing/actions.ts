@@ -3,6 +3,7 @@
 import { createClient } from "@/lib/supabase/server";
 import { prisma } from "@/lib/db";
 import { getStripe } from "./stripe";
+import { isPaidPlan, hasActiveSprint } from "./plan";
 
 // ─── Helpers ────────────────────────────────────────────────────
 
@@ -14,8 +15,35 @@ async function getCurrentUser() {
   if (!user) return null;
   return prisma.user.findUnique({
     where: { supabaseId: user.id },
-    select: { id: true, email: true, firstName: true, plan: true },
+    select: {
+      id: true,
+      email: true,
+      firstName: true,
+      plan: true,
+      sprintExpiresAt: true,
+    },
   });
+}
+
+// ─── Plan → Stripe price ID resolution ──────────────────────────
+
+export type CheckoutPlan = "boost" | "pro" | "sprint" | "founding";
+
+function getPriceIdForPlan(plan: CheckoutPlan): string | null {
+  switch (plan) {
+    case "boost":
+      return process.env.STRIPE_BOOST_PRICE_ID ?? null;
+    case "pro":
+      return process.env.STRIPE_PRO_PRICE_ID ?? null;
+    case "sprint":
+      return process.env.STRIPE_SPRINT_PRICE_ID ?? null;
+    case "founding":
+      return process.env.STRIPE_FOUNDING_PRICE_ID ?? null;
+  }
+}
+
+function isOneTimePlan(plan: CheckoutPlan): boolean {
+  return plan === "sprint";
 }
 
 // ─── Daily Usage Counter ────────────────────────────────────────
@@ -53,30 +81,41 @@ export async function getDailyUsage(
 
 // ─── Create Checkout Session ────────────────────────────────────
 
-export async function createCheckoutSession(): Promise<{
+export async function createCheckoutSession(
+  plan: CheckoutPlan = "pro"
+): Promise<{
   url: string | null;
   error?: string;
 }> {
   const user = await getCurrentUser();
   if (!user) return { url: null, error: "Non authentifié" };
 
-  if (user.plan === "PREMIUM") {
-    return { url: null, error: "Vous êtes déjà Premium" };
+  // Block re-purchase for users who already have higher-tier access
+  // (except Sprint, which is always allowed as a one-time top-up).
+  if (plan !== "sprint" && isPaidPlan({ plan: user.plan, sprintExpiresAt: user.sprintExpiresAt })) {
+    return { url: null, error: "Vous avez déjà un abonnement actif" };
   }
 
-  const priceId = process.env.STRIPE_PRO_PRICE_ID;
+  // Founding Member is invite-only — only allow checkout if user already
+  // has plan === FOUNDING (set by admin acceptance flow). Public access
+  // to ?plan=founding is rejected.
+  if (plan === "founding" && user.plan !== "FOUNDING") {
+    return { url: null, error: "Programme Founding Member sur invitation uniquement" };
+  }
+
+  const priceId = getPriceIdForPlan(plan);
   if (!priceId) {
     return { url: null, error: "Configuration prix manquante" };
   }
 
   try {
     const session = await getStripe().checkout.sessions.create({
-      mode: "subscription",
+      mode: isOneTimePlan(plan) ? "payment" : "subscription",
       payment_method_types: ["card"],
       customer_email: user.email,
-      metadata: { userId: user.id },
+      metadata: { userId: user.id, plan },
       line_items: [{ price: priceId, quantity: 1 }],
-      success_url: `${process.env.NEXT_PUBLIC_SITE_URL}/dashboard?upgraded=true`,
+      success_url: `${process.env.NEXT_PUBLIC_SITE_URL}/dashboard?upgraded=${plan}`,
       cancel_url: `${process.env.NEXT_PUBLIC_SITE_URL}/upgrade`,
       allow_promotion_codes: true,
     });

@@ -69,10 +69,14 @@ const iconMap: Record<string, React.ElementType> = {
   User, Briefcase, GraduationCap, Target, Zap, Heart, Shield, Flame, Settings, Sparkles, Linkedin, Cpu,
 };
 
+type ChosenPlan = "free" | "boost" | "pro" | "sprint";
+
 interface OnboardingFlowProps {
   initialData?: Partial<OnboardingFormData> | null;
-  chosenPlan?: "pro" | "free";
+  chosenPlan?: ChosenPlan;
 }
+
+const PAID_CHOSEN_PLANS: ChosenPlan[] = ["boost", "pro", "sprint"];
 
 export function OnboardingFlow({ initialData, chosenPlan = "free" }: OnboardingFlowProps) {
   const router = useRouter();
@@ -139,9 +143,9 @@ export function OnboardingFlow({ initialData, chosenPlan = "free" }: OnboardingF
         aiInsights.skills
       ).then(async (result) => {
         if (result.success) {
-          // If user chose Pro plan during signup → redirect to Stripe Checkout
-          if (chosenPlan === "pro") {
-            const checkout = await createCheckoutSession();
+          // If user chose a paid plan during signup → redirect to Stripe Checkout
+          if (PAID_CHOSEN_PLANS.includes(chosenPlan)) {
+            const checkout = await createCheckoutSession(chosenPlan as "boost" | "pro" | "sprint");
             if (checkout.url) {
               window.location.href = checkout.url;
               return;
@@ -443,7 +447,7 @@ export function OnboardingFlow({ initialData, chosenPlan = "free" }: OnboardingF
               "Finalisation..."
             ) : isLast ? (
               <>
-                {chosenPlan === "pro" ? "Passer au paiement" : "Lancer mon parcours"}
+                {PAID_CHOSEN_PLANS.includes(chosenPlan) ? "Passer au paiement" : "Lancer mon parcours"}
                 <Sparkles className="w-4 h-4" />
               </>
             ) : (

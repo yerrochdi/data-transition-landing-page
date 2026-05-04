@@ -2,6 +2,73 @@ import { NextRequest } from "next/server";
 import { getStripe } from "@/lib/billing/stripe";
 import { prisma } from "@/lib/db";
 import type Stripe from "stripe";
+import type { Plan } from "@/lib/generated/prisma/enums";
+
+const SPRINT_DURATION_DAYS = 30;
+
+/**
+ * Maps a Stripe price ID to its corresponding Plan enum value (or
+ * `"SPRINT"` as a marker for the one-time pass).
+ */
+function planFromPriceId(priceId: string | null | undefined): Plan | "SPRINT" | null {
+  if (!priceId) return null;
+  if (priceId === process.env.STRIPE_BOOST_PRICE_ID) return "BOOST";
+  if (priceId === process.env.STRIPE_PRO_PRICE_ID) return "PREMIUM";
+  if (priceId === process.env.STRIPE_FOUNDING_PRICE_ID) return "FOUNDING";
+  if (priceId === process.env.STRIPE_SPRINT_PRICE_ID) return "SPRINT";
+  return null;
+}
+
+async function activateSprint(userId: string) {
+  const expiresAt = new Date();
+  expiresAt.setDate(expiresAt.getDate() + SPRINT_DURATION_DAYS);
+
+  const user = await prisma.user.update({
+    where: { id: userId },
+    data: { sprintExpiresAt: expiresAt },
+    select: { email: true, firstName: true },
+  });
+
+  await prisma.activity.create({
+    data: {
+      userId,
+      type: "MILESTONE",
+      title: "Sprint 30 jours activé",
+      description: `Accès Pro illimité pendant 30 jours, jusqu'au ${expiresAt.toLocaleDateString("fr-FR")}.`,
+      icon: "Zap",
+    },
+  });
+
+  return user;
+}
+
+async function activatePlan(userId: string, plan: Plan) {
+  const user = await prisma.user.update({
+    where: { id: userId },
+    data: { plan },
+    select: { email: true, firstName: true },
+  });
+
+  const labels: Record<Plan, string> = {
+    FREE: "Free",
+    BOOST: "Boost",
+    PREMIUM: "Pro",
+    FOUNDING: "Founding Member",
+    ENTERPRISE: "Enterprise",
+  };
+
+  await prisma.activity.create({
+    data: {
+      userId,
+      type: "MILESTONE",
+      title: `Passage au plan ${labels[plan]}`,
+      description: `Abonnement ${labels[plan]} activé.`,
+      icon: "Crown",
+    },
+  });
+
+  return user;
+}
 
 export async function POST(request: NextRequest) {
   const body = await request.text();
@@ -29,29 +96,41 @@ export async function POST(request: NextRequest) {
       case "checkout.session.completed": {
         const session = event.data.object as Stripe.Checkout.Session;
         const userId = session.metadata?.userId;
+        if (!userId) break;
 
-        if (userId) {
-          const user = await prisma.user.update({
-            where: { id: userId },
-            data: { plan: "PREMIUM" },
-            select: { email: true, firstName: true },
-          });
+        // Determine which plan was purchased by inspecting the line item.
+        const lineItems = await getStripe().checkout.sessions.listLineItems(
+          session.id,
+          { limit: 1 }
+        );
+        const priceId = lineItems.data[0]?.price?.id;
+        const target = planFromPriceId(priceId);
 
-          // Log activity
-          await prisma.activity.create({
-            data: {
-              userId,
-              type: "MILESTONE",
-              title: "Passage au plan Premium",
-              description: "Abonnement Premium activé — accès illimité débloqué !",
-              icon: "Crown",
-            },
-          });
+        if (!target) {
+          console.warn("[webhook] checkout.session.completed with unknown priceId", priceId);
+          break;
+        }
 
-          // Send upgrade confirmation email (non-blocking)
+        if (target === "SPRINT") {
+          const user = await activateSprint(userId);
           import("@/lib/email/send").then(({ sendEmail }) =>
             import("@/lib/email/templates").then(({ upgradeEmail }) =>
-              sendEmail(user.email, "Bienvenue dans le plan Pro NextMove ✨", upgradeEmail(user.firstName))
+              sendEmail(
+                user.email,
+                "Sprint NextMove activé — 30 jours d'accès Pro ⚡",
+                upgradeEmail(user.firstName)
+              )
+            )
+          ).catch(console.error);
+        } else {
+          const user = await activatePlan(userId, target);
+          import("@/lib/email/send").then(({ sendEmail }) =>
+            import("@/lib/email/templates").then(({ upgradeEmail }) =>
+              sendEmail(
+                user.email,
+                "Bienvenue sur NextMove ✨",
+                upgradeEmail(user.firstName)
+              )
             )
           ).catch(console.error);
         }
@@ -61,19 +140,30 @@ export async function POST(request: NextRequest) {
       case "customer.subscription.deleted":
       case "customer.subscription.updated": {
         const subscription = event.data.object as Stripe.Subscription;
+
         const customerEmail =
           typeof subscription.customer === "string"
             ? (await getStripe().customers.retrieve(subscription.customer) as Stripe.Customer).email
             : null;
+        if (!customerEmail) break;
 
-        if (customerEmail) {
-          const isActive =
-            subscription.status === "active" ||
-            subscription.status === "trialing";
+        const isActive =
+          subscription.status === "active" || subscription.status === "trialing";
 
+        // Identify the plan from the subscription's price ID so we don't
+        // wrongly downgrade Founding to PREMIUM or vice versa on update.
+        const priceId = subscription.items.data[0]?.price?.id;
+        const target = planFromPriceId(priceId);
+
+        if (isActive && target && target !== "SPRINT") {
           await prisma.user.updateMany({
             where: { email: customerEmail },
-            data: { plan: isActive ? "PREMIUM" : "FREE" },
+            data: { plan: target },
+          });
+        } else if (!isActive) {
+          await prisma.user.updateMany({
+            where: { email: customerEmail },
+            data: { plan: "FREE" },
           });
         }
         break;

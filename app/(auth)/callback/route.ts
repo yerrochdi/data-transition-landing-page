@@ -71,7 +71,10 @@ export async function GET(request: Request) {
 
       // Pass chosen plan from signup (stored in user_metadata or URL param)
       const chosenPlan = searchParams.get("plan") || data.user.user_metadata?.chosen_plan;
-      const planParam = chosenPlan === "pro" ? "?plan=pro" : "";
+      const validPaidPlans = ["boost", "pro", "sprint"];
+      const planParam = validPaidPlans.includes(chosenPlan ?? "")
+        ? `?plan=${chosenPlan}`
+        : "";
 
       if (dbUser && !dbUser.onboardingCompleted) {
         return NextResponse.redirect(`${origin}/onboarding${planParam}`);

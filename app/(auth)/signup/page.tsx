@@ -9,7 +9,25 @@ import { signUp, signInWithGoogle } from "@/lib/auth/actions";
 function SignupForm() {
   const searchParams = useSearchParams();
   const planParam = searchParams.get("plan");
-  const isPro = planParam === "pro";
+  const validPlans = ["boost", "pro", "sprint"];
+  const chosenPlan = validPlans.includes(planParam ?? "")
+    ? (planParam as "boost" | "pro" | "sprint")
+    : "free";
+  const isPro = chosenPlan !== "free";
+
+  const planLabel: Record<typeof chosenPlan, string> = {
+    free: "Commencez gratuitement",
+    boost: "Plan Boost — 19€/mois",
+    pro: "Plan Pro — 49€/mois",
+    sprint: "Sprint — 149€ (30 jours)",
+  };
+
+  const planSubtitle: Record<typeof chosenPlan, string> = {
+    free: "Lancez votre diagnostic IA en 5 minutes",
+    boost: "Diagnostic IA + parcours complet après paiement",
+    pro: "Diagnostic IA + accès complet après paiement",
+    sprint: "Diagnostic IA + 30 jours d'accès Pro après paiement",
+  };
 
   const [error, setError] = useState<string | null>(null);
   const [loading, setLoading] = useState(false);
@@ -85,14 +103,14 @@ function SignupForm() {
         <div className={`inline-flex items-center gap-2 px-4 py-1.5 rounded-full border mb-4 ${isPro ? "bg-primary/10 border-primary/30" : "bg-primary/10 border-primary/20"}`}>
           {isPro ? <Crown className="w-4 h-4 text-primary" /> : <Sparkles className="w-4 h-4 text-primary" />}
           <span className="text-xs font-bold text-primary">
-            {isPro ? "Plan Pro — 49€/mois" : "Commencez gratuitement"}
+            {planLabel[chosenPlan]}
           </span>
         </div>
         <h1 className="font-headline text-3xl font-extrabold text-foreground mb-2">
           Créer votre compte
         </h1>
         <p className="text-sm text-muted-foreground">
-          {isPro ? "Diagnostic IA + accès complet après paiement" : "Lancez votre diagnostic IA en 5 minutes"}
+          {planSubtitle[chosenPlan]}
         </p>
       </div>
 
@@ -122,7 +140,7 @@ function SignupForm() {
 
       {/* Email form */}
       <form action={handleSubmit} className="space-y-4">
-        <input type="hidden" name="chosenPlan" value={isPro ? "pro" : "free"} />
+        <input type="hidden" name="chosenPlan" value={chosenPlan} />
         <div className="grid grid-cols-2 gap-4">
           <div>
             <label className="text-xs font-bold text-muted-foreground uppercase tracking-widest mb-2 block">
