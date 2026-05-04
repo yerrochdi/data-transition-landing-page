@@ -206,6 +206,108 @@ export default function HomePage() {
         </p>
       </section>
 
+      {/* Pour qui ça marche — 3 archétypes */}
+      <section className="py-24 px-6 md:px-12 max-w-6xl mx-auto">
+        <div className="text-center mb-16">
+          <span className="text-[10px] font-headline font-bold uppercase tracking-[0.2em] text-primary mb-2 block">
+            Pour qui ça marche
+          </span>
+          <h2 className="font-headline text-3xl md:text-4xl font-extrabold text-foreground mb-4">
+            Trois façons d&apos;intégrer la data à ta carrière
+          </h2>
+          <p className="text-muted-foreground max-w-2xl mx-auto">
+            La plateforme s&apos;adapte à ton profil. Voici trois trajectoires types selon ton point de départ et ton ambition.
+          </p>
+        </div>
+
+        <div className="grid grid-cols-1 md:grid-cols-3 gap-6">
+          {[
+            {
+              tag: "Le Pivoteur Tech",
+              transition: "Director Marketing → AI Product Manager",
+              persona:
+                "Marc, 42 ans, 15 ans en marketing dans la grande conso. Sent que son métier classique est bouleversé par l'IA. Veut pivoter sans repartir junior.",
+              steps: [
+                "Diagnostic complet du profil",
+                "Identification AI Product Manager comme cible",
+                "Upskilling produit + IA",
+                "Repositionnement LinkedIn",
+                "Opportunités matchées en scale-up",
+              ],
+              icon: Zap,
+            },
+            {
+              tag: "L'Upgrader Data-Driven",
+              transition: "CFO classique → CFO data-driven",
+              persona:
+                "Sophie, 45 ans, DAF d'une PME industrielle. Ne veut pas changer de métier mais sent qu'il faut maîtriser la data pour rester compétitive.",
+              steps: [
+                "Diagnostic du gap data finance",
+                "Upskilling outils data finance",
+                "Projet interne data-driven",
+                "Repositionnement comme CFO moderne",
+                "Évolution interne ou externe",
+              ],
+              icon: TrendingUp,
+            },
+            {
+              tag: "L'Hybrideur Stratégique",
+              transition: "Product Manager → Senior PM spécialisé IA",
+              persona:
+                "Thomas, 38 ans, PM dans la fintech. Veut prendre de l'avance sur l'IA sans devenir technique pur.",
+              steps: [
+                "Diagnostic du gap IA",
+                "Formation produit IA + portfolio",
+                "Construction de cas concrets",
+                "Networking ciblé scale-ups IA",
+                "Passage à un rôle Senior AI PM",
+              ],
+              icon: Star,
+            },
+          ].map((archetype) => (
+            <div
+              key={archetype.tag}
+              className="bg-surface-container-low p-7 rounded-2xl ghost-border hover-glow group transition-all flex flex-col"
+            >
+              <div className="w-11 h-11 rounded-xl bg-primary/10 flex items-center justify-center text-primary mb-5 group-hover:scale-110 transition-transform">
+                <archetype.icon className="w-5 h-5" />
+              </div>
+
+              <p className="text-[11px] font-bold uppercase tracking-wider text-primary mb-2">
+                {archetype.tag}
+              </p>
+              <h3 className="font-headline text-lg font-bold text-foreground mb-4 leading-snug">
+                {archetype.transition}
+              </h3>
+
+              <p className="text-sm text-muted-foreground leading-relaxed mb-5 italic">
+                {archetype.persona}
+              </p>
+
+              <div className="border-t border-border/20 pt-4 mt-auto">
+                <p className="text-[10px] font-bold uppercase tracking-wider text-muted-foreground mb-3">
+                  Parcours type
+                </p>
+                <ul className="space-y-2">
+                  {archetype.steps.map((step, i) => (
+                    <li key={i} className="flex items-start gap-2 text-xs text-foreground/80">
+                      <span className="w-4 h-4 rounded-full bg-primary/10 text-primary text-[10px] font-bold flex items-center justify-center shrink-0 mt-0.5">
+                        {i + 1}
+                      </span>
+                      <span className="leading-relaxed">{step}</span>
+                    </li>
+                  ))}
+                </ul>
+              </div>
+            </div>
+          ))}
+        </div>
+
+        <p className="text-[11px] text-muted-foreground/60 text-center mt-8 max-w-2xl mx-auto">
+          Exemples de parcours types — vos résultats dépendent de votre profil et de votre engagement.
+        </p>
+      </section>
+
       {/* How it Works */}
       <section className="py-24 px-6 md:px-12 max-w-6xl mx-auto">
         <div className="text-center mb-16">
