@@ -1,6 +1,7 @@
 "use client";
 
 import Link from "next/link";
+import Image from "next/image";
 import {
   ArrowRight,
   Sparkles,
@@ -80,6 +81,12 @@ export default function HomePage() {
           </span>
         </div>
         <div className="flex items-center gap-4">
+          <Link
+            href="/about"
+            className="hidden md:block text-sm text-muted-foreground hover:text-primary transition-colors font-headline font-bold"
+          >
+            À propos
+          </Link>
           <Link
             href="/login"
             className="hidden md:block text-sm text-muted-foreground hover:text-primary transition-colors font-headline font-bold"
@@ -366,6 +373,59 @@ export default function HomePage() {
             >
               Démarrer le Pro — 49€
             </Link>
+          </div>
+        </div>
+      </section>
+
+      {/* Qui suis-je */}
+      <section className="py-24 px-6 md:px-12 max-w-5xl mx-auto">
+        <div className="grid grid-cols-1 md:grid-cols-[280px_1fr] gap-10 md:gap-14 items-center">
+          {/* Photo */}
+          <div className="relative mx-auto md:mx-0">
+            <div className="absolute inset-0 gradient-primary opacity-20 blur-2xl rounded-full" />
+            <div className="relative w-56 h-56 md:w-64 md:h-64 rounded-2xl overflow-hidden ghost-border">
+              <Image
+                src="/founder.png"
+                alt="Yassine Errochdi, fondateur de NextMove AI"
+                width={512}
+                height={512}
+                className="w-full h-full object-cover"
+                priority
+              />
+            </div>
+          </div>
+
+          {/* Bio */}
+          <div>
+            <span className="text-[10px] font-headline font-bold uppercase tracking-[0.2em] text-primary mb-2 block">
+              Qui suis-je
+            </span>
+            <h2 className="font-headline text-3xl md:text-4xl font-extrabold text-foreground mb-6">
+              Pourquoi j&apos;ai créé NextMove
+            </h2>
+            <div className="space-y-4 text-muted-foreground leading-relaxed">
+              <p>
+                Je suis Yassine Errochdi, expert data &amp; IA. J&apos;ai accompagné des grands groupes français — Crédit Agricole Assurances, Total, EDF, Sopra, Catalina — sur leurs transformations data, et formé leurs équipes sur ces sujets.
+              </p>
+              <p>
+                Au fil de ces missions, un constat partout le même : trop de cadres talentueux pensent qu&apos;ils sont condamnés à l&apos;obsolescence face à l&apos;IA. <span className="text-foreground font-bold">C&apos;est faux.</span>
+              </p>
+              <p>
+                Les cadres qui intègrent la data et l&apos;IA à leur expertise existante deviennent les profils les plus recherchés du marché. Pas les juniors qui repartent de zéro — ceux qui capitalisent sur leurs années d&apos;expérience.
+              </p>
+              <p>
+                NextMove existe pour leur donner le plan, les outils et les opportunités. Mon objectif : accompagner 1000 cadres FR dans cette évolution en 3 ans.
+              </p>
+            </div>
+            <div className="mt-6 flex flex-col sm:flex-row gap-3">
+              <Link
+                href="/about"
+                className="inline-flex items-center justify-center gap-2 bg-surface-container-lowest ghost-border px-5 py-2.5 rounded-xl text-sm font-bold text-foreground hover:bg-surface-container transition-colors"
+              >
+                En savoir plus
+                <ArrowRight className="w-4 h-4" />
+              </Link>
+            </div>
           </div>
         </div>
       </section>
