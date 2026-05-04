@@ -432,7 +432,7 @@ export default function HomePage() {
 
         <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-4 gap-5">
           {/* Free */}
-          <div className="bg-surface-container-low p-7 rounded-2xl ghost-border">
+          <div className="bg-surface-container-low p-7 rounded-2xl ghost-border flex flex-col">
             <h3 className="font-headline text-xl font-bold text-foreground mb-2">Free</h3>
             <p className="text-sm text-muted-foreground mb-6">Découvrir la plateforme</p>
             <div className="mb-8">
@@ -464,14 +464,14 @@ export default function HomePage() {
             </div>
             <Link
               href="/signup"
-              className="block text-center bg-surface-container-lowest ghost-border px-6 py-3.5 rounded-xl text-sm font-bold text-foreground hover:bg-surface-container transition-colors"
+              className="block text-center bg-surface-container-lowest ghost-border px-6 py-3.5 rounded-xl text-sm font-bold text-foreground hover:bg-surface-container transition-colors mt-auto"
             >
               Commencer gratuitement
             </Link>
           </div>
 
           {/* Boost — Recommandé */}
-          <div className="relative bg-gradient-to-br from-surface-container-low to-primary/5 p-7 rounded-2xl border-2 border-primary/40">
+          <div className="relative bg-gradient-to-br from-surface-container-low to-primary/5 p-7 rounded-2xl border-2 border-primary/40 flex flex-col">
             <div className="absolute -top-3 left-1/2 -translate-x-1/2">
               <span className="gradient-primary text-primary-foreground text-[10px] font-bold px-4 py-1.5 rounded-full shadow-lg shadow-primary/20">
                 Recommandé
@@ -506,7 +506,7 @@ export default function HomePage() {
             </div>
             <Link
               href="/signup?plan=boost"
-              className="block text-center gradient-primary text-primary-foreground px-6 py-3.5 rounded-xl text-sm font-bold hover:scale-[1.02] transition-transform shadow-lg shadow-primary/20"
+              className="block text-center gradient-primary text-primary-foreground px-6 py-3.5 rounded-xl text-sm font-bold hover:scale-[1.02] transition-transform shadow-lg shadow-primary/20 mt-auto"
             >
               <span className="flex items-center justify-center gap-2">
                 <Zap className="w-4 h-4" />
@@ -516,7 +516,7 @@ export default function HomePage() {
           </div>
 
           {/* Pro */}
-          <div className="bg-surface-container-low p-7 rounded-2xl ghost-border">
+          <div className="bg-surface-container-low p-7 rounded-2xl ghost-border flex flex-col">
             <h3 className="font-headline text-xl font-bold text-foreground mb-2 flex items-center gap-2">
               <Crown className="w-5 h-5 text-primary" />
               Pro
@@ -546,7 +546,7 @@ export default function HomePage() {
             </div>
             <Link
               href="/signup?plan=pro"
-              className="block text-center bg-surface-container-lowest ghost-border px-6 py-3.5 rounded-xl text-sm font-bold text-foreground hover:bg-surface-container transition-colors"
+              className="block text-center bg-surface-container-lowest ghost-border px-6 py-3.5 rounded-xl text-sm font-bold text-foreground hover:bg-surface-container transition-colors mt-auto"
             >
               Démarrer le Pro — 49€
             </Link>
@@ -588,7 +588,7 @@ export default function HomePage() {
             </div>
             <Link
               href="/signup?plan=sprint"
-              className="block text-center bg-amber-500/10 border border-amber-500/30 text-amber-400 px-6 py-3.5 rounded-xl text-sm font-bold hover:bg-amber-500/15 transition-colors"
+              className="block text-center bg-amber-500/10 border border-amber-500/30 text-amber-400 px-6 py-3.5 rounded-xl text-sm font-bold hover:bg-amber-500/15 transition-colors mt-auto"
             >
               <span className="flex items-center justify-center gap-2">
                 <Sparkles className="w-4 h-4" />
