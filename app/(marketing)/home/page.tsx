@@ -133,6 +133,79 @@ export default function HomePage() {
         </div>
       </section>
 
+      {/* Chiffres marché */}
+      <section className="pb-24 px-6 md:px-12 max-w-6xl mx-auto">
+        <div className="text-center mb-12">
+          <span className="text-[10px] font-headline font-bold uppercase tracking-[0.2em] text-primary mb-2 block">
+            Chiffres marché
+          </span>
+          <h2 className="font-headline text-2xl md:text-3xl font-extrabold text-foreground max-w-3xl mx-auto leading-tight">
+            Le marché valorise massivement les cadres qui intègrent la data et l&apos;IA
+          </h2>
+        </div>
+
+        <div className="grid grid-cols-1 md:grid-cols-3 gap-5">
+          {[
+            {
+              role: "Marketing senior",
+              before: "65 – 80 k€",
+              after: "85 – 110 k€",
+              uplift: "+30%",
+            },
+            {
+              role: "Product Manager",
+              before: "60 – 75 k€",
+              after: "85 – 115 k€",
+              uplift: "+45%",
+            },
+            {
+              role: "Finance / Contrôle",
+              before: "70 – 90 k€",
+              after: "90 – 125 k€",
+              uplift: "+35%",
+            },
+          ].map((item) => (
+            <div
+              key={item.role}
+              className="bg-surface-container-low p-6 rounded-2xl ghost-border hover-glow group transition-all"
+            >
+              <p className="text-xs font-bold uppercase tracking-wider text-muted-foreground mb-4">
+                {item.role}
+              </p>
+
+              <div className="space-y-3">
+                <div className="flex items-center justify-between">
+                  <span className="text-xs text-muted-foreground">Profil classique</span>
+                  <span className="text-sm font-headline font-bold text-foreground/70">
+                    {item.before}
+                  </span>
+                </div>
+
+                <div className="h-px bg-border/30" />
+
+                <div className="flex items-center justify-between">
+                  <span className="text-xs text-primary font-bold">+ Data &amp; IA</span>
+                  <span className="text-base font-headline font-extrabold text-primary text-glow">
+                    {item.after}
+                  </span>
+                </div>
+              </div>
+
+              <div className="mt-5 inline-flex items-center gap-1.5 bg-primary/10 px-2.5 py-1 rounded-full border border-primary/20">
+                <TrendingUp className="w-3 h-3 text-primary" />
+                <span className="text-[11px] font-bold text-primary">
+                  {item.uplift} en moyenne
+                </span>
+              </div>
+            </div>
+          ))}
+        </div>
+
+        <p className="text-[11px] text-muted-foreground/60 text-center mt-6 max-w-2xl mx-auto leading-relaxed">
+          Ranges indicatifs basés sur APEC Baromètre cadres 2025, LinkedIn Economic Graph 2025 et France Travail. Les rémunérations effectives dépendent de la séniorité, du secteur et de la zone géographique.
+        </p>
+      </section>
+
       {/* How it Works */}
       <section className="py-24 px-6 md:px-12 max-w-6xl mx-auto">
         <div className="text-center mb-16">
