@@ -1,5 +1,6 @@
 import Link from "next/link";
 import { requireAdmin } from "@/lib/auth/admin";
+import { AdminNav } from "./_components/admin-nav";
 
 export default async function AdminLayout({ children }: { children: React.ReactNode }) {
   await requireAdmin();
@@ -15,12 +16,7 @@ export default async function AdminLayout({ children }: { children: React.ReactN
             </div>
             <span className="font-headline font-bold text-sm text-primary">Admin</span>
           </Link>
-          <div className="hidden md:flex items-center gap-4 text-xs font-headline">
-            <Link href="/admin" className="text-primary font-bold">Overview</Link>
-            <Link href="/admin" className="text-muted-foreground hover:text-primary transition-colors">Users</Link>
-            <Link href="/admin" className="text-muted-foreground hover:text-primary transition-colors">Content</Link>
-            <Link href="/admin" className="text-muted-foreground hover:text-primary transition-colors">Agents</Link>
-          </div>
+          <AdminNav />
         </div>
         <Link href="/dashboard" className="text-xs text-muted-foreground hover:text-primary transition-colors">
           ← Back to app
