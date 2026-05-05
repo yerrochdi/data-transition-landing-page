@@ -3,6 +3,7 @@
 import Link from "next/link";
 import Image from "next/image";
 import { ArrowRight, Linkedin, Target, Sparkles } from "lucide-react";
+import { Footer } from "@/components/marketing/footer";
 
 export default function AboutPage() {
   return (
@@ -128,20 +129,7 @@ export default function AboutPage() {
         </div>
       </section>
 
-      {/* Footer */}
-      <footer className="py-12 px-6 md:px-12 max-w-6xl mx-auto border-t border-border/10">
-        <div className="flex flex-col md:flex-row items-center justify-between gap-4">
-          <div className="flex items-center gap-2">
-            <div className="w-6 h-6 rounded-md gradient-primary flex items-center justify-center">
-              <span className="text-[10px] font-bold text-primary-foreground">N</span>
-            </div>
-            <span className="font-headline font-bold text-sm text-muted-foreground">NextMove AI</span>
-          </div>
-          <p className="text-xs text-muted-foreground">
-            &copy; 2026 NextMove AI. Tous droits réservés.
-          </p>
-        </div>
-      </footer>
+      <Footer />
     </div>
   );
 }

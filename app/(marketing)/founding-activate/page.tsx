@@ -4,6 +4,7 @@ import { Crown, AlertCircle, CheckCircle2 } from "lucide-react";
 import { lookupFoundingActivation } from "@/lib/founding-members/actions";
 import { createClient } from "@/lib/supabase/server";
 import { ActivationActions } from "./_components/activation-actions";
+import { Footer as SiteFooter } from "@/components/marketing/footer";
 
 export const metadata: Metadata = {
   title: "Activer mon accès Founding Member",
@@ -82,7 +83,7 @@ export default async function FoundingActivatePage({
         </div>
       </section>
 
-      <Footer />
+      <SiteFooter />
     </div>
   );
 }
@@ -135,7 +136,7 @@ function ErrorView({ message }: { message: string }) {
           </Link>
         </div>
       </section>
-      <Footer />
+      <SiteFooter />
     </div>
   );
 }
@@ -159,7 +160,7 @@ function SuccessView({ title, message }: { title: string; message: string }) {
           </Link>
         </div>
       </section>
-      <Footer />
+      <SiteFooter />
     </div>
   );
 }
@@ -179,20 +180,3 @@ function PageNav() {
   );
 }
 
-function Footer() {
-  return (
-    <footer className="py-12 px-6 md:px-12 max-w-6xl mx-auto border-t border-border/10">
-      <div className="flex flex-col md:flex-row items-center justify-between gap-4">
-        <div className="flex items-center gap-2">
-          <div className="w-6 h-6 rounded-md gradient-primary flex items-center justify-center">
-            <span className="text-[10px] font-bold text-primary-foreground">N</span>
-          </div>
-          <span className="font-headline font-bold text-sm text-muted-foreground">NextMove AI</span>
-        </div>
-        <p className="text-xs text-muted-foreground">
-          &copy; 2026 NextMove AI. Tous droits réservés.
-        </p>
-      </div>
-    </footer>
-  );
-}
