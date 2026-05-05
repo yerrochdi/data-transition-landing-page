@@ -1,7 +1,7 @@
 "use client";
 
 import { useState, useCallback, useRef } from "react";
-import { Linkedin, Upload, Loader2, Check, AlertCircle, ArrowRight, FileText, Sparkles } from "lucide-react";
+import { Linkedin, Upload, Loader2, Check, AlertCircle, ArrowRight, FileText, Sparkles, Zap } from "lucide-react";
 import { cn } from "@/lib/utils";
 
 interface LinkedInProfile {
@@ -32,12 +32,63 @@ interface StepLinkedInProps {
   onSkip: () => void;
 }
 
+type Mode = "quick" | "pdf";
+
+const SECTORS = [
+  "Tech / IT",
+  "Finance",
+  "Industrie",
+  "Conseil",
+  "Marketing / Communication",
+  "Santé",
+  "Retail / Distribution",
+  "Énergie",
+  "Immobilier",
+  "Éducation",
+  "Secteur public",
+  "Autre",
+];
+
 export function StepLinkedIn({ onProfileParsed, onSkip }: StepLinkedInProps) {
+  const [mode, setMode] = useState<Mode>("quick");
   const [status, setStatus] = useState<"idle" | "uploading" | "analyzing" | "done" | "error">("idle");
   const [error, setError] = useState<string | null>(null);
   const [profile, setProfile] = useState<LinkedInProfile | null>(null);
   const [dragOver, setDragOver] = useState(false);
   const fileRef = useRef<HTMLInputElement>(null);
+
+  // Quick mode form state
+  const [quickRole, setQuickRole] = useState("");
+  const [quickCompany, setQuickCompany] = useState("");
+  const [quickSector, setQuickSector] = useState("");
+  const [quickYears, setQuickYears] = useState("");
+  const [quickLinkedin, setQuickLinkedin] = useState("");
+
+  const submitQuick = () => {
+    if (!quickRole.trim() || !quickCompany.trim() || !quickSector || !quickYears) {
+      setError("Remplis au moins le poste, l'entreprise, le secteur et tes années d'expérience.");
+      return;
+    }
+    setError(null);
+
+    const yearsNum = parseInt(quickYears, 10);
+    const minimalProfile: LinkedInProfile = {
+      currentRole: quickRole.trim(),
+      currentCompany: quickCompany.trim(),
+      currentSector: quickSector,
+      experienceYears: isNaN(yearsNum) ? null : yearsNum,
+      educationLevel: null,
+      certifications: [],
+      topSkills: [],
+      experiences: [],
+      education: [],
+      summary: null,
+      hasDataExperience: false,
+    };
+    setProfile(minimalProfile);
+    setStatus("done");
+    onProfileParsed(minimalProfile);
+  };
 
   const handleFile = useCallback(async (file: File) => {
     if (file.type !== "application/pdf") {
@@ -101,39 +152,163 @@ export function StepLinkedIn({ onProfileParsed, onSkip }: StepLinkedInProps) {
             <Linkedin className="w-5 h-5 text-[#0077B5]" />
           </div>
           <div>
-            <h3 className="text-sm font-bold text-foreground">Importez votre profil LinkedIn</h3>
-            <p className="text-[10px] text-muted-foreground">Optionnel — accélère votre diagnostic</p>
+            <h3 className="text-sm font-bold text-foreground">Renseigne ton profil</h3>
+            <p className="text-[10px] text-muted-foreground">Optionnel — accélère ton diagnostic</p>
           </div>
         </div>
         <p className="text-xs text-muted-foreground leading-relaxed">
-          L&apos;IA analysera votre parcours pour <strong className="text-foreground">pré-remplir automatiquement</strong> votre profil :
-          postes, compétences, formations, secteur. Vous pourrez tout vérifier et corriger ensuite.
+          Choisis la méthode qui te convient&nbsp;: saisie rapide en 30 secondes ou import PDF complet pour une analyse IA approfondie.
         </p>
       </div>
 
-      {/* How to export */}
-      <div className="bg-surface-container-lowest p-4 rounded-xl ghost-border">
-        <p className="text-[10px] uppercase tracking-widest text-primary font-bold mb-2">
-          Comment exporter votre profil LinkedIn en PDF
-        </p>
-        <ol className="space-y-1.5 text-xs text-muted-foreground">
-          <li className="flex gap-2">
-            <span className="w-5 h-5 rounded-full bg-primary/10 text-primary text-[10px] font-bold flex items-center justify-center shrink-0">1</span>
-            <span>Allez sur votre profil LinkedIn</span>
-          </li>
-          <li className="flex gap-2">
-            <span className="w-5 h-5 rounded-full bg-primary/10 text-primary text-[10px] font-bold flex items-center justify-center shrink-0">2</span>
-            <span>Cliquez sur <strong className="text-foreground">Plus</strong> (bouton &quot;...&quot;) en haut de votre profil</span>
-          </li>
-          <li className="flex gap-2">
-            <span className="w-5 h-5 rounded-full bg-primary/10 text-primary text-[10px] font-bold flex items-center justify-center shrink-0">3</span>
-            <span>Sélectionnez <strong className="text-foreground">Enregistrer au format PDF</strong></span>
-          </li>
-        </ol>
-      </div>
-
-      {/* Upload zone */}
+      {/* Mode toggle */}
       {status === "idle" || status === "error" ? (
+        <div className="grid grid-cols-2 gap-2 p-1 bg-surface-container-lowest rounded-xl ghost-border">
+          <button
+            onClick={() => { setMode("quick"); setError(null); }}
+            className={cn(
+              "flex items-center justify-center gap-2 py-3 rounded-lg text-xs font-bold transition-all",
+              mode === "quick"
+                ? "bg-primary text-primary-foreground shadow-md"
+                : "text-muted-foreground hover:text-foreground"
+            )}
+          >
+            <Zap className="w-3.5 h-3.5" />
+            Saisie rapide (30s)
+          </button>
+          <button
+            onClick={() => { setMode("pdf"); setError(null); }}
+            className={cn(
+              "flex items-center justify-center gap-2 py-3 rounded-lg text-xs font-bold transition-all",
+              mode === "pdf"
+                ? "bg-primary text-primary-foreground shadow-md"
+                : "text-muted-foreground hover:text-foreground"
+            )}
+          >
+            <Sparkles className="w-3.5 h-3.5" />
+            Import PDF (analyse IA)
+          </button>
+        </div>
+      ) : null}
+
+      {/* Quick mode form */}
+      {mode === "quick" && (status === "idle" || status === "error") ? (
+        <div className="space-y-4">
+          <div className="grid grid-cols-1 sm:grid-cols-2 gap-3">
+            <div>
+              <label className="text-[10px] uppercase tracking-widest text-muted-foreground font-bold mb-1.5 block">
+                Poste actuel *
+              </label>
+              <input
+                type="text"
+                value={quickRole}
+                onChange={(e) => setQuickRole(e.target.value)}
+                placeholder="ex: Director Marketing"
+                className="w-full bg-surface-container-lowest border border-border/30 rounded-xl px-4 py-3 text-sm text-foreground placeholder:text-muted-foreground/50 focus:outline-none focus:border-primary/50 transition-colors"
+              />
+            </div>
+            <div>
+              <label className="text-[10px] uppercase tracking-widest text-muted-foreground font-bold mb-1.5 block">
+                Entreprise actuelle *
+              </label>
+              <input
+                type="text"
+                value={quickCompany}
+                onChange={(e) => setQuickCompany(e.target.value)}
+                placeholder="ex: L'Oréal"
+                className="w-full bg-surface-container-lowest border border-border/30 rounded-xl px-4 py-3 text-sm text-foreground placeholder:text-muted-foreground/50 focus:outline-none focus:border-primary/50 transition-colors"
+              />
+            </div>
+            <div>
+              <label className="text-[10px] uppercase tracking-widest text-muted-foreground font-bold mb-1.5 block">
+                Secteur *
+              </label>
+              <select
+                value={quickSector}
+                onChange={(e) => setQuickSector(e.target.value)}
+                className="w-full bg-surface-container-lowest border border-border/30 rounded-xl px-4 py-3 text-sm text-foreground focus:outline-none focus:border-primary/50 transition-colors"
+              >
+                <option value="">Sélectionne…</option>
+                {SECTORS.map((s) => (
+                  <option key={s} value={s}>{s}</option>
+                ))}
+              </select>
+            </div>
+            <div>
+              <label className="text-[10px] uppercase tracking-widest text-muted-foreground font-bold mb-1.5 block">
+                Années d&apos;expérience *
+              </label>
+              <input
+                type="number"
+                min={0}
+                max={50}
+                value={quickYears}
+                onChange={(e) => setQuickYears(e.target.value)}
+                placeholder="ex: 12"
+                className="w-full bg-surface-container-lowest border border-border/30 rounded-xl px-4 py-3 text-sm text-foreground placeholder:text-muted-foreground/50 focus:outline-none focus:border-primary/50 transition-colors"
+              />
+            </div>
+          </div>
+
+          <div>
+            <label className="text-[10px] uppercase tracking-widest text-muted-foreground font-bold mb-1.5 block">
+              Profil LinkedIn (optionnel)
+            </label>
+            <input
+              type="url"
+              value={quickLinkedin}
+              onChange={(e) => setQuickLinkedin(e.target.value)}
+              placeholder="https://www.linkedin.com/in/ton-profil"
+              className="w-full bg-surface-container-lowest border border-border/30 rounded-xl px-4 py-3 text-sm text-foreground placeholder:text-muted-foreground/50 focus:outline-none focus:border-primary/50 transition-colors"
+            />
+          </div>
+
+          {error && (
+            <div className="flex items-start gap-2 p-3 bg-red-500/10 border border-red-500/20 rounded-xl">
+              <AlertCircle className="w-4 h-4 text-red-400 shrink-0 mt-0.5" />
+              <p className="text-xs text-red-400">{error}</p>
+            </div>
+          )}
+
+          <button
+            onClick={submitQuick}
+            className="w-full gradient-primary text-primary-foreground py-3.5 rounded-xl text-sm font-bold flex items-center justify-center gap-2 hover:scale-[1.01] transition-transform"
+          >
+            <Check className="w-4 h-4" />
+            Valider et continuer
+          </button>
+
+          <p className="text-[10px] text-muted-foreground/70 text-center">
+            Tu pourras compléter ton profil à tout moment depuis tes paramètres.
+          </p>
+        </div>
+      ) : null}
+
+      {/* PDF mode — How to export */}
+      {mode === "pdf" && (status === "idle" || status === "error") ? (
+        <div className="bg-surface-container-lowest p-4 rounded-xl ghost-border">
+          <p className="text-[10px] uppercase tracking-widest text-primary font-bold mb-2">
+            Comment exporter ton profil LinkedIn en PDF
+          </p>
+          <ol className="space-y-1.5 text-xs text-muted-foreground">
+            <li className="flex gap-2">
+              <span className="w-5 h-5 rounded-full bg-primary/10 text-primary text-[10px] font-bold flex items-center justify-center shrink-0">1</span>
+              <span>Va sur ton profil LinkedIn</span>
+            </li>
+            <li className="flex gap-2">
+              <span className="w-5 h-5 rounded-full bg-primary/10 text-primary text-[10px] font-bold flex items-center justify-center shrink-0">2</span>
+              <span>Clique sur <strong className="text-foreground">Plus</strong> (bouton &quot;...&quot;) en haut de ton profil</span>
+            </li>
+            <li className="flex gap-2">
+              <span className="w-5 h-5 rounded-full bg-primary/10 text-primary text-[10px] font-bold flex items-center justify-center shrink-0">3</span>
+              <span>Sélectionne <strong className="text-foreground">Enregistrer au format PDF</strong></span>
+            </li>
+          </ol>
+        </div>
+      ) : null}
+
+      {/* Upload zone (PDF mode only, idle/error states) */}
+      {mode === "pdf" && (status === "idle" || status === "error") ? (
         <>
           <div
             onDragOver={(e) => { e.preventDefault(); setDragOver(true); }}
@@ -173,7 +348,10 @@ export function StepLinkedIn({ onProfileParsed, onSkip }: StepLinkedInProps) {
             </div>
           )}
         </>
-      ) : status === "uploading" || status === "analyzing" ? (
+      ) : null}
+
+      {/* Loading state */}
+      {status === "uploading" || status === "analyzing" ? (
         <div className="border-2 border-primary/30 rounded-2xl p-10 text-center bg-primary/5">
           <Loader2 className="w-10 h-10 text-primary mx-auto mb-3 animate-spin" />
           <p className="text-sm font-bold text-primary mb-1">
@@ -183,7 +361,10 @@ export function StepLinkedIn({ onProfileParsed, onSkip }: StepLinkedInProps) {
             L&apos;IA extrait vos postes, compétences et formations
           </p>
         </div>
-      ) : status === "done" && profile ? (
+      ) : null}
+
+      {/* Success / done state */}
+      {status === "done" && profile ? (
         <div className="space-y-4">
           {/* Success banner */}
           <div className="flex items-center gap-3 p-4 bg-primary/10 border border-primary/20 rounded-xl">
