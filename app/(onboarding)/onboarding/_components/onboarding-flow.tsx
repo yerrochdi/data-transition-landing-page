@@ -420,12 +420,12 @@ export function OnboardingFlow({ initialData, chosenPlan = "free" }: OnboardingF
         </div>
 
         {/* Step Content */}
-        <div className="mb-8 animate-fade-up" key={currentStep}>
+        <div className="mb-8 pb-24 lg:pb-8 animate-fade-up" key={currentStep}>
           {renderStep()}
         </div>
 
-        {/* Navigation */}
-        <div className="sticky bottom-0 z-40 bg-background/80 backdrop-blur-xl py-4 -mx-6 px-6 flex items-center justify-between border-t border-border/10">
+        {/* Navigation — fixed on mobile (anchored to viewport), sticky on desktop */}
+        <div className="fixed bottom-0 left-0 right-0 lg:sticky lg:left-auto lg:right-auto z-40 bg-background/95 lg:bg-background/80 backdrop-blur-xl py-4 px-6 lg:-mx-6 flex items-center justify-between border-t border-border/10 pb-[max(1rem,env(safe-area-inset-bottom))]">
           <button
             onClick={handleBack}
             className={cn(
