@@ -88,6 +88,38 @@ export function foundingMemberAdminNotification(application: {
   `);
 }
 
+export function foundingMemberAcceptedEmail(
+  firstName: string,
+  activationUrl: string
+): string {
+  return layout(`
+    <h1 style="color:#fff;font-size:22px;margin:0 0 16px">🎉 Bienvenue ${firstName}, tu es accepté</h1>
+    <p>Félicitations, tu fais partie des <strong style="color:#4be277">Founding Members</strong> de NextMove. Sur les centaines de candidatures, j'ai retenu la tienne — merci pour la qualité de ton dossier.</p>
+
+    <p style="margin-top:20px"><strong>Ton tarif Founding Member : 9€/mois à vie.</strong></p>
+    <p>Soit -53% par rapport au plan Boost et -82% par rapport au plan Pro. Ce tarif te reste acquis tant que tu restes actif sur NextMove.</p>
+
+    <div style="text-align:center;margin:28px 0">
+      <a href="${activationUrl}" style="display:inline-block;background:linear-gradient(135deg,#4be277,#36d068);color:#000;font-weight:bold;font-size:14px;padding:14px 32px;border-radius:12px;text-decoration:none">
+        Activer mon accès Founding Member →
+      </a>
+    </div>
+
+    <p style="color:#888;font-size:12px;margin-top:24px"><strong style="color:#e0e0e0">Important</strong> : ce lien est unique et personnel. Tu seras invité à payer 9€ pour activer ton accès, puis tu accèderas au parcours complet immédiatement.</p>
+
+    <p style="margin-top:24px">En contrepartie de ce tarif privilégié, je te demande :</p>
+    <ul style="padding-left:20px;margin:8px 0 16px">
+      <li>1 retour structuré par semaine pendant 3 mois</li>
+      <li>1 call de 30 min/mois avec moi</li>
+      <li>Honnêteté brute sur ce qui marche et ce qui cloche</li>
+    </ul>
+
+    <p>Une fois activé, je te recontacte pour caler notre call d'onboarding.</p>
+
+    <p style="color:#888;font-size:12px;margin-top:24px">À très vite,<br/>Yassine — Fondateur de NextMove</p>
+  `);
+}
+
 function escapeHtml(s: string): string {
   return s
     .replace(/&/g, "&amp;")

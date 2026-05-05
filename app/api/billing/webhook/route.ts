@@ -124,6 +124,17 @@ export async function POST(request: NextRequest) {
           ).catch(console.error);
         } else {
           const user = await activatePlan(userId, target);
+
+          // If this is a Founding activation, consume the token so the
+          // link can't be reused by anyone else.
+          const foundingToken = session.metadata?.foundingToken;
+          if (target === "FOUNDING" && foundingToken) {
+            await prisma.foundingMemberApplication.updateMany({
+              where: { activationToken: foundingToken },
+              data: { activatedAt: new Date() },
+            });
+          }
+
           import("@/lib/email/send").then(({ sendEmail }) =>
             import("@/lib/email/templates").then(({ upgradeEmail }) =>
               sendEmail(

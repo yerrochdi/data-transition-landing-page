@@ -22,6 +22,7 @@ export default function robots(): MetadataRoute.Robots {
           "/onboarding",
           "/upgrade",
           "/auth/",
+          "/founding-activate",
         ],
       },
     ],

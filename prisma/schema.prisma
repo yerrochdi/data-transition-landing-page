@@ -466,19 +466,21 @@ enum ResourceType {
 }
 
 model FoundingMemberApplication {
-  id            String                          @id @default(uuid())
-  name          String
-  email         String
-  linkedinUrl   String
-  currentRole   String
-  currentCompany String
-  situation     String                          @db.Text
-  motivation    String                          @db.Text
-  status        FoundingMemberApplicationStatus @default(PENDING)
-  reviewedAt    DateTime?
-  reviewerNote  String?                         @db.Text
-  createdAt     DateTime                        @default(now())
-  updatedAt     DateTime                        @updatedAt
+  id              String                          @id @default(uuid())
+  name            String
+  email           String
+  linkedinUrl     String
+  currentRole     String
+  currentCompany  String
+  situation       String                          @db.Text
+  motivation      String                          @db.Text
+  status          FoundingMemberApplicationStatus @default(PENDING)
+  reviewedAt      DateTime?
+  reviewerNote    String?                         @db.Text
+  activationToken String?                         @unique
+  activatedAt     DateTime?
+  createdAt       DateTime                        @default(now())
+  updatedAt       DateTime                        @updatedAt
 
   @@index([status])
   @@index([createdAt])

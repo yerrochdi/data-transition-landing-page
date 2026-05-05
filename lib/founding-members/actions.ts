@@ -1,13 +1,17 @@
 "use server";
 
+import { randomBytes } from "node:crypto";
 import { z } from "zod";
 import { prisma } from "@/lib/db/prisma";
 import { sendEmail } from "@/lib/email/send";
 import {
   foundingMemberConfirmation,
   foundingMemberAdminNotification,
+  foundingMemberAcceptedEmail,
 } from "@/lib/email/templates";
 import { isAdmin } from "@/lib/auth/admin";
+import { createClient } from "@/lib/supabase/server";
+import { getStripe } from "@/lib/billing/stripe";
 import { TOTAL_SEATS } from "./constants";
 
 const ADMIN_EMAIL = "contact@nextmove.sh";
@@ -121,6 +125,8 @@ export async function getFoundingMembersSeatStatus(): Promise<{
   };
 }
 
+const SITE_URL = process.env.NEXT_PUBLIC_SITE_URL || "https://nextmove.sh";
+
 export async function updateFoundingMemberStatus(
   applicationId: string,
   status: "PENDING" | "ACCEPTED" | "REJECTED",
@@ -130,27 +136,141 @@ export async function updateFoundingMemberStatus(
     return { ok: false, error: "Accès refusé" };
   }
 
+  const target = await prisma.foundingMemberApplication.findUnique({
+    where: { id: applicationId },
+  });
+  if (!target) return { ok: false, error: "Candidature introuvable" };
+
   if (status === "ACCEPTED") {
     const accepted = await prisma.foundingMemberApplication.count({
       where: { status: "ACCEPTED" },
     });
-    const target = await prisma.foundingMemberApplication.findUnique({
-      where: { id: applicationId },
-    });
-    if (!target) return { ok: false, error: "Candidature introuvable" };
     if (target.status !== "ACCEPTED" && accepted >= TOTAL_SEATS) {
       return { ok: false, error: "Toutes les places sont attribuées" };
     }
   }
 
-  await prisma.foundingMemberApplication.update({
+  // When transitioning to ACCEPTED for the first time, generate an
+  // activation token (32 bytes, URL-safe) so the candidate can claim
+  // their Founding seat at 9€/mo via /founding-activate?token=...
+  const isNewlyAccepted = status === "ACCEPTED" && target.status !== "ACCEPTED";
+  const activationToken = isNewlyAccepted
+    ? randomBytes(32).toString("base64url")
+    : undefined;
+
+  const updated = await prisma.foundingMemberApplication.update({
     where: { id: applicationId },
     data: {
       status,
       reviewedAt: status === "PENDING" ? null : new Date(),
       reviewerNote: note ?? undefined,
+      ...(activationToken ? { activationToken } : {}),
     },
   });
 
+  if (isNewlyAccepted && updated.activationToken) {
+    const firstName = updated.name.split(" ")[0] ?? updated.name;
+    const activationUrl = `${SITE_URL}/founding-activate?token=${updated.activationToken}`;
+    await sendEmail(
+      updated.email,
+      "🎉 Tu es accepté Founding Member NextMove",
+      foundingMemberAcceptedEmail(firstName, activationUrl)
+    );
+  }
+
   return { ok: true };
+}
+
+// ─── Activation flow (candidate clicks email link) ──────────────────
+
+type ActivationLookupResult =
+  | { ok: true; application: { id: string; email: string; name: string }; alreadyActivated: boolean }
+  | { ok: false; error: string };
+
+export async function lookupFoundingActivation(
+  token: string
+): Promise<ActivationLookupResult> {
+  if (!token) return { ok: false, error: "Lien invalide" };
+
+  const application = await prisma.foundingMemberApplication.findUnique({
+    where: { activationToken: token },
+    select: { id: true, email: true, name: true, status: true, activatedAt: true },
+  });
+
+  if (!application) {
+    return { ok: false, error: "Lien d'activation invalide ou expiré" };
+  }
+  if (application.status !== "ACCEPTED") {
+    return { ok: false, error: "Cette candidature n'est plus active" };
+  }
+
+  return {
+    ok: true,
+    application: { id: application.id, email: application.email, name: application.name },
+    alreadyActivated: application.activatedAt !== null,
+  };
+}
+
+export async function markFoundingActivated(token: string): Promise<{ ok: boolean }> {
+  await prisma.foundingMemberApplication.update({
+    where: { activationToken: token },
+    data: { activatedAt: new Date() },
+  });
+  return { ok: true };
+}
+
+/**
+ * Creates a Stripe checkout session for the Founding tier (9€/mo) using
+ * the activation token as authorization. The currently logged-in user
+ * must match the application's email — otherwise the request is rejected.
+ *
+ * On `checkout.session.completed`, the standard webhook will set
+ * `plan = FOUNDING` based on the priceId. We mark `activatedAt` here too
+ * so the link can't be reused.
+ */
+export async function createFoundingCheckout(
+  token: string
+): Promise<{ url: string | null; error?: string }> {
+  const lookup = await lookupFoundingActivation(token);
+  if (!lookup.ok) return { url: null, error: lookup.error };
+
+  const supabase = await createClient();
+  const {
+    data: { user: authUser },
+  } = await supabase.auth.getUser();
+
+  if (!authUser?.email) {
+    return { url: null, error: "Connecte-toi avec l'email de ta candidature" };
+  }
+  if (authUser.email.toLowerCase() !== lookup.application.email.toLowerCase()) {
+    return {
+      url: null,
+      error: "L'email connecté ne correspond pas à celui de ta candidature",
+    };
+  }
+
+  const dbUser = await prisma.user.findUnique({
+    where: { supabaseId: authUser.id },
+    select: { id: true, email: true },
+  });
+  if (!dbUser) return { url: null, error: "Utilisateur introuvable" };
+
+  const priceId = process.env.STRIPE_FOUNDING_PRICE_ID;
+  if (!priceId) return { url: null, error: "Configuration prix manquante" };
+
+  try {
+    const session = await getStripe().checkout.sessions.create({
+      mode: "subscription",
+      payment_method_types: ["card"],
+      customer_email: dbUser.email,
+      metadata: { userId: dbUser.id, plan: "founding", foundingToken: token },
+      line_items: [{ price: priceId, quantity: 1 }],
+      success_url: `${SITE_URL}/dashboard?upgraded=founding`,
+      cancel_url: `${SITE_URL}/founding-activate?token=${token}`,
+    });
+    return { url: session.url };
+  } catch (e) {
+    console.error("Founding checkout error:", e);
+    return { url: null, error: "Erreur de paiement" };
+  }
 }
