@@ -37,6 +37,11 @@ export function Footer() {
               </Link>
             </li>
             <li>
+              <Link href="/roadmap" className="hover:text-primary transition-colors">
+                Roadmap
+              </Link>
+            </li>
+            <li>
               <Link href="/login" className="hover:text-primary transition-colors">
                 Se connecter
               </Link>
