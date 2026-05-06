@@ -73,3 +73,116 @@ export function planLabel(state: BillingState): string {
       return "Enterprise";
   }
 }
+
+// ─── Quotas per plan ────────────────────────────────────────────────
+
+/**
+ * Concrete feature limits for a given billing state. Quotas are consumed
+ * daily (UTC midnight reset) and tracked in the DailyUsage table.
+ *
+ * Conventions:
+ * - `null` means unlimited.
+ * - `journeyPhasesUnlocked` is the highest phase index (1-5) that the user
+ *   can access. FREE only sees Phase 1 ("Diagnostic").
+ * - `opportunitiesLimit` is the number of opportunities visible in the
+ *   feed. Anything beyond is teased (Pattern B blur overlay).
+ */
+export type Quotas = {
+  // AI usage (per day)
+  copilotMessagesPerDay: number | null;
+  aiSessionsPerDay: number | null;
+
+  // Content gates
+  journeyPhasesUnlocked: number; // 1-5
+  opportunitiesLimit: number | null; // visible cards in /opportunities
+  hasFeedAccess: boolean; // /feed locked behind paid plans
+  hasPrioritySupport: boolean;
+
+  // Hard ceiling for paid tiers to prevent abuse (Pro/Founding/Sprint).
+  // null on FREE/BOOST since their dailyLimit is the actual cap.
+  hardDailyCeiling: number | null;
+};
+
+const QUOTAS_BY_PLAN: Record<Plan, Quotas> = {
+  FREE: {
+    copilotMessagesPerDay: 5,
+    aiSessionsPerDay: 3,
+    journeyPhasesUnlocked: 1,
+    opportunitiesLimit: 3,
+    hasFeedAccess: false,
+    hasPrioritySupport: false,
+    hardDailyCeiling: null,
+  },
+  BOOST: {
+    copilotMessagesPerDay: 30,
+    aiSessionsPerDay: 20,
+    journeyPhasesUnlocked: 5,
+    opportunitiesLimit: 10,
+    hasFeedAccess: true,
+    hasPrioritySupport: false,
+    hardDailyCeiling: null,
+  },
+  PREMIUM: {
+    copilotMessagesPerDay: null, // unlimited
+    aiSessionsPerDay: null,
+    journeyPhasesUnlocked: 5,
+    opportunitiesLimit: null,
+    hasFeedAccess: true,
+    hasPrioritySupport: true,
+    hardDailyCeiling: 200,
+  },
+  FOUNDING: {
+    copilotMessagesPerDay: null,
+    aiSessionsPerDay: null,
+    journeyPhasesUnlocked: 5,
+    opportunitiesLimit: null,
+    hasFeedAccess: true,
+    hasPrioritySupport: true,
+    hardDailyCeiling: 200,
+  },
+  ENTERPRISE: {
+    copilotMessagesPerDay: null,
+    aiSessionsPerDay: null,
+    journeyPhasesUnlocked: 5,
+    opportunitiesLimit: null,
+    hasFeedAccess: true,
+    hasPrioritySupport: true,
+    hardDailyCeiling: 500,
+  },
+};
+
+/**
+ * Returns the effective quotas for a user. An active Sprint pass
+ * temporarily upgrades the user to PREMIUM-tier quotas regardless of
+ * their persisted plan.
+ */
+export function getQuotas(state: BillingState): Quotas {
+  if (hasActiveSprint(state)) {
+    return QUOTAS_BY_PLAN.PREMIUM;
+  }
+  return QUOTAS_BY_PLAN[state.plan];
+}
+
+/**
+ * Helper for UI: returns true if the user has used up their daily quota
+ * for a given resource. `used` is the count from DailyUsage for today.
+ */
+export function isQuotaExceeded(
+  used: number,
+  limit: number | null
+): boolean {
+  if (limit === null) return false;
+  return used >= limit;
+}
+
+/**
+ * Compute remaining quota for display ("3 messages restants aujourd'hui").
+ * Returns null when the resource is unlimited.
+ */
+export function quotaRemaining(
+  used: number,
+  limit: number | null
+): number | null {
+  if (limit === null) return null;
+  return Math.max(0, limit - used);
+}
