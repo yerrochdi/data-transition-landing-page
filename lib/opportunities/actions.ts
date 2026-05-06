@@ -2,6 +2,7 @@
 
 import { createClient } from "@/lib/supabase/server";
 import { prisma } from "@/lib/db";
+import { getPlanLimits } from "@/lib/billing/plans";
 
 // ─── Types ────────────────────────────────────────────────────────
 
@@ -30,6 +31,10 @@ export interface OpportunitiesData {
   readinessScore: number;
   topSkills: string[];
   skillGaps: string[];
+  // Plan-based gating: how many of the listed opportunities are visible
+  // (the rest are returned but should be blurred + teased in the UI).
+  visibleLimit: number; // Infinity for paid tiers
+  plan: string;
 }
 
 // ─── Opportunity Builder ──────────────────────────────────────────
@@ -236,6 +241,9 @@ export async function getOpportunitiesData(): Promise<OpportunitiesData | null> 
     location: onboarding?.location ?? null,
   });
 
+  const limits = getPlanLimits(dbUser.plan);
+  const visibleLimit = limits.opportunitiesVisible;
+
   return {
     opportunities,
     targetRole: profile?.targetRole ?? onboarding?.targetRole ?? null,
@@ -244,5 +252,7 @@ export async function getOpportunitiesData(): Promise<OpportunitiesData | null> 
     readinessScore: profile?.readinessScore ?? 0,
     topSkills: profile?.topSkills ?? onboarding?.topSkills ?? [],
     skillGaps: profile?.skillGaps ?? [],
+    visibleLimit,
+    plan: dbUser.plan,
   };
 }

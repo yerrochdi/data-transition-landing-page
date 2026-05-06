@@ -1,6 +1,7 @@
 "use client";
 
 import { useState } from "react";
+import Link from "next/link";
 import {
   Search,
   Briefcase,
@@ -14,6 +15,7 @@ import {
   Zap,
   ExternalLink,
   Info,
+  Crown,
 } from "lucide-react";
 import { cn } from "@/lib/utils";
 import type { OpportunitiesData, OpportunityType, Opportunity } from "@/lib/opportunities/actions";
@@ -258,9 +260,45 @@ export function OpportunitiesView({ data }: { data: OpportunitiesData }) {
 
       {/* Results */}
       <div className="space-y-4">
-        {filtered.map((opp) => (
-          <OpportunityCard key={opp.id} opportunity={opp} />
-        ))}
+        {filtered.map((opp, index) => {
+          // Pattern B teaser: index past visibleLimit are blurred + locked
+          const isLocked = Number.isFinite(data.visibleLimit) && index >= data.visibleLimit;
+          const isFirstLocked = isLocked && index === data.visibleLimit;
+
+          if (!isLocked) {
+            return <OpportunityCard key={opp.id} opportunity={opp} />;
+          }
+
+          return (
+            <div key={opp.id} className="relative">
+              <div aria-hidden className="pointer-events-none select-none blur-sm opacity-40">
+                <OpportunityCard opportunity={opp} />
+              </div>
+              {isFirstLocked && (
+                <div className="absolute inset-0 flex items-center justify-center p-4">
+                  <div className="bg-surface-container-high/95 backdrop-blur-md border border-primary/30 rounded-2xl p-6 max-w-sm text-center shadow-[0_20px_60px_rgba(0,0,0,0.5)]">
+                    <div className="w-11 h-11 rounded-xl bg-primary/15 flex items-center justify-center text-primary mx-auto mb-3">
+                      <Crown className="w-5 h-5" />
+                    </div>
+                    <h3 className="font-headline text-base font-bold text-foreground mb-1.5">
+                      {filtered.length - data.visibleLimit} opportunités de plus
+                    </h3>
+                    <p className="text-xs text-muted-foreground mb-4 leading-relaxed">
+                      Tu vois les {data.visibleLimit} premières. Débloque les autres avec un plan supérieur — chaque opportunité est matchée à ton profil.
+                    </p>
+                    <Link
+                      href="/upgrade"
+                      className="inline-flex items-center justify-center gap-2 gradient-primary text-primary-foreground px-5 py-2.5 rounded-xl text-xs font-bold hover:scale-105 transition-transform shadow-lg shadow-primary/20"
+                    >
+                      <Zap className="w-3.5 h-3.5" />
+                      Voir les plans
+                    </Link>
+                  </div>
+                </div>
+              )}
+            </div>
+          );
+        })}
         {filtered.length === 0 && (
           <div className="text-center py-16">
             <Search className="w-12 h-12 text-muted-foreground mx-auto mb-4 opacity-50" />
