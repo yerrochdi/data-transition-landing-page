@@ -22,6 +22,7 @@ import {
   Lock,
   Crown,
   Infinity,
+  GraduationCap,
 } from "lucide-react";
 
 function FeatureCard({
@@ -317,17 +318,17 @@ export default function HomePage() {
           <span className="text-[10px] font-headline font-bold uppercase tracking-[0.2em] text-primary mb-2 block">
             Comment ça marche
           </span>
-          <h2 className="font-headline text-3xl md:text-4xl font-extrabold text-foreground">
-            Un parcours structuré en 5 phases
+          <h2 className="font-headline text-3xl md:text-4xl font-extrabold text-foreground max-w-3xl mx-auto leading-tight">
+            De ton profil actuel à profil data-augmenté en 5 étapes
           </h2>
         </div>
         <div className="grid grid-cols-1 md:grid-cols-5 gap-4">
           {[
-            { n: "01", title: "Diagnostic", desc: "Analyse complète de votre profil", icon: Brain },
-            { n: "02", title: "Vision", desc: "Définition de votre objectif", icon: Target },
-            { n: "03", title: "Positionnement", desc: "Construction de votre narrative", icon: Star },
-            { n: "04", title: "Exécution", desc: "Candidature et négociation", icon: Briefcase },
-            { n: "05", title: "Accélération", desc: "Premiers 90 jours", icon: TrendingUp },
+            { n: "01", title: "Diagnostic", desc: "Analyse de tes acquis et identification des gaps data/IA", icon: Brain },
+            { n: "02", title: "Cible", desc: "Définition du rôle data-augmenté qui valorise le mieux ton profil", icon: Target },
+            { n: "03", title: "Upskilling", desc: "Parcours sur-mesure pour acquérir les compétences clés", icon: GraduationCap },
+            { n: "04", title: "Repositionnement", desc: "CV, LinkedIn et narratif alignés sur ta nouvelle valeur", icon: Star },
+            { n: "05", title: "Activation", desc: "Opportunités matchées + préparation aux entretiens", icon: TrendingUp },
           ].map((phase) => (
             <div key={phase.n} className="bg-surface-container-low p-5 rounded-2xl ghost-border text-center hover-glow group">
               <div className="w-10 h-10 rounded-full bg-primary/10 flex items-center justify-center text-primary mx-auto mb-3 group-hover:scale-110 transition-transform">
