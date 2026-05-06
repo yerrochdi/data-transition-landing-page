@@ -501,35 +501,51 @@ export function JourneyView({
         {data.phases.map((phase, index) => {
           const isPremiumLocked = index >= maxPhases && plan === "FREE";
 
-          if (isPremiumLocked && index === maxPhases) {
-            // Show upgrade wall once, at the first locked phase
+          if (isPremiumLocked) {
+            // Pattern B teaser : show the locked phase blurred with an upgrade CTA
+            // overlaying. Encourages curiosity and conversion vs hiding the content.
             return (
-              <div key="upgrade-wall" className="relative">
-                <div className="absolute -left-4 md:-left-8 top-6 w-8 md:w-16 flex justify-center">
-                  <div className="w-10 h-10 rounded-full bg-gradient-to-br from-primary/20 to-amber-500/20 flex items-center justify-center z-10">
-                    <Crown className="w-4 h-4 text-primary" />
+              <div key={phase.id} className="relative">
+                <div
+                  aria-hidden
+                  className="pointer-events-none select-none blur-sm opacity-50"
+                >
+                  <PhaseCard
+                    phase={phase}
+                    isExpanded={false}
+                    onToggleExpand={() => {}}
+                    onToggleTask={() => {}}
+                    onAskCopilot={() => {}}
+                    isPending={false}
+                    router={router}
+                  />
+                </div>
+                {/* Show overlay CTA only on the first locked phase to avoid noise */}
+                {index === maxPhases && (
+                  <div className="absolute inset-0 flex items-center justify-center p-4">
+                    <div className="bg-surface-container-high/95 backdrop-blur-md border border-primary/30 rounded-2xl p-6 max-w-sm text-center shadow-[0_20px_60px_rgba(0,0,0,0.5)]">
+                      <div className="w-11 h-11 rounded-xl bg-primary/15 flex items-center justify-center text-primary mx-auto mb-3">
+                        <Crown className="w-5 h-5" />
+                      </div>
+                      <h3 className="font-headline text-base font-bold text-foreground mb-1.5">
+                        Phase {phase.order + 1} et au-delà
+                      </h3>
+                      <p className="text-xs text-muted-foreground mb-4 leading-relaxed">
+                        Tu vois la première phase. Débloque les {data.phases.length - maxPhases} phases suivantes pour aller jusqu&apos;au bout de ta transition.
+                      </p>
+                      <a
+                        href="/upgrade"
+                        className="inline-flex items-center justify-center gap-2 gradient-primary text-primary-foreground px-5 py-2.5 rounded-xl text-xs font-bold hover:scale-105 transition-transform shadow-lg shadow-primary/20"
+                      >
+                        <Zap className="w-3.5 h-3.5" />
+                        Voir les plans
+                      </a>
+                    </div>
                   </div>
-                </div>
-                <div className="p-6 rounded-2xl bg-gradient-to-br from-primary/5 via-surface-container-low to-amber-500/5 border border-primary/20 text-center">
-                  <h3 className="font-headline text-lg font-bold text-foreground mb-2">
-                    Débloque les phases {maxPhases + 1} à {data.phases.length}
-                  </h3>
-                  <p className="text-sm text-muted-foreground mb-4 max-w-md mx-auto">
-                    Passe au Pro pour accéder au parcours complet et accélérer ta transition.
-                  </p>
-                  <a
-                    href="/upgrade"
-                    className="inline-flex items-center gap-2 gradient-primary text-primary-foreground px-6 py-3 rounded-xl text-sm font-bold hover:scale-[1.02] transition-transform shadow-lg shadow-primary/20"
-                  >
-                    <Zap className="w-4 h-4" />
-                    Passer au Pro — 49€/mois
-                  </a>
-                </div>
+                )}
               </div>
             );
           }
-
-          if (isPremiumLocked) return null;
 
           return (
             <PhaseCard

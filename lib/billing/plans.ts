@@ -1,12 +1,34 @@
 // ─── Plan Configuration ─────────────────────────────────────────
-// Centralized plan limits and feature gates
+// Centralized plan limits and feature gates.
+//
+// NOTE: this file is the legacy quota source used across rate-limit.ts
+// and a few server pages. The new structured source is `getQuotas()`
+// in `./plan.ts`. Both must stay in sync until the migration is complete.
 
-export const PLAN_LIMITS = {
+type PlanLimits = {
+  copilotMessagesPerDay: number;
+  sessionsPerDay: number;
+  journeyPhases: number;
+  opportunitiesVisible: number;
+  hasFeedAccess: boolean;
+  canAccessAllResources: boolean;
+};
+
+export const PLAN_LIMITS: Record<string, PlanLimits> = {
   FREE: {
     copilotMessagesPerDay: 5,
     sessionsPerDay: 3,
     journeyPhases: 1, // Only Phase 1
     opportunitiesVisible: 3,
+    hasFeedAccess: false,
+    canAccessAllResources: true,
+  },
+  BOOST: {
+    copilotMessagesPerDay: 30,
+    sessionsPerDay: 20,
+    journeyPhases: Infinity,
+    opportunitiesVisible: 10,
+    hasFeedAccess: true,
     canAccessAllResources: true,
   },
   PREMIUM: {
@@ -14,6 +36,15 @@ export const PLAN_LIMITS = {
     sessionsPerDay: Infinity,
     journeyPhases: Infinity, // All phases
     opportunitiesVisible: Infinity,
+    hasFeedAccess: true,
+    canAccessAllResources: true,
+  },
+  FOUNDING: {
+    copilotMessagesPerDay: Infinity,
+    sessionsPerDay: Infinity,
+    journeyPhases: Infinity,
+    opportunitiesVisible: Infinity,
+    hasFeedAccess: true,
     canAccessAllResources: true,
   },
   ENTERPRISE: {
@@ -21,14 +52,15 @@ export const PLAN_LIMITS = {
     sessionsPerDay: Infinity,
     journeyPhases: Infinity,
     opportunitiesVisible: Infinity,
+    hasFeedAccess: true,
     canAccessAllResources: true,
   },
-} as const;
+};
 
 export type PlanType = keyof typeof PLAN_LIMITS;
 
-export function getPlanLimits(plan: string) {
-  return PLAN_LIMITS[(plan as PlanType) || "FREE"] ?? PLAN_LIMITS.FREE;
+export function getPlanLimits(plan: string): PlanLimits {
+  return PLAN_LIMITS[plan] ?? PLAN_LIMITS.FREE;
 }
 
 // ─── Usage Checking ─────────────────────────────────────────────
