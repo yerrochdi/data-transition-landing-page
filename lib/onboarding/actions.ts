@@ -144,6 +144,13 @@ export async function completeOnboarding(
     const skillGaps = computeSkillGaps(data);
 
     // Create/update user profile with computed scores
+    const goalFields = {
+      vertical: data.vertical || null,
+      transitionType: data.transitionType || null,
+      horizon: data.horizon || null,
+      successIndicator: data.successIndicator || null,
+    } as const;
+
     await prisma.userProfile.upsert({
       where: { userId },
       create: {
@@ -158,6 +165,7 @@ export async function completeOnboarding(
         confidenceLevel: data.confidenceLevel,
         readinessScore,
         careerScore,
+        ...goalFields,
       },
       update: {
         currentRole: data.currentRole || null,
@@ -170,6 +178,7 @@ export async function completeOnboarding(
         confidenceLevel: data.confidenceLevel,
         readinessScore,
         careerScore,
+        ...goalFields,
       },
     });
 

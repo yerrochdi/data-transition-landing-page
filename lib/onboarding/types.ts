@@ -24,6 +24,12 @@ export interface OnboardingFormData {
   targetRole: string;
   targetSector: string;
 
+  // Career goal — 3 imposed dimensions (Sprint 1, V1)
+  vertical: "FINANCE" | "TECH" | "OTHER" | "";
+  transitionType: "PIVOT" | "UPSKILL" | "INTERNAL_EVOLUTION" | "";
+  horizon: "THREE_MONTHS" | "SIX_MONTHS" | "TWELVE_MONTHS" | "";
+  successIndicator: "NEW_JOB" | "DATA_PROJECTS" | "SALARY_INCREASE" | "";
+
   // Step 5: Skills with proficiency
   topSkills: string[]; // kept for backward compat
   skillLevels: SkillWithLevel[];
@@ -77,6 +83,10 @@ export const initialFormData: OnboardingFormData = {
   technicalAppetite: "flexible",
   targetRole: "",
   targetSector: "",
+  vertical: "",
+  transitionType: "",
+  horizon: "",
+  successIndicator: "",
   topSkills: [],
   skillLevels: [],
   blockers: [],

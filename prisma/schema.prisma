@@ -70,12 +70,43 @@ model UserProfile {
   careerScore      Int      @default(0)
   readinessScore   Int      @default(0)
   confidenceLevel  Int      @default(5) // 1-10
+
+  // Career goal — 3 imposed dimensions (V1 Sprint 1)
+  vertical            Vertical?            // FINANCE | TECH (priorité commerciale V1)
+  transitionType      TransitionType?      // PIVOT | UPSKILL | INTERNAL_EVOLUTION
+  horizon             Horizon?             // THREE_MONTHS | SIX_MONTHS | TWELVE_MONTHS
+  successIndicator    SuccessIndicator?    // NEW_JOB | DATA_PROJECTS | SALARY_INCREASE
+
   createdAt        DateTime @default(now())
   updatedAt        DateTime @updatedAt
 
   user User @relation(fields: [userId], references: [id], onDelete: Cascade)
 
   @@map("user_profiles")
+}
+
+enum Vertical {
+  FINANCE
+  TECH
+  OTHER
+}
+
+enum TransitionType {
+  PIVOT
+  UPSKILL
+  INTERNAL_EVOLUTION
+}
+
+enum Horizon {
+  THREE_MONTHS
+  SIX_MONTHS
+  TWELVE_MONTHS
+}
+
+enum SuccessIndicator {
+  NEW_JOB
+  DATA_PROJECTS
+  SALARY_INCREASE
 }
 
 // ============================================================

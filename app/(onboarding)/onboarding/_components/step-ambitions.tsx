@@ -21,6 +21,30 @@ interface StepAmbitionsProps {
   onAiUpdate: (content: string) => void;
 }
 
+const VERTICAL_OPTIONS = [
+  { value: "FINANCE", label: "Finance / Assurance", desc: "DAF, contrôleur, finance d'entreprise" },
+  { value: "TECH", label: "Tech / Conseil", desc: "Product, projet, ESN, scale-up" },
+  { value: "OTHER", label: "Autre secteur", desc: "Marketing, RH, industrie, santé..." },
+] as const;
+
+const TRANSITION_TYPES = [
+  { value: "PIVOT", label: "Pivot complet", desc: "Changer de métier vers la data/IA" },
+  { value: "UPSKILL", label: "Upskill dans mon poste", desc: "Intégrer la data sans changer de métier" },
+  { value: "INTERNAL_EVOLUTION", label: "Évolution interne", desc: "Monter en grade en interne" },
+] as const;
+
+const HORIZONS = [
+  { value: "THREE_MONTHS", label: "3 mois", desc: "Sprint" },
+  { value: "SIX_MONTHS", label: "6 mois", desc: "Rythme soutenu" },
+  { value: "TWELVE_MONTHS", label: "12 mois", desc: "Étalé" },
+] as const;
+
+const SUCCESS_INDICATORS = [
+  { value: "NEW_JOB", label: "Décrocher un nouveau poste data-augmenté" },
+  { value: "DATA_PROJECTS", label: "Livrer X projets data dans mon poste actuel" },
+  { value: "SALARY_INCREASE", label: "Obtenir une augmentation de salaire" },
+] as const;
+
 export function StepAmbitions({
   targetRole,
   targetSector,
@@ -258,6 +282,92 @@ export function StepAmbitions({
               </p>
             </div>
           )}
+
+          {/* Career goal — 3 imposed dimensions */}
+          {targetRole && (
+            <div className="space-y-5 pt-2 border-t border-border/20 mt-4">
+              <p className="text-xs font-headline font-bold uppercase tracking-widest text-primary">
+                Cadre ton objectif
+              </p>
+
+              {/* Vertical */}
+              <div>
+                <label className="text-sm font-bold text-foreground mb-2 block">
+                  Ta verticale principale
+                </label>
+                <div className="grid grid-cols-1 sm:grid-cols-3 gap-2">
+                  {VERTICAL_OPTIONS.map((opt) => (
+                    <OptionButton
+                      key={opt.value}
+                      selected={formData.vertical === opt.value}
+                      label={opt.label}
+                      desc={opt.desc}
+                      onClick={() => onFieldChange("vertical", opt.value)}
+                    />
+                  ))}
+                </div>
+              </div>
+
+              {/* Transition type */}
+              <div>
+                <label className="text-sm font-bold text-foreground mb-2 block">
+                  Type de transition
+                </label>
+                <div className="grid grid-cols-1 sm:grid-cols-3 gap-2">
+                  {TRANSITION_TYPES.map((opt) => (
+                    <OptionButton
+                      key={opt.value}
+                      selected={formData.transitionType === opt.value}
+                      label={opt.label}
+                      desc={opt.desc}
+                      onClick={() => onFieldChange("transitionType", opt.value)}
+                    />
+                  ))}
+                </div>
+              </div>
+
+              {/* Horizon */}
+              <div>
+                <label className="text-sm font-bold text-foreground mb-2 block">
+                  Horizon
+                </label>
+                <div className="grid grid-cols-3 gap-2">
+                  {HORIZONS.map((opt) => (
+                    <OptionButton
+                      key={opt.value}
+                      selected={formData.horizon === opt.value}
+                      label={opt.label}
+                      desc={opt.desc}
+                      onClick={() => onFieldChange("horizon", opt.value)}
+                    />
+                  ))}
+                </div>
+              </div>
+
+              {/* Success indicator */}
+              <div>
+                <label className="text-sm font-bold text-foreground mb-2 block">
+                  Comment tu mesureras le succès
+                </label>
+                <div className="space-y-2">
+                  {SUCCESS_INDICATORS.map((opt) => (
+                    <button
+                      key={opt.value}
+                      onClick={() => onFieldChange("successIndicator", opt.value)}
+                      className={cn(
+                        "w-full p-3 rounded-xl text-left transition-all text-sm",
+                        formData.successIndicator === opt.value
+                          ? "bg-primary/10 border-2 border-primary/40 text-primary font-bold"
+                          : "bg-surface-container-lowest ghost-border hover:bg-surface-container text-foreground"
+                      )}
+                    >
+                      {opt.label}
+                    </button>
+                  ))}
+                </div>
+              </div>
+            </div>
+          )}
         </div>
       )}
 
@@ -308,5 +418,34 @@ export function StepAmbitions({
         </div>
       )}
     </div>
+  );
+}
+
+function OptionButton({
+  selected,
+  label,
+  desc,
+  onClick,
+}: {
+  selected: boolean;
+  label: string;
+  desc: string;
+  onClick: () => void;
+}) {
+  return (
+    <button
+      onClick={onClick}
+      className={cn(
+        "p-3 rounded-xl text-left transition-all",
+        selected
+          ? "bg-primary/10 border-2 border-primary/40 shadow-lg shadow-primary/10"
+          : "bg-surface-container-lowest ghost-border hover:bg-surface-container"
+      )}
+    >
+      <p className={cn("text-xs font-bold", selected ? "text-primary" : "text-foreground")}>
+        {label}
+      </p>
+      <p className="text-[10px] text-muted-foreground mt-0.5 leading-snug">{desc}</p>
+    </button>
   );
 }
