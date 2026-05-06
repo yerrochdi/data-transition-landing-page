@@ -425,8 +425,8 @@ export function OnboardingFlow({ initialData, chosenPlan = "free" }: OnboardingF
           </div>
         </div>
 
-        {/* Step Content */}
-        <div className="mb-8 pb-28 lg:pb-8 animate-fade-up" key={currentStep}>
+        {/* Step Content — pb-40 mobile to clear the fixed bottom nav (≈ 100px + safe-area) */}
+        <div className="mb-8 pb-40 lg:pb-8 animate-fade-up" key={currentStep}>
           {renderStep()}
         </div>
 
