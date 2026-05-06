@@ -1,6 +1,7 @@
 "use client";
 
-import { useReducer, useState, useTransition, useCallback } from "react";
+import { useReducer, useState, useTransition, useCallback, useEffect } from "react";
+import { createPortal } from "react-dom";
 import { useRouter } from "next/navigation";
 import {
   User,
@@ -88,6 +89,11 @@ export function OnboardingFlow({ initialData, chosenPlan = "free" }: OnboardingF
   const [aiInsights, setAiInsights] = useState<AiInsights>(initialAiInsights);
   const [isPending, startTransition] = useTransition();
   const [completing, setCompleting] = useState(false);
+  const [mounted, setMounted] = useState(false);
+
+  useEffect(() => {
+    setMounted(true);
+  }, []);
 
   const step = STEPS[currentStep];
   const Icon = iconMap[step.icon] || User;
@@ -420,12 +426,50 @@ export function OnboardingFlow({ initialData, chosenPlan = "free" }: OnboardingF
         </div>
 
         {/* Step Content */}
-        <div className="mb-8 pb-24 lg:pb-8 animate-fade-up" key={currentStep}>
+        <div className="mb-8 pb-28 lg:pb-8 animate-fade-up" key={currentStep}>
           {renderStep()}
         </div>
 
-        {/* Navigation — fixed on mobile (anchored to viewport), sticky on desktop */}
-        <div className="fixed bottom-0 left-0 right-0 lg:sticky lg:left-auto lg:right-auto z-40 bg-background/95 lg:bg-background/80 backdrop-blur-xl py-4 px-6 lg:-mx-6 flex items-center justify-between border-t border-border/10 pb-[max(1rem,env(safe-area-inset-bottom))]">
+        {/* Mobile nav — rendered via portal to body to escape any containing block */}
+        {mounted && createPortal(
+          <div className="lg:hidden fixed bottom-0 left-0 right-0 z-40 bg-background/95 backdrop-blur-xl py-4 px-6 flex items-center justify-between border-t border-border/10 pb-[max(1rem,env(safe-area-inset-bottom))]">
+            <button
+              onClick={handleBack}
+              className={cn(
+                "flex items-center gap-2 px-6 py-3 rounded-xl text-sm font-bold transition-all",
+                isFirst
+                  ? "opacity-0 pointer-events-none"
+                  : "bg-surface-container-lowest ghost-border text-muted-foreground hover:text-foreground"
+              )}
+            >
+              <ArrowLeft className="w-4 h-4" />
+              Retour
+            </button>
+            <button
+              onClick={handleNext}
+              disabled={completing}
+              className="gradient-primary text-primary-foreground px-8 py-3 rounded-xl text-sm font-bold flex items-center gap-2 active:scale-95 disabled:opacity-50"
+            >
+              {completing ? (
+                "Finalisation..."
+              ) : isLast ? (
+                <>
+                  {PAID_CHOSEN_PLANS.includes(chosenPlan) ? "Passer au paiement" : "Lancer mon parcours"}
+                  <Sparkles className="w-4 h-4" />
+                </>
+              ) : (
+                <>
+                  Continuer
+                  <ArrowRight className="w-4 h-4" />
+                </>
+              )}
+            </button>
+          </div>,
+          document.body
+        )}
+
+        {/* Desktop nav — sticky inside the flow */}
+        <div className="hidden lg:flex sticky bottom-0 z-40 bg-background/80 backdrop-blur-xl py-4 -mx-6 px-6 items-center justify-between border-t border-border/10">
           <button
             onClick={handleBack}
             className={cn(
