@@ -3,6 +3,7 @@
 import { createClient } from "@/lib/supabase/server";
 import { prisma } from "@/lib/db";
 import { getPlanLimits } from "@/lib/billing/plans";
+import { computeMatchesForUser } from "./scoring";
 
 // ─── Types ────────────────────────────────────────────────────────
 
@@ -204,6 +205,89 @@ function buildOpportunities(opts: {
   return opportunities;
 }
 
+// ─── Real opportunities loader (Sprint 2) ──────────────────────────
+
+const MATCH_FRESHNESS_DAYS = 7;
+
+/**
+ * Loads real opportunities from the database (France Travail synced)
+ * with the user's match scores. Recomputes matches if they're stale
+ * or missing. Returns null if there are no real opportunities yet
+ * (the caller falls back to template opportunities).
+ */
+async function loadRealOpportunities(userId: string): Promise<Opportunity[] | null> {
+  const realCount = await prisma.opportunity.count({
+    where: { isActive: true, source: { not: "MANUAL" } },
+  });
+  if (realCount === 0) return null;
+
+  // Check freshness of existing matches for this user.
+  const cutoff = new Date(Date.now() - MATCH_FRESHNESS_DAYS * 24 * 60 * 60 * 1000);
+  const freshMatchCount = await prisma.opportunityMatch.count({
+    where: { userId, lastComputedAt: { gte: cutoff } },
+  });
+
+  // If we have very few fresh matches, recompute. We don't await this for
+  // every page load — only when the user has no matches yet (first visit).
+  if (freshMatchCount === 0) {
+    try {
+      await computeMatchesForUser(userId);
+    } catch (err) {
+      console.error("[opportunities] match computation failed:", err);
+    }
+  }
+
+  // Now load opportunities + matches in one go.
+  const rows = await prisma.opportunity.findMany({
+    where: { isActive: true, source: { not: "MANUAL" } },
+    include: {
+      matches: { where: { userId } },
+    },
+    orderBy: { postedAt: "desc" },
+    take: 50,
+  });
+
+  const opportunities: Opportunity[] = rows.map((row) => {
+    const match = row.matches[0];
+    return {
+      id: row.id,
+      title: row.title,
+      company: row.company,
+      location: row.location,
+      type: typeFromPrisma(row.type),
+      tags: row.tags,
+      description: row.description,
+      remote: row.remote,
+      matchScore: match?.matchScore ?? 0,
+      aiReason: match?.aiReason ?? "Score en cours de calcul…",
+      salary: row.salary ?? undefined,
+      // Real offers link to the original posting (France Travail / LinkedIn).
+      searchUrl: row.sourceUrl ?? "https://candidat.francetravail.fr/offres/recherche",
+    };
+  });
+
+  // Sort by matchScore desc — best matches first, untreated ones at bottom.
+  opportunities.sort((a, b) => b.matchScore - a.matchScore);
+  return opportunities;
+}
+
+function typeFromPrisma(t: string): OpportunityType {
+  // Prisma enum is uppercase, our shared type is lowercase. We treat all
+  // real offers as "job" — the v2 API doesn't distinguish freelance reliably.
+  switch (t) {
+    case "JOB":
+      return "job";
+    case "FREELANCE":
+      return "freelance";
+    case "FORMATION":
+      return "formation";
+    case "TRANSITION":
+      return "transition";
+    default:
+      return "job";
+  }
+}
+
 // ─── Main Action ──────────────────────────────────────────────────
 
 export async function getOpportunitiesData(): Promise<OpportunitiesData | null> {
@@ -227,19 +311,24 @@ export async function getOpportunitiesData(): Promise<OpportunitiesData | null> 
   const profile = dbUser.profile;
   const onboarding = dbUser.onboarding;
 
-  const opportunities = buildOpportunities({
-    targetRole: profile?.targetRole ?? onboarding?.targetRole ?? null,
-    targetSector: profile?.targetSector ?? onboarding?.targetSector ?? null,
-    currentRole: profile?.currentRole ?? onboarding?.currentRole ?? null,
-    currentSector: profile?.currentSector ?? onboarding?.currentSector ?? null,
-    topSkills: profile?.topSkills ?? onboarding?.topSkills ?? [],
-    skillGaps: profile?.skillGaps ?? [],
-    readinessScore: profile?.readinessScore ?? 0,
-    hasDataTraining: onboarding?.hasDataTraining ?? false,
-    experienceYears: profile?.experienceYears ?? onboarding?.experienceYears ?? null,
-    remotePreference: onboarding?.remotePreference ?? null,
-    location: onboarding?.location ?? null,
-  });
+  // Try real opportunities first (Sprint 2). Fall back to AI-generated
+  // templates when the database is still empty (cron hasn't run yet).
+  const realOpportunities = await loadRealOpportunities(dbUser.id);
+  const opportunities =
+    realOpportunities ??
+    buildOpportunities({
+      targetRole: profile?.targetRole ?? onboarding?.targetRole ?? null,
+      targetSector: profile?.targetSector ?? onboarding?.targetSector ?? null,
+      currentRole: profile?.currentRole ?? onboarding?.currentRole ?? null,
+      currentSector: profile?.currentSector ?? onboarding?.currentSector ?? null,
+      topSkills: profile?.topSkills ?? onboarding?.topSkills ?? [],
+      skillGaps: profile?.skillGaps ?? [],
+      readinessScore: profile?.readinessScore ?? 0,
+      hasDataTraining: onboarding?.hasDataTraining ?? false,
+      experienceYears: profile?.experienceYears ?? onboarding?.experienceYears ?? null,
+      remotePreference: onboarding?.remotePreference ?? null,
+      location: onboarding?.location ?? null,
+    });
 
   const limits = getPlanLimits(dbUser.plan);
   const visibleLimit = limits.opportunitiesVisible;

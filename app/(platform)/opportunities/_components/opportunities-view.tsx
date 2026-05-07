@@ -111,16 +111,27 @@ function OpportunityCard({ opportunity }: { opportunity: Opportunity }) {
         <p className="text-[11px] text-muted-foreground leading-relaxed">{opportunity.aiReason}</p>
       </div>
 
-      {/* Search button */}
-      <a
-        href={opportunity.searchUrl}
-        target="_blank"
-        rel="noopener noreferrer"
-        className="inline-flex items-center gap-2 px-4 py-2 rounded-xl bg-primary/10 text-primary text-xs font-bold hover:bg-primary/20 transition-colors"
-      >
-        <ExternalLink className="w-3.5 h-3.5" />
-        {opportunity.type === "formation" ? "Voir sur Coursera" : "Rechercher sur LinkedIn"}
-      </a>
+      {/* Action buttons */}
+      <div className="flex flex-wrap items-center gap-2">
+        <a
+          href={opportunity.searchUrl}
+          target="_blank"
+          rel="noopener noreferrer"
+          className="inline-flex items-center gap-2 px-4 py-2 rounded-xl bg-primary/10 text-primary text-xs font-bold hover:bg-primary/20 transition-colors"
+        >
+          <ExternalLink className="w-3.5 h-3.5" />
+          {opportunity.type === "formation" ? "Voir sur Coursera" : "Voir l'offre"}
+        </a>
+        {opportunity.type !== "formation" && (
+          <Link
+            href={`/opportunities/${opportunity.id}/interview`}
+            className="inline-flex items-center gap-2 px-4 py-2 rounded-xl bg-surface-container-lowest ghost-border text-foreground text-xs font-bold hover:bg-surface-container transition-colors"
+          >
+            <Sparkles className="w-3.5 h-3.5 text-primary" />
+            Préparer l&apos;entretien
+          </Link>
+        )}
+      </div>
     </div>
   );
 }
