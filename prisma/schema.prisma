@@ -377,13 +377,31 @@ model Opportunity {
   sourceUrl   String?
   postedAt    DateTime
   isActive    Boolean         @default(true)
+
+  // Real-job data (Sprint 2 — France Travail / scraping)
+  source         OpportunitySource @default(MANUAL) // FRANCE_TRAVAIL | LINKEDIN_SCRAPE | ...
+  externalId     String?           @unique           // Job ID from the source, used for upsert
+  contractType   String?                             // CDI, CDD, MIS (intérim), STG...
+  experienceText String?                             // "5 ans d'expérience exigée"
+  romeCode       String?                             // ROME job code (M1801, M1802, ...)
+  skills         String[]                            // Extracted by IA from description
+
   createdAt   DateTime        @default(now())
   updatedAt   DateTime        @updatedAt
 
   bookmarks OpportunityBookmark[]
   matches   OpportunityMatch[]
 
+  @@index([source, isActive])
+  @@index([postedAt])
   @@map("opportunities")
+}
+
+enum OpportunitySource {
+  MANUAL
+  FRANCE_TRAVAIL
+  LINKEDIN_SCRAPE
+  WTTJ_SCRAPE
 }
 
 enum OpportunityType {
@@ -394,16 +412,21 @@ enum OpportunityType {
 }
 
 model OpportunityMatch {
-  id            String   @id @default(uuid())
-  opportunityId String
-  userId        String
-  matchScore    Int      // 0-100
-  aiReason      String   @db.Text
-  createdAt     DateTime @default(now())
+  id              String   @id @default(uuid())
+  opportunityId   String
+  userId          String
+  matchScore      Int      // 0-100
+  aiReason        String   @db.Text
+  gapExplanation  String?  @db.Text // skills missing, extracted by IA
+  matchedSkills   String[] // skills from user that matched the offer
+  missingSkills   String[] // skills from offer that user lacks
+  lastComputedAt  DateTime @default(now())
+  createdAt       DateTime @default(now())
 
   opportunity Opportunity @relation(fields: [opportunityId], references: [id], onDelete: Cascade)
 
   @@unique([opportunityId, userId])
+  @@index([userId, matchScore])
   @@map("opportunity_matches")
 }
 
