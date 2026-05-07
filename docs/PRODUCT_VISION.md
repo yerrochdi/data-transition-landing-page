@@ -63,10 +63,23 @@ Le user signe pour résoudre **3 problèmes que personne d'autre ne résout ense
 - Génération de messages d'approche personnalisés
 - Tracker des conversations entamées avec relances IA
 
-### 🔴 Feature 3 — Livrables concrets
-- Briefs guidés (ex: "Construis ton premier dashboard Power BI", "Analyse de cohorte sur tes vraies données", "Identifie 3 cas d'usage IA chez ton employeur")
-- Templates fournis + correction IA des livrables soumis
-- L'utilisateur termine avec un **portfolio de preuves de compétence** prêt à mettre sur LinkedIn
+### 🔴 Feature 3 — Livrables concrets (architecture parallèle au parcours)
+
+**Principe** : les livrables sont **indépendants** du parcours. L'utilisateur peut piocher un brief dès J1, le terminer en 3-7 jours, et l'ajouter à son portfolio LinkedIn **immédiatement** (pas à la fin des 6 mois de parcours).
+
+- Catalogue de 30-50 briefs (filtrables par compétence, secteur, durée)
+- Templates fournis (Notion / Power BI / Notebook Python / 1-pager)
+- Correction IA : score 0-100 + 3 points forts + 3 axes d'amélioration
+- Portfolio dispo dès le 1er livrable validé (export PDF + lien public partageable)
+- L'IA Copilot **suggère** le bon brief au bon moment du parcours, mais sans bloquer
+
+**Pourquoi cette architecture parallèle** : un user qui doit attendre 6 mois pour avoir 1 livrable = user qui résilie au mois 2. Quick wins = engagement = rétention.
+
+**Différenciation pricing** :
+- Free : 1 brief découverte (ex: 1-pager cas d'usage IA)
+- Boost : 5 briefs/mois
+- Pro : illimité (incluant briefs premium avec correction IA approfondie)
+- Sprint : 5 briefs sprint en 30 jours + revue 1:1 IA
 
 ## Pricing V1
 

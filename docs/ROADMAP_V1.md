@@ -97,44 +97,52 @@ Remplacer les "opportunités" générées par IA (fakes) par du job matching ave
 ## SPRINT 3 — Livrables concrets (S6-S8)
 
 ### Objectifs
-Permettre à l'utilisateur de produire un **portfolio de preuves de compétence** pendant son parcours.
+Permettre à l'utilisateur de **piocher un brief à tout moment** (pas couplé au parcours) et de bâtir un portfolio LinkedIn dès la 1ère semaine.
+
+### Architecture clé (décision 2026-05-07)
+- Livrables = **micro-projets indépendants** du parcours (3-7 jours chacun)
+- Catalogue de 30-50 briefs piochables à n'importe quel moment
+- Portfolio dispo **dès le 1er livrable validé** (pas à la fin des 6 mois)
+- L'IA Copilot suggère le bon brief au bon moment, mais sans bloquer
 
 ### Tâches
 
 **S6**
-- [ ] **Modèle Prisma `Deliverable`**
-  - userId, briefId, status (PENDING / SUBMITTED / REVIEWED), submittedAt, reviewedAt
-  - aiReview (JSON : score, points forts, axes d'amélioration)
-  - fileUrl ou contenu texte/markdown selon le type
-- [ ] **Modèle `DeliverableBrief`** — les briefs templates
-  - Title, description, sector (finance / tech), skill, difficulty, estimatedHours
-  - Template fichier (Power BI, Notebook Python, doc 1-pager, etc.)
-  - Critères d'évaluation (pour la correction IA)
-- [ ] **Seed 20 briefs initiaux** (10 par secteur)
+- [ ] **Modèle Prisma `DeliverableBrief`** — les briefs du catalogue
+  - title, description, sector (finance / tech / generic), skillCategory, difficulty,
+    estimatedDays (3-7), templateUrl, evaluationCriteria (text), suggestedAtPhase (1-5, optionnel)
+- [ ] **Modèle Prisma `Deliverable`** — la soumission user
+  - userId, briefId, status (DRAFT / SUBMITTED / REVIEWED / VALIDATED), startedAt,
+    submittedAt, reviewedAt, content (markdown ou fileUrl)
+  - aiReview JSON : score, strengths[3], improvements[3], suggestion
+  - isPublic (pour le portfolio public), shareableSlug
+- [ ] **Seed 30 briefs** (15 finance + 15 tech) au lieu de 20 prévus
 
 **S7**
-- [ ] **UI page Livrables** — `/deliverables`
-  - Liste des briefs disponibles, filtrable par compétence et difficulté
-  - Bouton "Démarrer ce livrable" → ouvre la page brief avec template téléchargeable
-- [ ] **Soumission de livrable**
-  - Upload fichier (S3/Vercel Blob) ou éditeur intégré (markdown)
-  - Bouton "Soumettre pour correction IA"
-- [ ] **Correction IA**
-  - Prompt structuré (critères du brief + soumission user)
-  - Output : score 0-100, 3 points forts, 3 axes d'amélioration, suggestion concrète d'amélioration
-  - Affichage en accordion sur la page du livrable
+- [ ] **UI page `/deliverables`** : catalogue
+  - Filtres : compétence, secteur, difficulté, durée
+  - Cards "Démarrer ce brief" + recommandation IA "Suggéré pour toi"
+- [ ] **Page brief individuel** : description + critères + template téléchargeable
+- [ ] **Éditeur de soumission** : upload fichier (Vercel Blob) ou markdown intégré
+- [ ] **Correction IA** :
+  - Prompt structuré (critères du brief + contenu soumis)
+  - Output : score 0-100, 3 forts, 3 axes, suggestion concrète
 
 **S8**
-- [ ] **Portfolio export**
-  - Page `/portfolio` qui liste tous les livrables validés
-  - Bouton "Exporter en PDF" (puppeteer + template HTML branded)
-  - Lien public partageable (avec toggle privacy)
-- [ ] **Intégration LinkedIn** — bouton "Partager sur LinkedIn" qui pré-remplit un post avec le lien
+- [ ] **Page `/portfolio`** : liste des livrables validés (statut VALIDATED)
+- [ ] **Export PDF** (puppeteer + template HTML branded)
+- [ ] **Lien public partageable** (`/p/{shareableSlug}`) avec toggle privacy
+- [ ] **Bouton "Partager sur LinkedIn"** : pré-rempli un post avec le lien
+- [ ] **Quotas par plan** :
+  - Free : 1 brief découverte
+  - Boost : 5 briefs/mois
+  - Pro / Founding / Sprint : illimité
 
 ### Livrables Sprint 3
-- ✅ 20 briefs templates disponibles
-- ✅ Workflow complet : choisir brief → soumettre → corriger IA → ajouter au portfolio
-- ✅ Export portfolio PDF + lien public
+- ✅ 30 briefs catalogue (finance + tech)
+- ✅ Workflow complet : pioche → soumets → corrige IA → ajoute au portfolio (en 3-7 jours)
+- ✅ Portfolio public partageable LinkedIn dès le 1er livrable validé
+- ✅ Quotas pricing branchés
 
 ---
 
