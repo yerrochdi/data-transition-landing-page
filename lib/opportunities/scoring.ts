@@ -179,7 +179,7 @@ ${offers
 - Expérience requise : ${o.experienceText ?? "non précisée"}
 - Skills extraites : ${o.skills.join(", ") || "(aucune)"}
 - Remote : ${o.remote ? "oui" : "non/non précisé"}
-- Description : ${o.description.slice(0, 1500)}
+- Description : ${o.description.slice(0, 700)}
 `
   )
   .join("\n")}
@@ -206,20 +206,35 @@ async function scoreOffersBatch(
   });
 
   const content = completion.choices[0]?.message?.content;
-  if (!content) return [];
+  if (!content) {
+    console.error("[scoring] Kimi returned empty content for batch of", offers.length);
+    return [];
+  }
 
   try {
     const parsed = JSON.parse(content) as { results?: ScoringResult[] };
-    return parsed.results ?? [];
+    if (!parsed.results || !Array.isArray(parsed.results)) {
+      console.error(
+        "[scoring] Kimi returned valid JSON but no 'results' array. Got:",
+        content.slice(0, 800)
+      );
+      return [];
+    }
+    return parsed.results;
   } catch (err) {
-    console.error("[scoring] failed to parse JSON:", err, content.slice(0, 500));
+    console.error(
+      "[scoring] failed to parse JSON. err=",
+      err instanceof Error ? err.message : err,
+      "content=",
+      content.slice(0, 800)
+    );
     return [];
   }
 }
 
 // ─── Public: score all active opportunities for a single user ──────
 
-const BATCH_SIZE = 8; // small enough to keep prompts under context limit
+const BATCH_SIZE = 4; // smaller batches = more reliable JSON output from Kimi
 
 /**
  * Computes (or refreshes) match scores for all active opportunities
@@ -310,7 +325,12 @@ export async function computeMatchesForUser(userId: string): Promise<{
         scored++;
       }
     } catch (err) {
-      console.error("[scoring] batch failed:", err);
+      console.error(
+        "[scoring] batch threw an exception. batch_ids=",
+        batch.map((b) => b.id).join(","),
+        "err=",
+        err instanceof Error ? `${err.name}: ${err.message}` : err
+      );
       failed += batch.length;
     }
   }
