@@ -99,38 +99,40 @@ Pour chaque offre, tu calcules :
 4. reason : 1 phrase claire ("Match fort sur Power BI et finance" ou "Trop junior pour ton profil senior")
 5. gapExplanation : 2-3 phrases concrètes (à apprendre OU pourquoi l'offre ne convient pas)
 
-═══ RÈGLES DE PÉNALISATION CRITIQUES ═══
+═══ RÈGLES DE PÉNALISATION ═══
 
 ⚠️ MISMATCH DE SÉNIORITÉ (le plus important — ce sont des cadres seniors)
 - Si l'offre est junior/technicien/débutant ET user a >5 ans XP → score MAX 25
 - Si l'offre est senior/lead/director ET user a <3 ans XP → score MAX 35
 - Toujours indiquer "Niveau de séniorité incompatible" dans reason si applicable
 
-⚠️ ADAPTATION SELON L'INDICATEUR DE SUCCÈS DU USER
-- Si successIndicator = "DATA_PROJECTS" (upskill dans poste actuel) :
-  → Pénalise les offres d'emploi externes (max 50)
-  → Privilégie les rôles avec dimension projet/internal-mobility
-- Si successIndicator = "SALARY_INCREASE" :
-  → Pénalise les offres avec un salaire < estimation user actuel (max 40)
-  → Privilégie les rôles avec salaire visible et compétitif
-- Si successIndicator = "NEW_JOB" :
-  → Pas de pénalité, privilégie les vrais matches role/sector
-
-⚠️ MISMATCH DE VERTICAL
-- Si vertical user = FINANCE et offre clairement TECH (et inversement) → pénalité -15 sauf si la cible explicite couvre les deux
-
 ⚠️ MISMATCH GÉOGRAPHIQUE
 - Si user a une location précise et l'offre est dans une ville très éloignée ET user n'est pas remote-only → pénalité -10
 - Si user est remote-only et offre est onsite uniquement → pénalité -20
 
+⚠️ ADAPTATION SOFT SELON L'INDICATEUR DE SUCCÈS
+(Ces signals sont indicatifs, pas bloquants — un user peut explorer hors de sa zone)
+- Si successIndicator = "DATA_PROJECTS" (upskill dans poste actuel) :
+  → Légère pénalité (-5 à -10) sur les offres d'emploi externes pures
+  → Privilégie les rôles avec dimension projet/internal mobility
+- Si successIndicator = "NEW_JOB" :
+  → Pas de pénalité particulière, focus sur le match role/sector
+- Si successIndicator = "SALARY_INCREASE" :
+  → Pas de pénalité automatique (on ne connaît pas le salaire actuel du user)
+  → Note : si l'offre a un salaire visible compétitif, c'est un bonus dans la reason
+
+⚠️ MISMATCH DE VERTICAL (soft)
+- Si vertical user = FINANCE et offre purement TECH (et inversement) → pénalité -10
+- Sauf si la cible explicite (targetRole) couvre les deux mondes
+
 ═══ ÉCHELLE DE SCORE FINALE ═══
 - 90-100 : match parfait (séniorité + rôle + secteur + skills + géo alignés)
-- 70-89 : bon match avec 1-2 gaps comblables
-- 50-69 : match correct mais gap notable
-- 30-49 : match faible (mismatch séniorité ou vertical ou succès)
-- 0-29 : pas adapté du tout (à ne pas afficher en priorité)
+- 70-89 : bon match avec 1-2 gaps comblables en quelques mois
+- 50-69 : match correct mais gap notable (à montrer)
+- 30-49 : match faible (à explorer pour le user curieux)
+- 0-29 : pas adapté du tout
 
-Sois SÉVÈRE. Mieux vaut 10 offres pertinentes qu'30 offres avec du bruit.
+Sois EXIGEANT sur la séniorité. Pour les autres critères, sois pragmatique : si une offre est vraiment proche du target role du user, score-la haut même si la vertical est légèrement différente.
 
 Réponds UNIQUEMENT avec un JSON valide au format :
 { "results": [ { "opportunityId": "...", "matchScore": 87, "matchedSkills": [...], "missingSkills": [...], "reason": "...", "gapExplanation": "..." } ] }
@@ -267,6 +269,14 @@ export async function computeMatchesForUser(userId: string): Promise<{
 
       // Map results by ID for safe upserts (model can shuffle order).
       const byId = new Map(results.map((r) => [r.opportunityId, r]));
+
+      // Log score distribution so we can tune the prompt from Vercel logs.
+      if (results.length > 0) {
+        const scores = results.map((r) => r.matchScore).sort((a, b) => b - a);
+        console.log(
+          `[scoring] user=${user.userId} batch=${batch.length} top3=${scores.slice(0, 3).join(",")} median=${scores[Math.floor(scores.length / 2)]} min=${scores[scores.length - 1]}`
+        );
+      }
 
       for (const offer of batch) {
         const result = byId.get(offer.id);
