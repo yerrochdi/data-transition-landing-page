@@ -18,14 +18,36 @@ const SEARCH_URL =
 
 const SCOPE = "o2dsoffre api_offresdemploiv2";
 
-// ROME codes targeted for the V1 — data/IA roles relevant for cadres en pivot.
+// ROME codes targeted for the V1 — data/IA roles for senior cadres.
+// We deliberately avoid M1805 (dev info généraliste) and E1106 (communication
+// trop large), which dragged in technicians and junior roles in the first run.
 export const TARGET_ROME_CODES = [
-  "M1810", // Analyse de tendances
+  "M1810", // Analyse de tendances (data analyst / scientist)
   "M1811", // Direction d'études en sciences humaines, économiques et sociales
   "M1802", // Conseil et maîtrise d'ouvrage en systèmes d'information
-  "M1805", // Études et développement informatique
-  "E1106", // Communication
+  "M1803", // Direction des systèmes d'information (CTO, DSI, Tech Lead)
+  "M1806", // Conseil et MOA en SI (architecte, expert SI)
+  "M1402", // Conseil en organisation et management d'entreprise
 ];
+
+// Free-text search keywords used in addition to ROME codes.
+// Helps surface roles like "AI Product Manager" or "Head of Data" that
+// some recruiters file under generic ROME codes.
+export const TARGET_KEYWORDS = [
+  "data scientist",
+  "data analyst senior",
+  "machine learning engineer",
+  "AI product manager",
+  "head of data",
+  "data engineer senior",
+  "lead data",
+  "chief data officer",
+];
+
+// Experience filter on France Travail v2:
+// 1 = débutant accepté, 2 = 1 an d'XP minimum, 3 = expérience exigée
+// We force 3 = "expérience exigée" to filter out junior offers at the source.
+const EXPERIENCE_LEVEL = "3";
 
 let cachedToken: { value: string; expiresAt: number } | null = null;
 
@@ -96,6 +118,7 @@ type SearchOptions = {
   codeROME?: string; // single ROME — France Travail expects one at a time for filtering
   commune?: string; // INSEE code
   range?: string; // "0-49" — France Travail returns max 150 per call
+  experience?: string; // 1 = débutant, 2 = 1 an, 3 = exigée
 };
 
 export async function searchOffers(options: SearchOptions = {}): Promise<FranceTravailOffer[]> {
@@ -105,6 +128,7 @@ export async function searchOffers(options: SearchOptions = {}): Promise<FranceT
   if (options.motsCles) params.set("motsCles", options.motsCles);
   if (options.codeROME) params.set("codeROME", options.codeROME);
   if (options.commune) params.set("commune", options.commune);
+  if (options.experience) params.set("experience", options.experience);
   params.set("range", options.range ?? "0-49");
 
   const res = await fetch(`${SEARCH_URL}?${params.toString()}`, {
@@ -124,27 +148,73 @@ export async function searchOffers(options: SearchOptions = {}): Promise<FranceT
   return json.resultats ?? [];
 }
 
+// Junior / non-senior titles that we filter out post-fetch even when
+// France Travail's experience filter doesn't catch them. Lowercase match
+// on the offer title.
+const JUNIOR_TITLE_PATTERNS = [
+  /\btechnicien(?:ne)?\b/i,
+  /\bapprenti(?:e)?\b/i,
+  /\bstage\b/i,
+  /\bstagiaire\b/i,
+  /\balternance\b/i,
+  /\balternant(?:e)?\b/i,
+  /\bjunior\b/i, // careful: "senior junior" doesn't exist, this is safe
+  /\bd[ée]butant(?:e)?\b/i,
+  /\bsupport\s+(niveau\s*)?[12]\b/i, // "support niveau 1/2"
+  /\bhotline\b/i,
+  /\bhelp\s*desk\b/i,
+];
+
+function isJuniorOrNonSeniorTitle(title: string): boolean {
+  return JUNIOR_TITLE_PATTERNS.some((p) => p.test(title));
+}
+
 /**
- * Fetches a batch of offers across all data/IA-relevant ROME codes,
- * deduplicates by ID, and returns the merged list. Used by the weekly
- * cron sync to refresh the database.
+ * Fetches a batch of offers across all data/IA-relevant ROME codes
+ * AND a list of senior data/IA keywords, deduplicates by ID, filters
+ * out junior/technicien/stage/alternance titles, and returns the
+ * merged senior-only list.
  */
 export async function fetchAllRelevantOffers(): Promise<FranceTravailOffer[]> {
   const seen = new Map<string, FranceTravailOffer>();
 
+  // ROME-based search
   for (const code of TARGET_ROME_CODES) {
     try {
-      const offers = await searchOffers({ codeROME: code, range: "0-49" });
+      const offers = await searchOffers({
+        codeROME: code,
+        experience: EXPERIENCE_LEVEL,
+        range: "0-49",
+      });
       for (const offer of offers) {
         if (!seen.has(offer.id)) seen.set(offer.id, offer);
       }
     } catch (err) {
-      // One bad ROME shouldn't block the whole sync — log and continue.
       console.error(`[france-travail] ROME ${code} fetch failed:`, err);
     }
   }
 
-  return Array.from(seen.values());
+  // Keyword-based search (catches creative job titles France Travail
+  // ROME codes don't cover well, like "AI Product Manager")
+  for (const keyword of TARGET_KEYWORDS) {
+    try {
+      const offers = await searchOffers({
+        motsCles: keyword,
+        experience: EXPERIENCE_LEVEL,
+        range: "0-29",
+      });
+      for (const offer of offers) {
+        if (!seen.has(offer.id)) seen.set(offer.id, offer);
+      }
+    } catch (err) {
+      console.error(`[france-travail] keyword "${keyword}" fetch failed:`, err);
+    }
+  }
+
+  // Post-filter: drop junior/technicien/stage titles even if they slipped
+  // through France Travail's experience filter.
+  const allOffers = Array.from(seen.values());
+  return allOffers.filter((offer) => !isJuniorOrNonSeniorTitle(offer.intitule));
 }
 
 // ─── Offline mock for development before credentials are activated ──

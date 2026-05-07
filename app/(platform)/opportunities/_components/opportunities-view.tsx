@@ -138,12 +138,23 @@ function OpportunityCard({ opportunity }: { opportunity: Opportunity }) {
 
 // ─── Main View ────────────────────────────────────────────────────
 
+// Anything below this score is hidden by default — these offers are too
+// far from the user's profile and clutter the list. Users can toggle
+// them back on via the "À explorer" filter below.
+const LOW_SCORE_THRESHOLD = 50;
+
 export function OpportunitiesView({ data }: { data: OpportunitiesData }) {
   const [filter, setFilter] = useState<OpportunityType | "all">("all");
   const [searchQuery, setSearchQuery] = useState("");
+  const [showLowScores, setShowLowScores] = useState(false);
+
+  const lowScoreCount = data.opportunities.filter(
+    (o) => o.matchScore < LOW_SCORE_THRESHOLD
+  ).length;
 
   const filtered = data.opportunities.filter((opp) => {
     if (filter !== "all" && opp.type !== filter) return false;
+    if (!showLowScores && opp.matchScore < LOW_SCORE_THRESHOLD) return false;
     if (searchQuery) {
       const q = searchQuery.toLowerCase();
       return opp.title.toLowerCase().includes(q) ||
@@ -268,6 +279,23 @@ export function OpportunitiesView({ data }: { data: OpportunitiesData }) {
           ))}
         </div>
       </div>
+
+      {/* Low-score toggle */}
+      {lowScoreCount > 0 && (
+        <div className="flex items-center justify-between gap-3 bg-surface-container-low rounded-xl ghost-border px-4 py-3 mb-6">
+          <p className="text-xs text-muted-foreground">
+            {showLowScores
+              ? `${lowScoreCount} opportunité${lowScoreCount > 1 ? "s" : ""} à explorer affichée${lowScoreCount > 1 ? "s" : ""} (match faible)`
+              : `${lowScoreCount} opportunité${lowScoreCount > 1 ? "s" : ""} à explorer masquée${lowScoreCount > 1 ? "s" : ""} (match < 50%)`}
+          </p>
+          <button
+            onClick={() => setShowLowScores(!showLowScores)}
+            className="text-xs font-bold text-primary hover:underline shrink-0"
+          >
+            {showLowScores ? "Masquer" : "Afficher"}
+          </button>
+        </div>
+      )}
 
       {/* Results */}
       <div className="space-y-4">
