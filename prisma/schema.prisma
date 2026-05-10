@@ -40,6 +40,7 @@ model User {
   bookmarks           OpportunityBookmark[]
   analyticsSnapshots  AnalyticsSnapshot[]
   activities          Activity[]
+  deliverables        Deliverable[]
 
   @@map("users")
 }
@@ -545,4 +546,72 @@ enum FoundingMemberApplicationStatus {
   PENDING
   ACCEPTED
   REJECTED
+}
+
+// ============================================================
+// Deliverables (Sprint 3 — Livrables concrets / Portfolio)
+// ============================================================
+
+model DeliverableBrief {
+  id                  String   @id @default(uuid())
+  slug                String   @unique
+  title               String
+  shortDescription    String   @db.Text  // 1-2 lines for catalogue card
+  fullBrief           String   @db.Text  // markdown, full instructions
+  sector              String   // "finance" | "tech" | "generic"
+  skillCategory       String   // "data-viz" | "sql" | "ai-usecase" | "analysis" | "ml"
+  difficulty          Int      // 1-5
+  estimatedDays       Int      // 3-7
+  templateUrl         String?  // Notion / GitHub / Figma template link
+  tools               String[] // ["Power BI", "Python", "Notion", ...]
+  evaluationCriteria  String   @db.Text  // markdown, what the IA reviewer looks for
+  suggestedAtPhase    Int?     // 1-5, optional hint to Copilot
+  isPublished         Boolean  @default(true)
+  isPremium           Boolean  @default(false) // requires Pro/Sprint
+  createdAt           DateTime @default(now())
+  updatedAt           DateTime @updatedAt
+
+  deliverables Deliverable[]
+
+  @@index([sector, isPublished])
+  @@map("deliverable_briefs")
+}
+
+model Deliverable {
+  id            String              @id @default(uuid())
+  userId        String
+  briefId       String
+  status        DeliverableStatus   @default(DRAFT)
+
+  // Submission
+  content       String?             @db.Text  // markdown editor content
+  fileUrl       String?                       // Vercel Blob URL for attached file
+  externalUrl   String?                       // link to Notion / GitHub / Figma
+
+  // AI review
+  aiReview      Json?               // {score:0-100, strengths:[3], improvements:[3], suggestion:string}
+  aiReviewAt    DateTime?
+
+  // Portfolio sharing
+  isPublic      Boolean             @default(false)
+  shareableSlug String?             @unique
+
+  startedAt     DateTime            @default(now())
+  submittedAt   DateTime?
+  validatedAt   DateTime?
+  updatedAt     DateTime            @updatedAt
+
+  user  User             @relation(fields: [userId], references: [id], onDelete: Cascade)
+  brief DeliverableBrief @relation(fields: [briefId], references: [id], onDelete: Restrict)
+
+  @@unique([userId, briefId])
+  @@index([userId, status])
+  @@map("deliverables")
+}
+
+enum DeliverableStatus {
+  DRAFT
+  SUBMITTED
+  REVIEWED
+  VALIDATED
 }

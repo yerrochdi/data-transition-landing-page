@@ -95,6 +95,7 @@ export type Quotas = {
   // Content gates
   journeyPhasesUnlocked: number; // 1-5
   opportunitiesLimit: number | null; // visible cards in /opportunities
+  deliverablesPerMonth: number | null; // briefs that can be started per 30-day window
   hasFeedAccess: boolean; // /feed locked behind paid plans
   hasPrioritySupport: boolean;
 
@@ -109,6 +110,7 @@ const QUOTAS_BY_PLAN: Record<Plan, Quotas> = {
     aiSessionsPerDay: 3,
     journeyPhasesUnlocked: 1,
     opportunitiesLimit: 3,
+    deliverablesPerMonth: 1,
     hasFeedAccess: false,
     hasPrioritySupport: false,
     hardDailyCeiling: null,
@@ -118,6 +120,7 @@ const QUOTAS_BY_PLAN: Record<Plan, Quotas> = {
     aiSessionsPerDay: 20,
     journeyPhasesUnlocked: 5,
     opportunitiesLimit: 10,
+    deliverablesPerMonth: 5,
     hasFeedAccess: true,
     hasPrioritySupport: false,
     hardDailyCeiling: null,
@@ -127,6 +130,7 @@ const QUOTAS_BY_PLAN: Record<Plan, Quotas> = {
     aiSessionsPerDay: null,
     journeyPhasesUnlocked: 5,
     opportunitiesLimit: null,
+    deliverablesPerMonth: null,
     hasFeedAccess: true,
     hasPrioritySupport: true,
     hardDailyCeiling: 200,
@@ -136,6 +140,7 @@ const QUOTAS_BY_PLAN: Record<Plan, Quotas> = {
     aiSessionsPerDay: null,
     journeyPhasesUnlocked: 5,
     opportunitiesLimit: null,
+    deliverablesPerMonth: null,
     hasFeedAccess: true,
     hasPrioritySupport: true,
     hardDailyCeiling: 200,
@@ -145,6 +150,7 @@ const QUOTAS_BY_PLAN: Record<Plan, Quotas> = {
     aiSessionsPerDay: null,
     journeyPhasesUnlocked: 5,
     opportunitiesLimit: null,
+    deliverablesPerMonth: null,
     hasFeedAccess: true,
     hasPrioritySupport: true,
     hardDailyCeiling: 500,

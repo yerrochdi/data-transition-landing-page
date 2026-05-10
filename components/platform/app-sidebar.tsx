@@ -14,6 +14,8 @@ import {
   Crown,
   Zap,
   Users,
+  FileCheck,
+  Award,
 } from "lucide-react";
 import { cn } from "@/lib/utils";
 
@@ -27,6 +29,8 @@ const iconMap: Record<string, React.ElementType> = {
   BookOpen,
   Settings,
   Users,
+  FileCheck,
+  Award,
 };
 
 const navItems = [
@@ -36,6 +40,8 @@ const navItems = [
   { label: "Communauté", href: "/feed", icon: "Users" },
   { label: "Skill Roadmap", href: "/analytics", icon: "TrendingUp" },
   { label: "Job Market", href: "/opportunities", icon: "Briefcase" },
+  { label: "Livrables", href: "/deliverables", icon: "FileCheck" },
+  { label: "Portfolio", href: "/my-portfolio", icon: "Award" },
   { label: "Resources", href: "/resources", icon: "BookOpen" },
   { label: "Paramètres", href: "/settings", icon: "Settings" },
 ];
