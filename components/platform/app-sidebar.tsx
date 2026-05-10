@@ -56,6 +56,48 @@ interface AppSidebarProps {
   };
 }
 
+const PLAN_BADGE: Record<string, { label: string; className: string }> = {
+  FREE: {
+    label: "Free",
+    className: "bg-muted/40 text-muted-foreground",
+  },
+  BOOST: {
+    label: "Boost",
+    className: "bg-blue-500/15 text-blue-400 border border-blue-500/30",
+  },
+  PREMIUM: {
+    label: "Pro",
+    className:
+      "bg-gradient-to-r from-primary/20 to-primary/10 text-primary border border-primary/30",
+  },
+  FOUNDING: {
+    label: "Founding",
+    className:
+      "bg-gradient-to-r from-amber-500/20 to-amber-500/10 text-amber-400 border border-amber-500/30",
+  },
+  ENTERPRISE: {
+    label: "Enterprise",
+    className: "bg-purple-500/15 text-purple-400 border border-purple-500/30",
+  },
+};
+
+function PlanBadge({ plan }: { plan: string }) {
+  const config = PLAN_BADGE[plan] ?? PLAN_BADGE.FREE;
+  return (
+    <span
+      className={cn(
+        "inline-flex items-center gap-1 px-2 py-0.5 rounded-full text-[10px] font-bold uppercase tracking-wider mt-0.5",
+        config.className
+      )}
+    >
+      {(plan === "PREMIUM" || plan === "FOUNDING") && (
+        <Crown className="w-2.5 h-2.5" />
+      )}
+      {config.label}
+    </span>
+  );
+}
+
 export function AppSidebar({ user }: AppSidebarProps) {
   const pathname = usePathname();
 
@@ -68,13 +110,11 @@ export function AppSidebar({ user }: AppSidebarProps) {
           <div className="w-12 h-12 rounded-full bg-primary/20 flex items-center justify-center text-primary">
             <Brain className="w-6 h-6" />
           </div>
-          <div>
-            <p className="font-headline font-bold text-primary text-sm">
+          <div className="flex-1 min-w-0">
+            <p className="font-headline font-bold text-primary text-sm truncate">
               {user.targetRole || "Career Architect"}
             </p>
-            <p className="text-xs text-muted-foreground">
-              NextMove {user.plan === "PREMIUM" ? "Premium" : user.plan === "ENTERPRISE" ? "Enterprise" : "Free"}
-            </p>
+            <PlanBadge plan={user.plan} />
           </div>
         </div>
 

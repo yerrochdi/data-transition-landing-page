@@ -58,10 +58,13 @@ export async function getDailyUsage(
   today.setHours(0, 0, 0, 0);
 
   if (type === "copilot") {
-    return prisma.agentMessage.count({
+    // Source of truth = Activity AGENT_INTERACTION (created by trackCopilotUsage
+    // in /api/chat after each successful response). agentMessage is not currently
+    // persisted, so counting it would always return 0.
+    return prisma.activity.count({
       where: {
-        conversation: { userId: user.id },
-        role: "USER",
+        userId: user.id,
+        type: "AGENT_INTERACTION",
         createdAt: { gte: today },
       },
     });

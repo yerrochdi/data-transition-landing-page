@@ -16,6 +16,10 @@ import {
   Send,
   Save,
   Share2,
+  ListChecks,
+  FileText,
+  Bot,
+  Award,
 } from "lucide-react";
 import { cn } from "@/lib/utils";
 import {
@@ -310,6 +314,65 @@ export function BriefDetailView({
         )}
       </div>
 
+      {/* "How it works" — only when not started yet, to onboard the user */}
+      {!isStarted && (
+        <div className="bg-surface-container-lowest rounded-2xl p-5 ghost-border">
+          <div className="flex items-center gap-2 mb-4">
+            <ListChecks className="w-4 h-4 text-primary" />
+            <span className="text-[10px] uppercase tracking-widest font-bold text-primary">
+              Comment ça marche
+            </span>
+          </div>
+          <ol className="grid md:grid-cols-4 gap-3 text-xs">
+            {[
+              {
+                step: 1,
+                icon: FileText,
+                title: "Lis le brief",
+                desc: "Énoncé + critères d'évaluation IA juste en dessous.",
+              },
+              {
+                step: 2,
+                icon: Sparkles,
+                title: "Travaille où tu veux",
+                desc: `Notion, GitHub, Figma, Drive… ${brief.estimatedDays} jours conseillés.`,
+              },
+              {
+                step: 3,
+                icon: Bot,
+                title: "Soumets pour correction",
+                desc: "Un lien vers ton livrable + une description suffit. L'IA évalue en 30s.",
+              },
+              {
+                step: 4,
+                icon: Award,
+                title: "Validé → Portfolio",
+                desc: "Score ≥ 70 = livrable validé. Rends-le public, partage sur LinkedIn.",
+              },
+            ].map((s) => {
+              const Icon = s.icon;
+              return (
+                <li
+                  key={s.step}
+                  className="flex flex-col gap-1.5 p-3 rounded-xl bg-surface-container"
+                >
+                  <div className="flex items-center gap-2">
+                    <span className="w-5 h-5 rounded-full bg-primary/15 text-primary text-[10px] font-bold flex items-center justify-center">
+                      {s.step}
+                    </span>
+                    <Icon className="w-3.5 h-3.5 text-primary" />
+                  </div>
+                  <p className="font-bold text-foreground text-xs">{s.title}</p>
+                  <p className="text-[11px] text-muted-foreground leading-snug">
+                    {s.desc}
+                  </p>
+                </li>
+              );
+            })}
+          </ol>
+        </div>
+      )}
+
       {/* Error banner from server action redirect */}
       {error && (
         <div className="bg-red-500/5 border border-red-500/20 rounded-xl p-3 text-sm text-red-400 flex items-center gap-2">
@@ -398,10 +461,19 @@ export function BriefDetailView({
         </div>
       ) : (
         <div className="bg-surface-container-lowest rounded-2xl p-6 ghost-border space-y-4">
-          <div className="flex items-center justify-between">
-            <h3 className="font-headline text-lg font-bold text-foreground">
-              Ton livrable
-            </h3>
+          <div className="flex items-center justify-between gap-3 flex-wrap">
+            <div>
+              <h3 className="font-headline text-lg font-bold text-foreground">
+                Ton livrable
+              </h3>
+              {!isValidated && !isSubmitted && (
+                <p className="text-xs text-muted-foreground mt-1">
+                  Travaille ton livrable où tu veux (Notion, GitHub, Figma…),
+                  puis colle le lien ici + une courte description avant de
+                  soumettre.
+                </p>
+              )}
+            </div>
             {isSubmitted && (
               <span className="flex items-center gap-1 text-xs text-blue-400">
                 <Loader2 className="w-3.5 h-3.5 animate-spin" />
