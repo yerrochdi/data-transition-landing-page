@@ -130,6 +130,16 @@ ${deliverable.externalUrl ? `**Lien externe :** ${deliverable.externalUrl}\n\n` 
       },
     });
 
+    // Recompute the user's next recommended action — the orchestrator
+    // needs to know that a deliverable just got validated so it can
+    // pivot to the next priority (e.g. ambitious deliverable, opportunities).
+    if (verdict === "validated") {
+      const { refreshNextAction } = await import("@/lib/orchestrator/actions");
+      await refreshNextAction(deliverable.userId).catch((err) => {
+        console.error("[orchestrator] refresh after deliverable failed:", err);
+      });
+    }
+
     return review;
   } catch (err) {
     console.error("[ai-review] generation failed:", err);

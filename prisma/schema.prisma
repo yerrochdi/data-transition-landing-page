@@ -41,6 +41,7 @@ model User {
   analyticsSnapshots  AnalyticsSnapshot[]
   activities          Activity[]
   deliverables        Deliverable[]
+  recommendations     RecommendedAction[]
 
   @@map("users")
 }
@@ -628,4 +629,53 @@ enum DeliverableStatus {
 enum SubmissionMode {
   TEXT_ONLY      // CV, 1-pager use case — content text is the deliverable
   LINK_REQUIRED  // RAG, dashboard, analyse — need a link to external artefact
+}
+
+// ============================================================
+// Orchestrator — what should the user do next?
+// ============================================================
+// One row per user that captures the *current* recommended action.
+// We don't keep a long history here — the orchestrator recomputes on
+// demand when the user state changes. The row is upserted, so each user
+// has at most one active recommendation at a time (decision 1B: single
+// next-best-action, not a list of 3).
+
+model RecommendedAction {
+  id          String   @id @default(uuid())
+  userId      String   @unique
+  // The action template the orchestrator picked. The template defines
+  // the title, copy and target route — see lib/orchestrator/templates.ts.
+  templateKey ActionTemplate
+  // Free-form metadata the template needs to render (e.g. briefSlug,
+  // phaseSlug). Schema depends on the template key.
+  metadata    Json?
+  status      ActionStatus @default(ACTIVE)
+  generatedAt DateTime @default(now())
+  completedAt DateTime?
+  // Computed at the same time as the action: the user's readiness score
+  // snapshot. We surface it in the UI for "you went from 30% to 45%".
+  readinessSnapshot Int @default(0)
+
+  user User @relation(fields: [userId], references: [id], onDelete: Cascade)
+
+  @@index([userId, status])
+  @@map("recommended_actions")
+}
+
+enum ActionTemplate {
+  COMPLETE_ONBOARDING
+  RUN_DIAGNOSTIC
+  FIRST_QUICK_DELIVERABLE
+  ADVANCE_PHASE_1
+  EXPLORE_OPPORTUNITIES
+  AMBITIOUS_DELIVERABLE
+  ADVANCE_LATER_PHASE
+  // Sentinel when nothing is left and the user is fully active
+  KEEP_MOMENTUM
+}
+
+enum ActionStatus {
+  ACTIVE
+  COMPLETED
+  SKIPPED
 }

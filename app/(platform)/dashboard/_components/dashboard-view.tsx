@@ -29,13 +29,15 @@ import { StreakTip } from "./streak-tip";
 import { Achievements } from "./achievements";
 import { WelcomeModal } from "./welcome-modal";
 import { NextActions } from "./next-actions";
+import { NextBestAction, type NextBestActionProps } from "./next-best-action";
 import { cn } from "@/lib/utils";
 
 interface DashboardViewProps {
   data: DashboardData;
+  nextAction: NextBestActionProps | null;
 }
 
-export function DashboardView({ data }: DashboardViewProps) {
+export function DashboardView({ data, nextAction }: DashboardViewProps) {
   const { user, profile, onboarding, streakDays, dailyTip, journey } = data;
 
   const careerScore = profile?.careerScore ?? 0;
@@ -62,6 +64,13 @@ export function DashboardView({ data }: DashboardViewProps) {
           readinessScore={readinessScore}
         />
       )}
+
+      {/* ═══════════════════════════════════════════════════════════
+          NEXT BEST ACTION — the orchestrator's recommendation
+          (Phase A: this is the new dashboard hero, replacing the
+           feature-juxtaposition with a single fil rouge)
+          ═══════════════════════════════════════════════════════════ */}
+      {nextAction && <NextBestAction {...nextAction} />}
 
       {/* ═══════════════════════════════════════════════════════════
           HERO — Score + Role Transition + KPIs
