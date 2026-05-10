@@ -25,6 +25,7 @@ CREATE TABLE IF NOT EXISTS "deliverable_briefs" (
   "tools"               TEXT[] NOT NULL DEFAULT '{}',
   "evaluationCriteria"  TEXT NOT NULL,
   "suggestedAtPhase"    INTEGER,
+  "useFromProfile"      BOOLEAN NOT NULL DEFAULT false,
   "isPublished"         BOOLEAN NOT NULL DEFAULT true,
   "isPremium"           BOOLEAN NOT NULL DEFAULT false,
   "createdAt"           TIMESTAMP(3) NOT NULL DEFAULT CURRENT_TIMESTAMP,

@@ -566,6 +566,11 @@ model DeliverableBrief {
   tools               String[] // ["Power BI", "Python", "Notion", ...]
   evaluationCriteria  String   @db.Text  // markdown, what the IA reviewer looks for
   suggestedAtPhase    Int?     // 1-5, optional hint to Copilot
+  // When true, the brief can be pre-drafted by the IA from the user's
+  // onboarding profile (CV, 1-pager use case, LinkedIn summary). Pure
+  // technical briefs (RAG, dashboard) leave this false because the user
+  // must produce real artefacts.
+  useFromProfile      Boolean  @default(false)
   isPublished         Boolean  @default(true)
   isPremium           Boolean  @default(false) // requires Pro/Sprint
   createdAt           DateTime @default(now())

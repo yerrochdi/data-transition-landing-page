@@ -23,6 +23,7 @@ export type BriefCard = Pick<
   | "tools"
   | "isPremium"
   | "suggestedAtPhase"
+  | "useFromProfile"
 > & {
   userStatus: DeliverableStatus | null;
 };
@@ -98,6 +99,7 @@ export async function getCatalogueData(): Promise<CatalogueData | null> {
     tools: b.tools,
     isPremium: b.isPremium,
     suggestedAtPhase: b.suggestedAtPhase,
+    useFromProfile: b.useFromProfile,
     userStatus: statusByBrief.get(b.id) ?? null,
   }));
 
@@ -190,6 +192,46 @@ export async function startDeliverable(
   return { ok: true, deliverableId: deliverable.id };
 }
 
+// ─── Generate first draft from user profile ───────────────────────
+
+export async function generateFirstDraft(
+  deliverableId: string
+): Promise<{ ok: boolean; draft?: string; error?: string }> {
+  const user = await getCurrentUser();
+  if (!user) return { ok: false, error: "Not authenticated" };
+
+  const deliverable = await prisma.deliverable.findUnique({
+    where: { id: deliverableId },
+    include: { brief: true },
+  });
+  if (!deliverable || deliverable.userId !== user.id) {
+    return { ok: false, error: "Forbidden" };
+  }
+  if (!deliverable.brief.useFromProfile) {
+    return {
+      ok: false,
+      error: "Ce brief ne supporte pas la génération depuis le profil.",
+    };
+  }
+  if (deliverable.status === DeliverableStatus.VALIDATED) {
+    return { ok: false, error: "Livrable déjà validé." };
+  }
+
+  const { generateDraftFromProfile } = await import("./draft-generator");
+  const result = await generateDraftFromProfile(user.id, deliverable.brief.id);
+  if (!result.ok || !result.draft) {
+    return { ok: false, error: result.error ?? "Erreur de génération" };
+  }
+
+  // Persist the generated draft so the user has it next time
+  await prisma.deliverable.update({
+    where: { id: deliverableId },
+    data: { content: result.draft },
+  });
+
+  return { ok: true, draft: result.draft };
+}
+
 // ─── Save draft ───────────────────────────────────────────────────
 
 export async function saveDraft(
@@ -238,15 +280,25 @@ export async function submitForReview(
     return { ok: false, error: "Forbidden" };
   }
 
-  // Must have something to review
-  const hasContent =
-    (deliverable.content && deliverable.content.trim().length >= 100) ||
-    (deliverable.externalUrl && deliverable.externalUrl.trim().length > 0);
-  if (!hasContent) {
+  // Both fields required: a description (≥100 chars) AND a link to the
+  // actual artefact (so the IA reviewer has real material to evaluate).
+  const trimmedContent = deliverable.content?.trim() ?? "";
+  const trimmedUrl = deliverable.externalUrl?.trim() ?? "";
+
+  if (trimmedContent.length < 100) {
+    return {
+      ok: false,
+      error: `Ta description fait ${trimmedContent.length} caractères. Ajoute-en au moins ${
+        100 - trimmedContent.length
+      } de plus avant de soumettre — l'IA a besoin de contexte pour évaluer.`,
+    };
+  }
+
+  if (trimmedUrl.length === 0 || !/^https?:\/\//i.test(trimmedUrl)) {
     return {
       ok: false,
       error:
-        "Ajoute au moins 100 caractères de description ou un lien vers ton livrable avant de soumettre.",
+        "Ajoute un lien valide (Notion, GitHub, Figma, Drive…) vers ton livrable avant de soumettre.",
     };
   }
 

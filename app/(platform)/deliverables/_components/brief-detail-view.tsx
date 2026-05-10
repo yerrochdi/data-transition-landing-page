@@ -20,6 +20,7 @@ import {
   FileText,
   Bot,
   Award,
+  Wand2,
 } from "lucide-react";
 import { cn } from "@/lib/utils";
 import {
@@ -27,6 +28,7 @@ import {
   saveDraft,
   submitForReview,
   togglePublic,
+  generateFirstDraft,
   type BriefDetail,
 } from "@/lib/deliverables/actions";
 
@@ -266,6 +268,30 @@ export function BriefDetailView({
     });
   };
 
+  const handleGenerateDraft = () => {
+    if (!deliverable) return;
+    if (
+      content.trim().length > 0 &&
+      !window.confirm(
+        "Générer un nouveau premier jet va remplacer ton contenu actuel. Continuer ?"
+      )
+    ) {
+      return;
+    }
+    startTransition(async () => {
+      showFeedback("Génération en cours… 15-30 secondes.", "success");
+      const result = await generateFirstDraft(deliverable.id);
+      if (result.ok && result.draft) {
+        setContent(result.draft);
+        showFeedback(
+          "Premier jet généré ! Retravaille-le, puis soumets pour correction."
+        );
+      } else {
+        showFeedback(result.error ?? "Erreur", "error");
+      }
+    });
+  };
+
   return (
     <div className="space-y-6 max-w-4xl">
       {/* Back link */}
@@ -283,8 +309,14 @@ export function BriefDetailView({
           <span className="px-2.5 py-1 rounded-full text-[10px] font-bold uppercase tracking-wider bg-primary/10 text-primary">
             {brief.sector}
           </span>
-          {brief.isPremium && (
+          {brief.useFromProfile && (
             <span className="flex items-center gap-1 px-2 py-0.5 rounded-full bg-primary/10 text-primary text-[10px] font-bold">
+              <Wand2 className="w-3 h-3" />
+              IA-assisté
+            </span>
+          )}
+          {brief.isPremium && (
+            <span className="flex items-center gap-1 px-2 py-0.5 rounded-full bg-amber-500/15 text-amber-400 text-[10px] font-bold">
               <Crown className="w-3 h-3" />
               Pro
             </span>
@@ -507,6 +539,38 @@ export function BriefDetailView({
             />
           </div>
 
+          {/* "Generate first draft" — only for briefs that support it */}
+          {brief.useFromProfile && !isValidated && (
+            <div className="bg-primary/5 border border-primary/20 rounded-xl p-4 flex items-start gap-3">
+              <div className="w-8 h-8 rounded-lg bg-primary/15 flex items-center justify-center shrink-0">
+                <Wand2 className="w-4 h-4 text-primary" />
+              </div>
+              <div className="flex-1 min-w-0">
+                <p className="text-sm font-bold text-foreground mb-0.5">
+                  Pas envie de partir d'une page blanche ?
+                </p>
+                <p className="text-xs text-muted-foreground mb-2.5">
+                  L'IA peut rédiger un premier jet à partir de ton onboarding (poste,
+                  réalisations, secteur). Tu n'as plus qu'à retravailler.
+                </p>
+                <button
+                  onClick={handleGenerateDraft}
+                  disabled={isPending}
+                  className="inline-flex items-center gap-2 px-3 py-1.5 rounded-lg bg-primary text-primary-foreground text-xs font-bold hover:bg-primary/90 disabled:opacity-50"
+                >
+                  {isPending ? (
+                    <Loader2 className="w-3.5 h-3.5 animate-spin" />
+                  ) : (
+                    <Wand2 className="w-3.5 h-3.5" />
+                  )}
+                  {content.trim().length > 0
+                    ? "Regénérer un premier jet"
+                    : "Générer un premier jet IA"}
+                </button>
+              </div>
+            </div>
+          )}
+
           {/* Content */}
           <div>
             <label className="text-[10px] uppercase tracking-widest font-bold text-muted-foreground block mb-1.5">
@@ -516,7 +580,7 @@ export function BriefDetailView({
               value={content}
               onChange={(e) => setContent(e.target.value)}
               disabled={isValidated}
-              rows={10}
+              rows={brief.useFromProfile ? 16 : 10}
               placeholder="Décris ta démarche, tes choix, tes hypothèses... (min 100 caractères)"
               className="w-full px-3 py-2 rounded-lg bg-surface-container border border-border text-sm focus:outline-none focus:border-primary disabled:opacity-50 font-mono"
             />

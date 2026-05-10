@@ -95,6 +95,7 @@ Un notebook Jupyter (.ipynb) **commenté en français** contenant :
     estimatedDays: 3,
     suggestedAtPhase: 1,
     isPremium: false,
+    useFromProfile: true,
     tools: ["Notion / Google Docs", "Excalidraw (schéma archi)"],
     templateUrl: "https://www.notion.so/templates/nextmove-ai-usecase-1pager",
     shortDescription:
@@ -270,6 +271,7 @@ Ta boîte (cabinet de conseil, ESN, scale-up) a 50 documents internes (procédur
     estimatedDays: 3,
     suggestedAtPhase: 1,
     isPremium: false,
+    useFromProfile: true,
     tools: ["Notion ou Canva", "ChatGPT / Claude (assistance rédaction)"],
     templateUrl: "https://www.notion.so/templates/nextmove-cv-data-augmente",
     shortDescription:

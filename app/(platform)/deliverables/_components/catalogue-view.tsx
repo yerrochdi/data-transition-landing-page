@@ -11,6 +11,7 @@ import {
   TrendingUp,
   Zap,
   ArrowRight,
+  Wand2,
 } from "lucide-react";
 import { cn } from "@/lib/utils";
 import type { CatalogueData, BriefCard } from "@/lib/deliverables/actions";
@@ -79,7 +80,7 @@ function BriefCardComponent({
         if (locked) e.preventDefault();
       }}
     >
-      {/* Top row : sector badge + premium */}
+      {/* Top row : sector badge + premium + IA-assisté */}
       <div className="flex items-center justify-between gap-2 flex-wrap">
         <span
           className={cn(
@@ -89,12 +90,23 @@ function BriefCardComponent({
         >
           {sector.label}
         </span>
-        {brief.isPremium && (
-          <span className="flex items-center gap-1 px-2 py-0.5 rounded-full bg-primary/10 text-primary text-[10px] font-bold">
-            <Crown className="w-3 h-3" />
-            Pro
-          </span>
-        )}
+        <div className="flex items-center gap-1.5 flex-wrap">
+          {brief.useFromProfile && (
+            <span
+              className="flex items-center gap-1 px-2 py-0.5 rounded-full bg-primary/10 text-primary text-[10px] font-bold"
+              title="Premier jet généré à partir de ton onboarding"
+            >
+              <Wand2 className="w-3 h-3" />
+              IA-assisté
+            </span>
+          )}
+          {brief.isPremium && (
+            <span className="flex items-center gap-1 px-2 py-0.5 rounded-full bg-amber-500/15 text-amber-400 text-[10px] font-bold">
+              <Crown className="w-3 h-3" />
+              Pro
+            </span>
+          )}
+        </div>
       </div>
 
       {/* Title + description */}
