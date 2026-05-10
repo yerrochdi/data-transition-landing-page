@@ -95,7 +95,22 @@ export async function computeNextAction(
     };
   }
 
-  // ─── Rule 3: no validated deliverable yet ────────────────────
+  // ─── Rule 3: diagnostic phase not yet completed → BLOCKING ───
+  // The diagnostic must be finished before we surface deliverables,
+  // opportunities or ambitious briefs. It's what calibrates everything
+  // downstream (matching, brief suggestions, salary intelligence). A
+  // real career coach doesn't skip the assessment — neither do we.
+  // Even if the user has already started a livrable in parallel, we
+  // bring them back to finish the diagnostic first.
+  if (diagnostic.status !== "COMPLETED") {
+    return {
+      template: "ADVANCE_PHASE_1",
+      metadata: null,
+      readinessSnapshot: readiness,
+    };
+  }
+
+  // ─── Rule 4: diagnostic done but no validated deliverable yet ──
   const validatedDeliverables = user.deliverables.filter(
     (d) => d.status === "VALIDATED"
   );
@@ -116,7 +131,6 @@ export async function computeNextAction(
       };
     }
     // Pick the easiest available quick-win (TEXT_ONLY + useFromProfile)
-    // We hardcode the slug priority for V1: CV first, then 1-pager
     const candidate = await prisma.deliverableBrief.findFirst({
       where: {
         useFromProfile: true,
@@ -133,21 +147,6 @@ export async function computeNextAction(
         readinessSnapshot: readiness,
       };
     }
-  }
-
-  // ─── Rule 4: diagnostic phase not yet completed ──────────────
-  // Only push this when the user has NO validated deliverable yet.
-  // If they're already producing concrete work, momentum wins — keep
-  // them on the deliverable track rather than dragging them back.
-  if (
-    diagnostic.status !== "COMPLETED" &&
-    validatedDeliverables.length === 0
-  ) {
-    return {
-      template: "ADVANCE_PHASE_1",
-      metadata: null,
-      readinessSnapshot: readiness,
-    };
   }
 
   // ─── Rule 5: Phase 1 done + first deliverable done → opportunities ──

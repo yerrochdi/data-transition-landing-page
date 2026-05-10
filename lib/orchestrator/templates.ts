@@ -70,9 +70,9 @@ export function renderAction(
     case "ADVANCE_PHASE_1":
       return {
         template,
-        title: "Avance ta Phase 1 — Diagnostic",
-        why: "Tu as commencé, finis-la avant d'attaquer la suite. Chaque tâche fait monter ton readiness score.",
-        cta: "Reprendre la Phase 1",
+        title: "Termine ton Diagnostic",
+        why: "C'est l'étape qui calibre tout le reste — opportunités, briefs, parcours. Pas de raccourci, on doit la finir avant d'attaquer la suite.",
+        cta: "Reprendre le diagnostic",
         href: "/journey",
         iconName: "GraduationCap",
         estimatedMinutes: 30,
