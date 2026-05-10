@@ -10,6 +10,13 @@ EXCEPTION
   WHEN duplicate_object THEN null;
 END $$;
 
+-- Enum: SubmissionMode
+DO $$ BEGIN
+  CREATE TYPE "SubmissionMode" AS ENUM ('TEXT_ONLY', 'LINK_REQUIRED');
+EXCEPTION
+  WHEN duplicate_object THEN null;
+END $$;
+
 -- Table: deliverable_briefs
 CREATE TABLE IF NOT EXISTS "deliverable_briefs" (
   "id"                  TEXT PRIMARY KEY,
@@ -26,6 +33,7 @@ CREATE TABLE IF NOT EXISTS "deliverable_briefs" (
   "evaluationCriteria"  TEXT NOT NULL,
   "suggestedAtPhase"    INTEGER,
   "useFromProfile"      BOOLEAN NOT NULL DEFAULT false,
+  "submissionMode"      "SubmissionMode" NOT NULL DEFAULT 'LINK_REQUIRED',
   "isPublished"         BOOLEAN NOT NULL DEFAULT true,
   "isPremium"           BOOLEAN NOT NULL DEFAULT false,
   "createdAt"           TIMESTAMP(3) NOT NULL DEFAULT CURRENT_TIMESTAMP,

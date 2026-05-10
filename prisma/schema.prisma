@@ -571,6 +571,10 @@ model DeliverableBrief {
   // technical briefs (RAG, dashboard) leave this false because the user
   // must produce real artefacts.
   useFromProfile      Boolean  @default(false)
+  // How the user submits this deliverable. TEXT_ONLY = the deliverable IS
+  // the text content (CV, 1-pager). LINK_REQUIRED = the user must paste a
+  // link to an external artefact (Notion, GitHub, Looker Studio).
+  submissionMode      SubmissionMode @default(LINK_REQUIRED)
   isPublished         Boolean  @default(true)
   isPremium           Boolean  @default(false) // requires Pro/Sprint
   createdAt           DateTime @default(now())
@@ -619,4 +623,9 @@ enum DeliverableStatus {
   SUBMITTED
   REVIEWED
   VALIDATED
+}
+
+enum SubmissionMode {
+  TEXT_ONLY      // CV, 1-pager use case — content text is the deliverable
+  LINK_REQUIRED  // RAG, dashboard, analyse — need a link to external artefact
 }

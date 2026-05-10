@@ -209,6 +209,8 @@ export function BriefDetailView({
   const isReviewed = deliverable?.status === "REVIEWED";
   const isValidated = deliverable?.status === "VALIDATED";
   const review = deliverable?.aiReview as AiReviewShape | null | undefined;
+  const isTextOnly = brief.submissionMode === "TEXT_ONLY";
+  const minChars = isTextOnly ? 200 : 100;
 
   const showFeedback = (msg: string, type: "success" | "error" = "success") => {
     setFeedback(msg);
@@ -366,14 +368,18 @@ export function BriefDetailView({
               {
                 step: 2,
                 icon: Sparkles,
-                title: "Travaille où tu veux",
-                desc: `Notion, GitHub, Figma, Drive… ${brief.estimatedDays} jours conseillés.`,
+                title: isTextOnly ? "Rédige ton livrable" : "Construis ton livrable",
+                desc: isTextOnly
+                  ? `Directement ici dans l'éditeur. ${brief.estimatedDays} jours conseillés.`
+                  : `Sur Notion, GitHub, Figma… ${brief.estimatedDays} jours conseillés.`,
               },
               {
                 step: 3,
                 icon: Bot,
                 title: "Soumets pour correction",
-                desc: "Un lien vers ton livrable + une description suffit. L'IA évalue en 30s.",
+                desc: isTextOnly
+                  ? "L'IA évalue ton texte selon les critères du brief en 30s."
+                  : "Lien + description courte. L'IA évalue en 30s.",
               },
               {
                 step: 4,
@@ -500,9 +506,9 @@ export function BriefDetailView({
               </h3>
               {!isValidated && !isSubmitted && (
                 <p className="text-xs text-muted-foreground mt-1">
-                  Travaille ton livrable où tu veux (Notion, GitHub, Figma…),
-                  puis colle le lien ici + une courte description avant de
-                  soumettre.
+                  {isTextOnly
+                    ? "Rédige ton livrable directement dans l'éditeur. Quand tu es prêt, soumets pour correction IA."
+                    : "Construis ton livrable sur Notion / GitHub / Figma. Colle le lien ici + une courte description avant de soumettre."}
                 </p>
               )}
             </div>
@@ -524,20 +530,26 @@ export function BriefDetailView({
             )}
           </div>
 
-          {/* External URL */}
-          <div>
-            <label className="text-[10px] uppercase tracking-widest font-bold text-muted-foreground block mb-1.5">
-              Lien vers ton livrable (Notion, GitHub, Figma, Drive…)
-            </label>
-            <input
-              type="url"
-              value={externalUrl}
-              onChange={(e) => setExternalUrl(e.target.value)}
-              disabled={isValidated}
-              placeholder="https://..."
-              className="w-full px-3 py-2 rounded-lg bg-surface-container border border-border text-sm focus:outline-none focus:border-primary disabled:opacity-50"
-            />
-          </div>
+          {/* External URL — only for LINK_REQUIRED briefs (RAG, dashboard…) */}
+          {!isTextOnly && (
+            <div>
+              <label className="text-[10px] uppercase tracking-widest font-bold text-muted-foreground block mb-1.5">
+                Lien vers ton livrable (Notion, GitHub, Figma, Drive…) *
+              </label>
+              <input
+                type="url"
+                value={externalUrl}
+                onChange={(e) => setExternalUrl(e.target.value)}
+                disabled={isValidated}
+                placeholder="https://..."
+                className="w-full px-3 py-2 rounded-lg bg-surface-container border border-border text-sm focus:outline-none focus:border-primary disabled:opacity-50"
+              />
+              <p className="text-[10px] text-muted-foreground mt-1">
+                Pour ce brief, ton livrable vit sur Notion / GitHub / Figma. Colle le
+                lien public ici.
+              </p>
+            </div>
+          )}
 
           {/* "Generate first draft" — only for briefs that support it */}
           {brief.useFromProfile && !isValidated && (
@@ -571,21 +583,27 @@ export function BriefDetailView({
             </div>
           )}
 
-          {/* Content */}
+          {/* Content — main editor */}
           <div>
             <label className="text-[10px] uppercase tracking-widest font-bold text-muted-foreground block mb-1.5">
-              Description / contexte (markdown supporté)
+              {isTextOnly
+                ? "Ton livrable (markdown supporté) *"
+                : "Description de ta démarche (markdown supporté) *"}
             </label>
             <textarea
               value={content}
               onChange={(e) => setContent(e.target.value)}
               disabled={isValidated}
-              rows={brief.useFromProfile ? 16 : 10}
-              placeholder="Décris ta démarche, tes choix, tes hypothèses... (min 100 caractères)"
+              rows={brief.useFromProfile || isTextOnly ? 18 : 10}
+              placeholder={
+                isTextOnly
+                  ? `Rédige ton ${brief.title.toLowerCase()} directement ici. Min ${minChars} caractères.`
+                  : `Décris tes choix, tes hypothèses, ce que ton livrable montre… (min ${minChars} caractères)`
+              }
               className="w-full px-3 py-2 rounded-lg bg-surface-container border border-border text-sm focus:outline-none focus:border-primary disabled:opacity-50 font-mono"
             />
             <div className="text-[10px] text-muted-foreground mt-1 text-right">
-              {content.length} caractères
+              {content.length} / {minChars} caractères min
             </div>
           </div>
 

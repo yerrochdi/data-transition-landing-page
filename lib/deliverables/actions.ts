@@ -24,6 +24,7 @@ export type BriefCard = Pick<
   | "isPremium"
   | "suggestedAtPhase"
   | "useFromProfile"
+  | "submissionMode"
 > & {
   userStatus: DeliverableStatus | null;
 };
@@ -100,6 +101,7 @@ export async function getCatalogueData(): Promise<CatalogueData | null> {
     isPremium: b.isPremium,
     suggestedAtPhase: b.suggestedAtPhase,
     useFromProfile: b.useFromProfile,
+    submissionMode: b.submissionMode,
     userStatus: statusByBrief.get(b.id) ?? null,
   }));
 
@@ -280,26 +282,41 @@ export async function submitForReview(
     return { ok: false, error: "Forbidden" };
   }
 
-  // Both fields required: a description (≥100 chars) AND a link to the
-  // actual artefact (so the IA reviewer has real material to evaluate).
+  // Validation rules depend on the brief's submissionMode:
+  //   TEXT_ONLY      → only the text content matters (≥ 200 chars, the
+  //                    deliverable IS the text — CV, 1-pager, résumé)
+  //   LINK_REQUIRED  → need a valid link AND a short description (≥ 100
+  //                    chars to give the IA context — RAG, dashboard…)
   const trimmedContent = deliverable.content?.trim() ?? "";
   const trimmedUrl = deliverable.externalUrl?.trim() ?? "";
+  const isTextOnly = deliverable.brief.submissionMode === "TEXT_ONLY";
 
-  if (trimmedContent.length < 100) {
-    return {
-      ok: false,
-      error: `Ta description fait ${trimmedContent.length} caractères. Ajoute-en au moins ${
-        100 - trimmedContent.length
-      } de plus avant de soumettre — l'IA a besoin de contexte pour évaluer.`,
-    };
-  }
-
-  if (trimmedUrl.length === 0 || !/^https?:\/\//i.test(trimmedUrl)) {
-    return {
-      ok: false,
-      error:
-        "Ajoute un lien valide (Notion, GitHub, Figma, Drive…) vers ton livrable avant de soumettre.",
-    };
+  if (isTextOnly) {
+    if (trimmedContent.length < 200) {
+      return {
+        ok: false,
+        error: `Ton livrable fait ${trimmedContent.length} caractères. Ajoute-en au moins ${
+          200 - trimmedContent.length
+        } de plus avant de soumettre — un CV ou un 1-pager solide nécessite du contenu.`,
+      };
+    }
+  } else {
+    // LINK_REQUIRED
+    if (trimmedUrl.length === 0 || !/^https?:\/\//i.test(trimmedUrl)) {
+      return {
+        ok: false,
+        error:
+          "Colle un lien valide (Notion, GitHub, Figma, Drive…) vers ton livrable avant de soumettre.",
+      };
+    }
+    if (trimmedContent.length < 100) {
+      return {
+        ok: false,
+        error: `Ajoute une description de ta démarche (au moins ${
+          100 - trimmedContent.length
+        } caractères de plus). L'IA en a besoin pour évaluer ton livrable.`,
+      };
+    }
   }
 
   await prisma.deliverable.update({
