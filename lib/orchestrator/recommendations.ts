@@ -80,9 +80,14 @@ export async function computeNextAction(
     };
   }
 
-  // ─── Rule 2: no journey progress on Phase 1 yet ──────────────
-  const phase1 = user.journeyProgress.find((p) => p.phase.order === 1);
-  if (!phase1 || phase1.status === "LOCKED") {
+  // ─── Rule 2: diagnostic phase not even started ───────────────
+  // The diagnostic phase is identified by slug (stable) — its `order`
+  // varies by deployment (0 in some seeds, 1 in others). LOCKED means
+  // the user has never opened it.
+  const diagnostic = user.journeyProgress.find(
+    (p) => p.phase.slug === "diagnostic"
+  );
+  if (!diagnostic || diagnostic.status === "LOCKED") {
     return {
       template: "RUN_DIAGNOSTIC",
       metadata: null,
@@ -130,8 +135,14 @@ export async function computeNextAction(
     }
   }
 
-  // ─── Rule 4: Phase 1 not yet completed ───────────────────────
-  if (phase1.status !== "COMPLETED") {
+  // ─── Rule 4: diagnostic phase not yet completed ──────────────
+  // Only push this when the user has NO validated deliverable yet.
+  // If they're already producing concrete work, momentum wins — keep
+  // them on the deliverable track rather than dragging them back.
+  if (
+    diagnostic.status !== "COMPLETED" &&
+    validatedDeliverables.length === 0
+  ) {
     return {
       template: "ADVANCE_PHASE_1",
       metadata: null,
