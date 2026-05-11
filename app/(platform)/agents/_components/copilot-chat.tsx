@@ -1,6 +1,7 @@
 "use client";
 
 import { useState, useRef, useEffect, useCallback } from "react";
+import Link from "next/link";
 import {
   Sparkles,
   Send,
@@ -18,6 +19,12 @@ import {
   ArrowDown,
   GraduationCap,
   TrendingUp,
+  Clock,
+  ListChecks,
+  FileCheck,
+  Crown,
+  Award,
+  ArrowRight,
 } from "lucide-react";
 import { cn } from "@/lib/utils";
 import { renderInlineMarkdown } from "@/lib/utils/render-markdown";
@@ -38,6 +45,16 @@ export interface SuggestionData {
   color: string;
 }
 
+export interface PriorityAction {
+  title: string;
+  why: string;
+  cta: string;
+  href: string;
+  iconName: string;
+  estimatedMinutes: number;
+  readinessSnapshot: number;
+}
+
 interface CopilotChatProps {
   suggestions: SuggestionData[];
   userName: string;
@@ -45,6 +62,7 @@ interface CopilotChatProps {
   dailyUsage?: number;
   dailyLimit?: number;
   plan?: string;
+  nextAction?: PriorityAction | null;
 }
 
 // ─── Icon Map ─────────────────────────────────────────────────────
@@ -60,6 +78,77 @@ const ICON_MAP: Record<string, React.ElementType> = {
   TrendingUp,
   Sparkles,
 };
+
+const ORCHESTRATOR_ICONS: Record<string, React.ElementType> = {
+  ListChecks,
+  Sparkles,
+  FileCheck,
+  GraduationCap,
+  Briefcase,
+  TrendingUp,
+  Crown,
+  Award,
+};
+
+// ─── Priority Banner ──────────────────────────────────────────────
+
+function PriorityBanner({
+  nextAction,
+  onAsk,
+}: {
+  nextAction: PriorityAction;
+  onAsk: (q: string) => void;
+}) {
+  const Icon = ORCHESTRATOR_ICONS[nextAction.iconName] ?? Sparkles;
+  return (
+    <div className="shrink-0 mb-4 p-4 rounded-2xl bg-gradient-to-br from-primary/10 to-surface-container-lowest border border-primary/20">
+      <div className="flex items-start gap-3">
+        <div className="w-10 h-10 rounded-xl bg-primary/15 flex items-center justify-center shrink-0">
+          <Icon className="w-5 h-5 text-primary" />
+        </div>
+        <div className="flex-1 min-w-0">
+          <p className="text-[10px] uppercase tracking-widest font-bold text-primary mb-0.5">
+            Ta priorité du moment
+          </p>
+          <h3 className="font-headline font-bold text-foreground text-sm leading-tight">
+            {nextAction.title}
+          </h3>
+          <p className="text-xs text-muted-foreground mt-1 leading-relaxed">
+            {nextAction.why}
+          </p>
+          <div className="flex items-center gap-2 mt-2 text-[10px] text-muted-foreground">
+            <span className="flex items-center gap-1">
+              <Clock className="w-3 h-3" /> ~{nextAction.estimatedMinutes} min
+            </span>
+            <span className="w-1 h-1 rounded-full bg-muted-foreground/50" />
+            <span>Readiness {nextAction.readinessSnapshot}%</span>
+          </div>
+          <div className="flex flex-wrap items-center gap-2 mt-3">
+            <Link
+              href={nextAction.href}
+              className="inline-flex items-center gap-1 px-3 py-1.5 rounded-lg bg-primary text-primary-foreground text-xs font-bold hover:bg-primary/90"
+            >
+              {nextAction.cta}
+              <ArrowRight className="w-3 h-3" />
+            </Link>
+            <button
+              type="button"
+              onClick={() =>
+                onAsk(
+                  `Explique-moi concrètement pourquoi je dois "${nextAction.title}" maintenant, et donne-moi 3 conseils pour la réussir vite.`
+                )
+              }
+              className="inline-flex items-center gap-1 px-3 py-1.5 rounded-lg bg-surface-container hover:bg-surface-container-high text-xs font-bold text-foreground"
+            >
+              <MessageCircle className="w-3 h-3" />
+              Pourquoi cette étape ?
+            </button>
+          </div>
+        </div>
+      </div>
+    </div>
+  );
+}
 
 // ─── Message Bubble ───────────────────────────────────────────────
 
@@ -144,7 +233,7 @@ function MessageBubble({ message, isStreaming }: { message: Message; isStreaming
 
 // ─── Main Component ───────────────────────────────────────────────
 
-export function CopilotChat({ suggestions, userName, initialQuery, dailyUsage = 0, dailyLimit = Infinity, plan = "FREE" }: CopilotChatProps) {
+export function CopilotChat({ suggestions, userName, initialQuery, dailyUsage = 0, dailyLimit = Infinity, plan = "FREE", nextAction = null }: CopilotChatProps) {
   const [messages, setMessages] = useState<Message[]>([]);
   const [input, setInput] = useState("");
   const [isStreaming, setIsStreaming] = useState(false);
@@ -297,6 +386,14 @@ export function CopilotChat({ suggestions, userName, initialQuery, dailyUsage = 
           </div>
         </div>
       </header>
+
+      {/* Priority banner — what the orchestrator says the user should focus on */}
+      {nextAction && (
+        <PriorityBanner
+          nextAction={nextAction}
+          onAsk={(q) => sendMessage(q)}
+        />
+      )}
 
       {/* Messages Area */}
       <div ref={scrollContainerRef} className="flex-1 overflow-y-auto relative">

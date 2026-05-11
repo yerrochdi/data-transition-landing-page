@@ -4,6 +4,7 @@ import { prisma } from "@/lib/db";
 import { ai } from "@/lib/ai/client";
 import { SYSTEM_PROMPT } from "@/lib/ai/prompts";
 import { checkCopilotLimit, trackCopilotUsage } from "@/lib/billing/rate-limit";
+import { getNextActionForCurrentUser } from "@/lib/orchestrator/actions";
 
 interface ChatMessage {
   role: "user" | "assistant";
@@ -96,11 +97,36 @@ Readiness : ${p?.readinessScore ?? 0}%
 ${o.aiSummary ? `DIAGNOSTIC IA PRÉCÉDENT :\n${o.aiSummary}` : ""}`;
 }
 
+type NextActionForPrompt = Awaited<ReturnType<typeof getNextActionForCurrentUser>>;
+
+function buildOrchestratorContext(nextAction: NextActionForPrompt): string {
+  if (!nextAction) {
+    return `PRIORITÉ ACTUELLE DE L'UTILISATEUR : aucune (compte fraîchement créé ou état non chargé). Si on te demande "que faire ?", suggère d'abord de finir l'onboarding.`;
+  }
+
+  return `PRIORITÉ ACTUELLE DE L'UTILISATEUR (calculée par l'orchestrateur NextMove) :
+
+→ ${nextAction.title}
+  Raison : ${nextAction.why}
+  Durée estimée : ~${nextAction.estimatedMinutes} min
+  Page concernée : ${nextAction.href}
+  Readiness score actuel : ${nextAction.readinessSnapshot}%
+
+RÈGLE IMPORTANTE : tu es son coach. Quand l'user te demande "que faire ?", "je sais pas par où commencer", ou "aide-moi sur X" alors que X n'est PAS sa priorité actuelle, tu dois :
+1. Reconnaître ce qu'il veut faire (validate)
+2. Lui rappeler doucement sa priorité actuelle et POURQUOI elle compte
+3. Lui dire qu'il peut continuer sa priorité d'abord, et que tu seras là après
+
+Exemple : si la priorité est "Termine ton Diagnostic" et l'user demande "aide-moi pour mon CV", tu réponds : "Je peux t'aider sur ton CV, mais avant — ton diagnostic est encore à finir. C'est lui qui calibre tout ce qui suit. Tu veux qu'on termine ça d'abord (15 min), puis on attaque ton CV sereinement ?"
+
+Ne sois pas dogmatique : si l'user insiste, aide-le. Mais le PREMIER réflexe doit toujours être de proposer la priorité.`;
+}
+
 const COPILOT_SYSTEM = `${SYSTEM_PROMPT}
 
-Tu es le Copilot IA personnel de l'utilisateur sur NextMove AI, une plateforme de transition de carrière vers la data/IA.
+Tu es le Copilot IA personnel de l'utilisateur sur NextMove AI, une plateforme de transition de carrière vers la data/IA. Tu es son coach, pas un chatbot générique. Tu connais où il en est dans son parcours et tu l'orientes vers la prochaine bonne étape.
 
-CONTEXTE : L'utilisateur a complété un diagnostic complet. Son profil est fourni ci-dessous. Tu dois TOUJOURS te baser sur ces données pour personnaliser tes réponses.
+CONTEXTE : L'utilisateur a complété un diagnostic complet. Son profil est fourni ci-dessous, ainsi que sa priorité du moment. Tu dois TOUJOURS te baser sur ces données pour personnaliser tes réponses.
 
 COMPORTEMENT :
 - Réponds TOUJOURS en français
@@ -179,9 +205,17 @@ export async function POST(request: NextRequest) {
       profile: dbUser.profile,
     });
 
+    // Fetch the current orchestrator priority so the Copilot can act as
+    // a real coach (push back when the user asks for something off-track).
+    const nextAction = await getNextActionForCurrentUser();
+    const orchestratorContext = buildOrchestratorContext(nextAction);
+
     // Build messages array for the AI
     const aiMessages = [
-      { role: "system" as const, content: `${COPILOT_SYSTEM}\n\n${profileContext}` },
+      {
+        role: "system" as const,
+        content: `${COPILOT_SYSTEM}\n\n${profileContext}\n\n${orchestratorContext}`,
+      },
       ...messages.slice(-10).map((m) => ({
         role: m.role as "user" | "assistant",
         content: m.content,
