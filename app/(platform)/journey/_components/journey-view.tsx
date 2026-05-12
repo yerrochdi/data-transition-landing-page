@@ -85,16 +85,9 @@ function TaskItem({
           )}>
             {task.title}
           </h4>
-          {isDone && (
-            <span className="text-[9px] font-bold text-emerald-400 bg-emerald-500/10 px-2 py-0.5 rounded-full shrink-0">
-              +5 XP
-            </span>
-          )}
-          {!isDone && !isLocked && (
-            <span className="text-[9px] font-bold text-primary/60 bg-primary/5 px-2 py-0.5 rounded-full shrink-0">
-              +5 XP
-            </span>
-          )}
+          {/* XP badges removed in Phase A step 4 — senior cadres care
+              about real progress (readiness score, validated work),
+              not Duolingo-style points. */}
         </div>
         <p className="text-xs text-muted-foreground leading-relaxed mb-2">{task.description}</p>
 

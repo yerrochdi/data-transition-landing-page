@@ -957,12 +957,7 @@ export function TaskSessionView({ task }: { task: TaskWithContext }) {
               {task.title}
             </h1>
           </div>
-          <div className="flex items-center gap-1.5">
-            <GraduationCap className="w-4 h-4 text-primary" />
-            <span className="text-[10px] font-bold text-primary">
-              +5 XP
-            </span>
-          </div>
+          {/* +5 XP removed in Phase A step 4 */}
         </div>
 
         {/* Step Progress */}

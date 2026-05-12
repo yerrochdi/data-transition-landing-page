@@ -25,10 +25,8 @@ import { GoalsAvailability } from "./goals-availability";
 import { PrioritiesLearning } from "./priorities-learning";
 import { ReadinessBreakdown } from "./readiness-breakdown";
 import { SkillGaps } from "./skill-gaps";
-import { StreakTip } from "./streak-tip";
-import { Achievements } from "./achievements";
+// StreakTip and Achievements intentionally removed — see Phase A step 4.
 import { WelcomeModal } from "./welcome-modal";
-import { NextActions } from "./next-actions";
 import { NextBestAction, type NextBestActionProps } from "./next-best-action";
 import { cn } from "@/lib/utils";
 
@@ -38,7 +36,7 @@ interface DashboardViewProps {
 }
 
 export function DashboardView({ data, nextAction }: DashboardViewProps) {
-  const { user, profile, onboarding, streakDays, dailyTip, journey } = data;
+  const { user, profile, onboarding, journey } = data;
 
   const careerScore = profile?.careerScore ?? 0;
   const readinessScore = profile?.readinessScore ?? 0;
@@ -227,44 +225,12 @@ export function DashboardView({ data, nextAction }: DashboardViewProps) {
         </div>
       </div>
 
-      {/* ═══════════════════════════════════════════════════════════
-          STREAK + DAILY TIP
-          ═══════════════════════════════════════════════════════════ */}
-      {hasCompletedOnboarding && (
-        <StreakTip streakDays={streakDays} dailyTip={dailyTip} />
-      )}
-
-      {/* ═══════════════════════════════════════════════════════════
-          NEXT ACTIONS — What to do now
-          ═══════════════════════════════════════════════════════════ */}
-      {hasCompletedOnboarding && (
-        <NextActions
-          targetRole={targetRole ?? null}
-          skillGaps={skillGaps}
-          overallJourneyProgress={journey.overallProgress}
-          activePhaseTitle={journey.activePhaseTitle}
-          nextTaskTitle={journey.nextTaskTitle}
-          completedTasks={journey.completedTasks}
-          totalTasks={journey.totalTasks}
-        />
-      )}
-
-      {/* ═══════════════════════════════════════════════════════════
-          BADGES / ACHIEVEMENTS
-          ═══════════════════════════════════════════════════════════ */}
-      {hasCompletedOnboarding && (
-        <Achievements
-          careerScore={careerScore}
-          readinessScore={readinessScore}
-          streakDays={streakDays}
-          skillCount={skills.length}
-          gapCount={skillGaps.length}
-          confidenceLevel={confidenceLevel}
-          hasDataTraining={onboarding?.hasDataTraining ?? false}
-          certificationCount={onboarding?.certifications?.length ?? 0}
-          blockerCount={onboarding?.blockers?.length ?? 0}
-        />
-      )}
+      {/* The orchestrator's <NextBestAction> at the top now plays the
+          role that StreakTip + NextActions used to play (the "what to
+          do now" signal). We've removed both to keep one fil rouge.
+          Achievements is also removed: gamification with day streaks
+          doesn't match a senior cadre audience. Concrete progress
+          (readiness score, validated deliverables) shows up elsewhere. */}
 
       {/* ═══════════════════════════════════════════════════════════
           ROW 1 — AI Summary (full width for structured view)

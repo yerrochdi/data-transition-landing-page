@@ -3,7 +3,7 @@
 import {
   TrendingUp,
   Target,
-  Flame,
+  Award,
   AlertTriangle,
   Zap,
   Sparkles,
@@ -410,7 +410,7 @@ export function AnalyticsView({ data }: { data: AnalyticsData }) {
         <MetricCard
           label="Career Score"
           value={data.careerScore}
-          sublabel={`/ 1000 · ${data.completedTasks * 5} XP gagnés`}
+          sublabel="/ 1000"
           icon={Target}
           accent
         />
@@ -421,10 +421,10 @@ export function AnalyticsView({ data }: { data: AnalyticsData }) {
           icon={Zap}
         />
         <MetricCard
-          label="Streak"
-          value={`${data.streakDays}j`}
-          sublabel="Jours consécutifs"
-          icon={Flame}
+          label="Livrables validés"
+          value={`${data.validatedDeliverablesCount}`}
+          sublabel="Portfolio data"
+          icon={Award}
         />
         <MetricCard
           label="Parcours"

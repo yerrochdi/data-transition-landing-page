@@ -26,7 +26,7 @@ export interface AnalyticsData {
   careerScore: number;
   readinessScore: number;
   confidenceLevel: number;
-  streakDays: number;
+  validatedDeliverablesCount: number;
   blockerCount: number;
   skillGaps: string[];
   topSkills: string[];
@@ -140,15 +140,16 @@ export async function getAnalyticsData(): Promise<AnalyticsData | null> {
 
   const journeyProgress = totalTasks > 0 ? Math.round((completedTasks / totalTasks) * 100) : 0;
 
-  // ── Streak ──
-  const { updateStreak } = await import("@/lib/streak/helpers");
-  const streakDays = await updateStreak(dbUser.id);
+  // Validated deliverables — the real progress signal (replaces streak).
+  const validatedDeliverablesCount = await prisma.deliverable.count({
+    where: { userId: dbUser.id, status: "VALIDATED" },
+  });
 
   return {
     careerScore: profile?.careerScore ?? 0,
     readinessScore: profile?.readinessScore ?? 0,
     confidenceLevel: profile?.confidenceLevel ?? onboarding?.confidenceLevel ?? 5,
-    streakDays,
+    validatedDeliverablesCount,
     blockerCount: onboarding?.blockers?.length ?? 0,
     skillGaps: profile?.skillGaps ?? [],
     topSkills: profile?.topSkills ?? onboarding?.topSkills ?? [],
