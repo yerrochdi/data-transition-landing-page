@@ -99,53 +99,68 @@ function PriorityBanner({
   nextAction: PriorityAction;
   onAsk: (q: string) => void;
 }) {
+  const [expanded, setExpanded] = useState(false);
   const Icon = ORCHESTRATOR_ICONS[nextAction.iconName] ?? Sparkles;
+
   return (
-    <div className="shrink-0 mb-4 p-4 rounded-2xl bg-gradient-to-br from-primary/10 to-surface-container-lowest border border-primary/20">
-      <div className="flex items-start gap-3">
-        <div className="w-10 h-10 rounded-xl bg-primary/15 flex items-center justify-center shrink-0">
-          <Icon className="w-5 h-5 text-primary" />
+    <div className="shrink-0 mb-3 px-3 py-2 rounded-xl bg-primary/5 border border-primary/15">
+      {/* Compact row — always visible */}
+      <div className="flex items-center gap-2.5">
+        <div className="w-7 h-7 rounded-lg bg-primary/15 flex items-center justify-center shrink-0">
+          <Icon className="w-3.5 h-3.5 text-primary" />
         </div>
         <div className="flex-1 min-w-0">
-          <p className="text-[10px] uppercase tracking-widest font-bold text-primary mb-0.5">
-            Ta priorité du moment
-          </p>
-          <h3 className="font-headline font-bold text-foreground text-sm leading-tight">
-            {nextAction.title}
-          </h3>
-          <p className="text-xs text-muted-foreground mt-1 leading-relaxed">
-            {nextAction.why}
-          </p>
-          <div className="flex items-center gap-2 mt-2 text-[10px] text-muted-foreground">
-            <span className="flex items-center gap-1">
-              <Clock className="w-3 h-3" /> ~{nextAction.estimatedMinutes} min
+          <div className="flex items-center gap-2">
+            <p className="text-[9px] uppercase tracking-widest font-bold text-primary">
+              Priorité
+            </p>
+            <span className="text-[10px] text-muted-foreground">
+              ~{nextAction.estimatedMinutes} min · Readiness {nextAction.readinessSnapshot}%
             </span>
-            <span className="w-1 h-1 rounded-full bg-muted-foreground/50" />
-            <span>Readiness {nextAction.readinessSnapshot}%</span>
           </div>
-          <div className="flex flex-wrap items-center gap-2 mt-3">
-            <Link
-              href={nextAction.href}
-              className="inline-flex items-center gap-1 px-3 py-1.5 rounded-lg bg-primary text-primary-foreground text-xs font-bold hover:bg-primary/90"
-            >
-              {nextAction.cta}
-              <ArrowRight className="w-3 h-3" />
-            </Link>
-            <button
-              type="button"
-              onClick={() =>
-                onAsk(
-                  `Explique-moi concrètement pourquoi je dois "${nextAction.title}" maintenant, et donne-moi 3 conseils pour la réussir vite.`
-                )
-              }
-              className="inline-flex items-center gap-1 px-3 py-1.5 rounded-lg bg-surface-container hover:bg-surface-container-high text-xs font-bold text-foreground"
-            >
-              <MessageCircle className="w-3 h-3" />
-              Pourquoi cette étape ?
-            </button>
-          </div>
+          <p className="text-sm font-bold text-foreground truncate">
+            {nextAction.title}
+          </p>
+        </div>
+        <div className="flex items-center gap-1.5 shrink-0">
+          <Link
+            href={nextAction.href}
+            className="inline-flex items-center gap-1 px-2.5 py-1 rounded-md bg-primary text-primary-foreground text-[11px] font-bold hover:bg-primary/90"
+          >
+            {nextAction.cta}
+            <ArrowRight className="w-3 h-3" />
+          </Link>
+          <button
+            type="button"
+            onClick={() => setExpanded((v) => !v)}
+            className="text-[11px] text-muted-foreground hover:text-foreground px-1.5 py-1"
+            aria-label="Détails"
+          >
+            {expanded ? "▴" : "▾"}
+          </button>
         </div>
       </div>
+
+      {/* Expanded details */}
+      {expanded && (
+        <div className="mt-2 pt-2 border-t border-primary/15 space-y-2">
+          <p className="text-xs text-muted-foreground leading-relaxed">
+            {nextAction.why}
+          </p>
+          <button
+            type="button"
+            onClick={() =>
+              onAsk(
+                `Explique-moi concrètement pourquoi je dois "${nextAction.title}" maintenant, et donne-moi 3 conseils pour la réussir vite.`
+              )
+            }
+            className="inline-flex items-center gap-1 px-2.5 py-1 rounded-md bg-surface-container hover:bg-surface-container-high text-[11px] font-bold text-foreground"
+          >
+            <MessageCircle className="w-3 h-3" />
+            Demande au Copilot
+          </button>
+        </div>
+      )}
     </div>
   );
 }

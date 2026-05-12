@@ -40,15 +40,14 @@ export async function getNextActionForCurrentUser(): Promise<
     where: { userId },
   });
 
-  // If none, or stale (>24h or COMPLETED), recompute
-  const stale =
-    !row ||
-    row.status !== "ACTIVE" ||
-    Date.now() - row.generatedAt.getTime() > 24 * 60 * 60 * 1000;
-
-  if (stale) {
-    row = await refreshNextAction(userId);
-  }
+  // Always recompute the recommendation on every dashboard load.
+  // The orchestrator is cheap (one DB read + pure logic) and recompute
+  // costs nothing vs the risk of showing a stale recommendation when
+  // the user just completed something. Staleness cache was creating
+  // confusion (e.g. diagnostic completed but card still says "termine
+  // ton diagnostic"). We keep the row to track historical completions
+  // but always recompute the templateKey.
+  row = await refreshNextAction(userId);
 
   if (!row) return null;
   const rendered = renderAction(
