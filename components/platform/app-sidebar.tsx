@@ -33,17 +33,50 @@ const iconMap: Record<string, React.ElementType> = {
   Award,
 };
 
-const navItems = [
-  { label: "Dashboard", href: "/dashboard", icon: "LayoutDashboard" },
-  { label: "Immersive Path", href: "/journey", icon: "GitBranch" },
-  { label: "Copilot IA", href: "/agents", icon: "Bot" },
-  { label: "Communauté", href: "/feed", icon: "Users" },
-  { label: "Skill Roadmap", href: "/analytics", icon: "TrendingUp" },
-  { label: "Job Market", href: "/opportunities", icon: "Briefcase" },
-  { label: "Livrables", href: "/deliverables", icon: "FileCheck" },
-  { label: "Portfolio", href: "/my-portfolio", icon: "Award" },
-  { label: "Resources", href: "/resources", icon: "BookOpen" },
-  { label: "Paramètres", href: "/settings", icon: "Settings" },
+// Sidebar groups (Phase A step 5). Order matters: top = daily work,
+// bottom = secondary / settings. Inside each group, the order reflects
+// the user journey through the product.
+type NavGroup = {
+  label: string | null; // null = no group header rendered
+  items: { label: string; href: string; icon: string }[];
+};
+
+const navGroups: NavGroup[] = [
+  {
+    label: null, // primary
+    items: [
+      { label: "Dashboard", href: "/dashboard", icon: "LayoutDashboard" },
+      { label: "Copilot IA", href: "/agents", icon: "Bot" },
+    ],
+  },
+  {
+    label: "Travailler",
+    items: [
+      { label: "Parcours", href: "/journey", icon: "GitBranch" },
+      { label: "Livrables", href: "/deliverables", icon: "FileCheck" },
+    ],
+  },
+  {
+    label: "Valoriser",
+    items: [
+      { label: "Portfolio", href: "/my-portfolio", icon: "Award" },
+      { label: "Opportunités", href: "/opportunities", icon: "Briefcase" },
+    ],
+  },
+  {
+    label: "Aller plus loin",
+    items: [
+      { label: "Communauté", href: "/feed", icon: "Users" },
+      { label: "Analytics", href: "/analytics", icon: "TrendingUp" },
+      { label: "Ressources", href: "/resources", icon: "BookOpen" },
+    ],
+  },
+  {
+    label: null,
+    items: [
+      { label: "Paramètres", href: "/settings", icon: "Settings" },
+    ],
+  },
 ];
 
 interface AppSidebarProps {
@@ -118,27 +151,37 @@ export function AppSidebar({ user }: AppSidebarProps) {
           </div>
         </div>
 
-        {/* Nav Links */}
-        <div className="space-y-1">
-          {navItems.map((item) => {
-            const Icon = iconMap[item.icon] || LayoutDashboard;
-            const isActive = pathname === item.href || pathname.startsWith(item.href);
-            return (
-              <Link
-                key={item.href}
-                href={item.href}
-                className={cn(
-                  "flex items-center gap-3 p-3 rounded-lg transition-all",
-                  isActive
-                    ? "bg-surface-container text-primary border-l-4 border-primary shadow-lg shadow-primary/5 font-bold"
-                    : "text-muted-foreground hover:bg-surface-container"
-                )}
-              >
-                <Icon className="w-5 h-5" />
-                <span className="font-headline text-sm">{item.label}</span>
-              </Link>
-            );
-          })}
+        {/* Nav groups */}
+        <div className="space-y-4">
+          {navGroups.map((group, gi) => (
+            <div key={gi} className="space-y-1">
+              {group.label && (
+                <p className="px-3 mb-1 text-[9px] uppercase tracking-widest text-muted-foreground/60 font-bold">
+                  {group.label}
+                </p>
+              )}
+              {group.items.map((item) => {
+                const Icon = iconMap[item.icon] || LayoutDashboard;
+                const isActive =
+                  pathname === item.href || pathname.startsWith(item.href);
+                return (
+                  <Link
+                    key={item.href}
+                    href={item.href}
+                    className={cn(
+                      "flex items-center gap-3 p-3 rounded-lg transition-all",
+                      isActive
+                        ? "bg-surface-container text-primary border-l-4 border-primary shadow-lg shadow-primary/5 font-bold"
+                        : "text-muted-foreground hover:bg-surface-container"
+                    )}
+                  >
+                    <Icon className="w-5 h-5" />
+                    <span className="font-headline text-sm">{item.label}</span>
+                  </Link>
+                );
+              })}
+            </div>
+          ))}
         </div>
       </div>
 
