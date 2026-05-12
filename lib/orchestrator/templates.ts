@@ -116,6 +116,19 @@ export function renderAction(
       };
     }
 
+    case "UPGRADE_FOR_MORE": {
+      const reason = metadata?.reason ?? "atteindre ton prochain livrable";
+      return {
+        template,
+        title: "Tu as épuisé ton quota — passe au plan supérieur",
+        why: `Tu as livré tes ${reason}. Pour continuer cette semaine, passe au Boost (5 livrables/mois) ou au Pro (illimité). Sinon, reprends le 1er du mois prochain.`,
+        cta: "Voir les plans",
+        href: "/upgrade",
+        iconName: "Crown",
+        estimatedMinutes: 3,
+      };
+    }
+
     case "KEEP_MOMENTUM":
       return {
         template,

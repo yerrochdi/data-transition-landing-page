@@ -670,6 +670,9 @@ enum ActionTemplate {
   EXPLORE_OPPORTUNITIES
   AMBITIOUS_DELIVERABLE
   ADVANCE_LATER_PHASE
+  // When the next logical action would be a new deliverable but the
+  // user has reached their monthly quota — push them toward upgrade.
+  UPGRADE_FOR_MORE
   // Sentinel when nothing is left and the user is fully active
   KEEP_MOMENTUM
 }

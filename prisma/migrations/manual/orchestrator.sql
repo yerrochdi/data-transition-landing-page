@@ -7,9 +7,16 @@ DO $$ BEGIN
   CREATE TYPE "ActionTemplate" AS ENUM (
     'COMPLETE_ONBOARDING','RUN_DIAGNOSTIC','FIRST_QUICK_DELIVERABLE',
     'ADVANCE_PHASE_1','EXPLORE_OPPORTUNITIES','AMBITIOUS_DELIVERABLE',
-    'ADVANCE_LATER_PHASE','KEEP_MOMENTUM'
+    'ADVANCE_LATER_PHASE','UPGRADE_FOR_MORE','KEEP_MOMENTUM'
   );
 EXCEPTION WHEN duplicate_object THEN null; END $$;
+
+-- For existing enums (e.g. re-running migration after a deploy), add the
+-- new value idempotently. ALTER TYPE … ADD VALUE IF NOT EXISTS is the
+-- supported syntax on Postgres 12+.
+DO $$ BEGIN
+  ALTER TYPE "ActionTemplate" ADD VALUE IF NOT EXISTS 'UPGRADE_FOR_MORE';
+EXCEPTION WHEN others THEN null; END $$;
 
 DO $$ BEGIN
   CREATE TYPE "ActionStatus" AS ENUM ('ACTIVE','COMPLETED','SKIPPED');

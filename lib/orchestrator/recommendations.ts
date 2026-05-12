@@ -2,7 +2,7 @@
 
 import { prisma } from "@/lib/db";
 import type { ActionTemplate } from "@/lib/generated/prisma/enums";
-import { hasBoostAccess } from "@/lib/billing/plan";
+import { hasBoostAccess, getQuotas } from "@/lib/billing/plan";
 
 /**
  * The orchestrator. Given a userId, computes which single canonical
@@ -45,6 +45,7 @@ export async function computeNextAction(
       deliverables: {
         select: {
           status: true,
+          startedAt: true,
           brief: {
             select: {
               slug: true,
@@ -110,6 +111,25 @@ export async function computeNextAction(
     };
   }
 
+  // ─── Compute deliverable quota state (used by rules 4 + 6) ────
+  // We need to know if the user has hit their monthly cap before we
+  // suggest starting a new deliverable. Started briefs are counted
+  // (DRAFT, SUBMITTED, REVIEWED, VALIDATED all count toward the cap).
+  const quotas = getQuotas({
+    plan: user.plan,
+    sprintExpiresAt: user.sprintExpiresAt,
+  });
+  const monthlyLimit = quotas.deliverablesPerMonth;
+  const startOfMonth = (() => {
+    const d = new Date();
+    return new Date(Date.UTC(d.getUTCFullYear(), d.getUTCMonth(), 1));
+  })();
+  const startedThisMonth = user.deliverables.filter(
+    (d) => d.startedAt >= startOfMonth
+  ).length;
+  const quotaReached =
+    monthlyLimit !== null && startedThisMonth >= monthlyLimit;
+
   // ─── Rule 4: diagnostic done but no validated deliverable yet ──
   const validatedDeliverables = user.deliverables.filter(
     (d) => d.status === "VALIDATED"
@@ -120,6 +140,7 @@ export async function computeNextAction(
 
   if (validatedDeliverables.length === 0) {
     // If a quick-win brief is already started, point them back to it
+    // (the quota was consumed when they started, no upgrade nudge needed).
     if (inProgressDeliverable) {
       return {
         template: "FIRST_QUICK_DELIVERABLE",
@@ -127,6 +148,15 @@ export async function computeNextAction(
           briefSlug: inProgressDeliverable.brief.slug,
           briefTitle: inProgressDeliverable.brief.title,
         },
+        readinessSnapshot: readiness,
+      };
+    }
+    // No deliverable started yet but quota already reached? Edge case
+    // (user started + abandoned somehow). Push upgrade.
+    if (quotaReached) {
+      return {
+        template: "UPGRADE_FOR_MORE",
+        metadata: { reason: `${monthlyLimit} livrable de ce mois` },
         readinessSnapshot: readiness,
       };
     }
@@ -163,6 +193,19 @@ export async function computeNextAction(
 
   // ─── Rule 6: time for a more ambitious deliverable ───────────
   if (validatedDeliverables.length >= 1 && validatedDeliverables.length < 3) {
+    // If quota is reached, don't suggest starting another deliverable —
+    // push them toward upgrade instead. This is the core of "the coach
+    // honors the plan": don't propose what the user can't action.
+    if (quotaReached) {
+      return {
+        template: "UPGRADE_FOR_MORE",
+        metadata: {
+          reason: `${monthlyLimit} livrable${monthlyLimit === 1 ? "" : "s"} ce mois-ci`,
+        },
+        readinessSnapshot: readiness,
+      };
+    }
+
     const completedSlugs = new Set(
       user.deliverables.map((d) => d.brief.slug)
     );
