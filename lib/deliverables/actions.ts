@@ -27,6 +27,10 @@ export type BriefCard = Pick<
   | "submissionMode"
 > & {
   userStatus: DeliverableStatus | null;
+  // True when the user can't start this brief yet (difficulty >= 3 and
+  // no validated deliverable yet). Already-started briefs are never
+  // locked.
+  lockedByGate: boolean;
 };
 
 export type CatalogueData = {
@@ -67,7 +71,7 @@ export async function getCatalogueData(): Promise<CatalogueData | null> {
     sprintExpiresAt: user.sprintExpiresAt,
   });
 
-  const [briefs, userDeliverables, startedThisMonth] = await Promise.all([
+  const [briefs, userDeliverables, startedThisMonth, validatedCount] = await Promise.all([
     prisma.deliverableBrief.findMany({
       where: { isPublished: true },
       orderBy: [{ difficulty: "asc" }, { estimatedDays: "asc" }],
@@ -82,28 +86,40 @@ export async function getCatalogueData(): Promise<CatalogueData | null> {
         startedAt: { gte: startOfMonthUTC() },
       },
     }),
+    prisma.deliverable.count({
+      where: { userId: user.id, status: "VALIDATED" },
+    }),
   ]);
 
   const statusByBrief = new Map(
     userDeliverables.map((d) => [d.briefId, d.status])
   );
 
-  const cards: BriefCard[] = briefs.map((b) => ({
-    id: b.id,
-    slug: b.slug,
-    title: b.title,
-    shortDescription: b.shortDescription,
-    sector: b.sector,
-    skillCategory: b.skillCategory,
-    difficulty: b.difficulty,
-    estimatedDays: b.estimatedDays,
-    tools: b.tools,
-    isPremium: b.isPremium,
-    suggestedAtPhase: b.suggestedAtPhase,
-    useFromProfile: b.useFromProfile,
-    submissionMode: b.submissionMode,
-    userStatus: statusByBrief.get(b.id) ?? null,
-  }));
+  const cards: BriefCard[] = briefs.map((b) => {
+    const userStatus = statusByBrief.get(b.id) ?? null;
+    // A brief is locked by the gate only if the user hasn't started it
+    // AND it's ambitious (difficulty ≥ 3) AND they have no validated
+    // deliverable yet. Already-started briefs are always accessible.
+    const lockedByGate =
+      !userStatus && b.difficulty >= 3 && validatedCount === 0;
+    return {
+      id: b.id,
+      slug: b.slug,
+      title: b.title,
+      shortDescription: b.shortDescription,
+      sector: b.sector,
+      skillCategory: b.skillCategory,
+      difficulty: b.difficulty,
+      estimatedDays: b.estimatedDays,
+      tools: b.tools,
+      isPremium: b.isPremium,
+      suggestedAtPhase: b.suggestedAtPhase,
+      useFromProfile: b.useFromProfile,
+      submissionMode: b.submissionMode,
+      userStatus,
+      lockedByGate,
+    };
+  });
 
   return {
     briefs: cards,

@@ -12,6 +12,7 @@ import {
   Zap,
   ArrowRight,
   Wand2,
+  Lock,
 } from "lucide-react";
 import { cn } from "@/lib/utils";
 import type { CatalogueData, BriefCard } from "@/lib/deliverables/actions";
@@ -65,19 +66,24 @@ function BriefCardComponent({
   const StatusIcon = status?.icon;
 
   const premiumBlocked = brief.isPremium && isFreeUser;
+  // Gate-locked briefs (ambitious, no validated yet) stay clickable —
+  // the brief page renders a LockedPage explaining what to do.
+  // Only quota-locked briefs prevent the click.
+  const clickBlocked = locked && !brief.lockedByGate;
 
   return (
     <Link
       href={premiumBlocked ? "/upgrade" : `/deliverables/${brief.slug}`}
       className={cn(
         "group bg-surface-container-low p-5 rounded-2xl ghost-border transition-all flex flex-col gap-3",
-        locked
+        clickBlocked
           ? "opacity-50 cursor-not-allowed"
-          : "hover:bg-surface-container hover:border-primary/20 cursor-pointer"
+          : "hover:bg-surface-container hover:border-primary/20 cursor-pointer",
+        brief.lockedByGate && !brief.userStatus && "opacity-70"
       )}
-      aria-disabled={locked}
+      aria-disabled={clickBlocked}
       onClick={(e) => {
-        if (locked) e.preventDefault();
+        if (clickBlocked) e.preventDefault();
       }}
     >
       {/* Top row : sector badge + premium + IA-assisté */}
@@ -91,6 +97,15 @@ function BriefCardComponent({
           {sector.label}
         </span>
         <div className="flex items-center gap-1.5 flex-wrap">
+          {brief.lockedByGate && !brief.userStatus && (
+            <span
+              className="flex items-center gap-1 px-2 py-0.5 rounded-full bg-muted/40 text-muted-foreground text-[10px] font-bold"
+              title="Valide 1 livrable d'abord pour débloquer celui-ci"
+            >
+              <Lock className="w-3 h-3" />
+              À débloquer
+            </span>
+          )}
           {brief.useFromProfile && (
             <span
               className="flex items-center gap-1 px-2 py-0.5 rounded-full bg-primary/10 text-primary text-[10px] font-bold"
@@ -193,9 +208,16 @@ export function CatalogueView({ data }: { data: CatalogueData }) {
   const quotaReached =
     data.monthlyLimit !== null && data.startedThisMonth >= data.monthlyLimit;
 
-  // Already-started briefs are always accessible (no lock).
+  // Already-started briefs are always accessible (no lock). A brief is
+  // locked if EITHER:
+  // - the user reached their monthly quota and didn't start it yet, OR
+  // - the orchestrator gate says it's too ambitious right now
+  //   (difficulty ≥ 3 without any validated deliverable yet)
   const isLocked = (b: BriefCard) =>
-    quotaReached && !b.userStatus && !b.isPremium;
+    !b.userStatus && (
+      (quotaReached && !b.isPremium) ||
+      b.lockedByGate
+    );
 
   const completedCount = data.briefs.filter(
     (b) => b.userStatus === "VALIDATED"
