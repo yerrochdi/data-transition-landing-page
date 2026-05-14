@@ -147,7 +147,7 @@ export async function POST(request: NextRequest) {
               sendEmail(
                 user.email,
                 "Sprint NextMove activé — 30 jours d'accès Pro ⚡",
-                upgradeEmail(user.firstName)
+                upgradeEmail(user.firstName, "SPRINT")
               )
             )
           ).catch(console.error);
@@ -164,13 +164,17 @@ export async function POST(request: NextRequest) {
             });
           }
 
+          // target is BOOST | PREMIUM | FOUNDING here (SPRINT handled above)
+          const emailSubject =
+            target === "BOOST"
+              ? "Bienvenue dans le plan Boost ⚡"
+              : target === "FOUNDING"
+                ? "Bienvenue parmi les Founding Members 🎉"
+                : "Bienvenue dans le plan Pro ✨";
+
           import("@/lib/email/send").then(({ sendEmail }) =>
             import("@/lib/email/templates").then(({ upgradeEmail }) =>
-              sendEmail(
-                user.email,
-                "Bienvenue sur NextMove ✨",
-                upgradeEmail(user.firstName)
-              )
+              sendEmail(user.email, emailSubject, upgradeEmail(user.firstName, target))
             )
           ).catch(console.error);
         }

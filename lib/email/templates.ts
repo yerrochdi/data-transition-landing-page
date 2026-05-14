@@ -129,22 +129,90 @@ function escapeHtml(s: string): string {
     .replace(/'/g, "&#039;");
 }
 
-export function upgradeEmail(firstName: string): string {
+/**
+ * Plan-specific upgrade confirmation email. Each plan gets its own
+ * title, feature list and CTA so a Boost user isn't told "Bienvenue
+ * dans le plan Pro". `plan` accepts the 4 purchasable tiers.
+ */
+type UpgradeEmailPlan = "BOOST" | "PREMIUM" | "FOUNDING" | "SPRINT";
+
+const UPGRADE_CONTENT: Record<
+  UpgradeEmailPlan,
+  { title: string; intro: string; features: string[]; cta: string; ctaHref: string }
+> = {
+  BOOST: {
+    title: "Bienvenue dans le plan Boost ⚡",
+    intro: "Ton abonnement Boost est maintenant actif.",
+    features: [
+      "<strong>Parcours complet en 5 phases</strong> — toutes les leçons débloquées",
+      "<strong>30 messages Copilot / jour</strong> — ton coach IA disponible quand tu en as besoin",
+      "<strong>10 opportunités matchées</strong> — des offres ciblées sur ton profil",
+      "<strong>5 livrables / mois</strong> — construis ton portfolio data",
+      "<strong>Feed communautaire</strong> — apprends des autres cadres en transition",
+    ],
+    cta: "Reprendre mon parcours",
+    ctaHref: "/dashboard",
+  },
+  PREMIUM: {
+    title: "Bienvenue dans le plan Pro ✨",
+    intro: "Ton abonnement Pro est maintenant actif.",
+    features: [
+      "<strong>Copilot IA illimité</strong> — plus aucune limite de messages",
+      "<strong>Toutes les opportunités</strong> — accès complet aux offres matchées",
+      "<strong>Livrables illimités</strong> — y compris les briefs Pro avancés",
+      "<strong>Parcours complet en 5 phases</strong> + support prioritaire",
+    ],
+    cta: "Reprendre mon parcours",
+    ctaHref: "/dashboard",
+  },
+  FOUNDING: {
+    title: "Bienvenue parmi les Founding Members 🎉",
+    intro:
+      "Ton accès Founding Member est activé — accès Pro complet, au tarif fondateur, à vie.",
+    features: [
+      "<strong>Tout le plan Pro</strong> — Copilot illimité, livrables illimités, toutes les opportunités",
+      "<strong>Tarif 9€/mois à vie</strong> — acquis tant que tu restes actif",
+      "<strong>Ligne directe avec le fondateur</strong> — ton retour façonne le produit",
+    ],
+    cta: "Accéder à mon parcours",
+    ctaHref: "/dashboard",
+  },
+  SPRINT: {
+    title: "Sprint NextMove activé ⚡",
+    intro:
+      "Ton Sprint est lancé : 30 jours d'accès Pro complet pour avancer vite.",
+    features: [
+      "<strong>Accès Pro pendant 30 jours</strong> — tout est débloqué",
+      "<strong>Copilot illimité + tous les livrables</strong>",
+      "<strong>Toutes les opportunités matchées</strong>",
+      "<strong>Idéal pour une phase intense</strong> — pas d'engagement, retour en Free à la fin",
+    ],
+    cta: "Démarrer mon Sprint",
+    ctaHref: "/dashboard",
+  },
+};
+
+export function upgradeEmail(firstName: string, plan: string = "PREMIUM"): string {
+  // Fall back to PREMIUM content for any plan we don't have a specific
+  // template for (FREE/ENTERPRISE never reach the upgrade email path,
+  // but this keeps the function total and type-safe).
+  const key: UpgradeEmailPlan =
+    plan === "BOOST" || plan === "FOUNDING" || plan === "SPRINT"
+      ? plan
+      : "PREMIUM";
+  const c = UPGRADE_CONTENT[key];
   return layout(`
-    <h1 style="color:#fff;font-size:22px;margin:0 0 16px">Bienvenue dans le plan Pro ✨</h1>
-    <p>Merci ${firstName} ! Votre abonnement Pro est maintenant actif.</p>
-    <p>Vous avez désormais accès à :</p>
+    <h1 style="color:#fff;font-size:22px;margin:0 0 16px">${c.title}</h1>
+    <p>Merci ${firstName} ! ${c.intro}</p>
+    <p>Voici ce que tu débloques :</p>
     <ul style="padding-left:20px;margin:16px 0">
-      <li><strong>Parcours complet en 5 phases</strong> — toutes les leçons débloquées</li>
-      <li><strong>Copilot IA illimité</strong> — plus de limite de messages</li>
-      <li><strong>Sessions IA immersives</strong> — quiz et feedback personnalisés</li>
-      <li><strong>Toutes les opportunités</strong> — suggestions sans restriction</li>
+      ${c.features.map((f) => `<li>${f}</li>`).join("\n      ")}
     </ul>
     <div style="text-align:center;margin:24px 0">
-      <a href="${SITE_URL}/journey" style="display:inline-block;background:linear-gradient(135deg,#4be277,#36d068);color:#000;font-weight:bold;font-size:14px;padding:12px 28px;border-radius:12px;text-decoration:none">
-        Commencer mon parcours Pro
+      <a href="${SITE_URL}${c.ctaHref}" style="display:inline-block;background:linear-gradient(135deg,#4be277,#36d068);color:#000;font-weight:bold;font-size:14px;padding:12px 28px;border-radius:12px;text-decoration:none">
+        ${c.cta}
       </a>
     </div>
-    <p style="color:#888;font-size:12px">Vous pouvez gérer votre abonnement dans les <a href="${SITE_URL}/settings" style="color:#4be277">paramètres</a>.</p>
+    <p style="color:#888;font-size:12px">Tu peux gérer ton abonnement dans les <a href="${SITE_URL}/settings" style="color:#4be277">paramètres</a>.</p>
   `);
 }
