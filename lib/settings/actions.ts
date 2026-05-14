@@ -14,6 +14,7 @@ export interface SettingsData {
     email: string;
     avatarUrl: string | null;
     plan: string;
+    sprintExpiresAt: Date | null;
     createdAt: Date;
   };
   profile: {
@@ -61,6 +62,7 @@ export async function getSettingsData(): Promise<SettingsData | null> {
       email: dbUser.email,
       avatarUrl: dbUser.avatarUrl,
       plan: dbUser.plan,
+      sprintExpiresAt: dbUser.sprintExpiresAt,
       createdAt: dbUser.createdAt,
     },
     profile: dbUser.profile

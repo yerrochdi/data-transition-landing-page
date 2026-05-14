@@ -23,7 +23,9 @@ import { cn } from "@/lib/utils";
 import { updateProfile, deleteAccount, resetOnboarding } from "@/lib/settings/actions";
 import { signOut } from "@/lib/auth/actions";
 import { createPortalSession } from "@/lib/billing/actions";
+import { isPaidPlan, planLabel } from "@/lib/billing/plan";
 import type { SettingsData } from "@/lib/settings/actions";
+import type { Plan } from "@/lib/generated/prisma/enums";
 
 // ─── Section Card ─────────────────────────────────────────────────
 
@@ -192,6 +194,16 @@ export function SettingsView({ data }: { data: SettingsData }) {
     year: "numeric",
   });
 
+  // Billing state — drives the plan badge label and whether the
+  // "Gérer mon abonnement" (Stripe Customer Portal) button shows.
+  // Any paying tier (Boost/Pro/Founding/Enterprise) or an active Sprint
+  // pass can manage their subscription.
+  const billingState = {
+    plan: data.user.plan as Plan,
+    sprintExpiresAt: data.user.sprintExpiresAt,
+  };
+  const isPaidUser = isPaidPlan(billingState);
+
   return (
     <div className="space-y-8">
       {/* Header */}
@@ -246,14 +258,23 @@ export function SettingsView({ data }: { data: SettingsData }) {
             <div className="flex items-center gap-1.5 px-3 py-1.5 rounded-full bg-primary/10">
               <Crown className="w-3.5 h-3.5 text-primary" />
               <span className="text-xs font-bold text-primary">
-                {data.user.plan === "PREMIUM" ? "Premium" : data.user.plan === "ENTERPRISE" ? "Enterprise" : "Free"}
+                {planLabel(billingState)}
               </span>
             </div>
-            {data.user.plan === "PREMIUM" && (
+            {isPaidUser && (
               <button
                 onClick={async () => {
                   const result = await createPortalSession();
-                  if (result.url) window.location.href = result.url;
+                  if (result.url) {
+                    window.location.href = result.url;
+                  } else {
+                    setMessage({
+                      type: "error",
+                      text:
+                        result.error ??
+                        "Impossible d'ouvrir la gestion d'abonnement.",
+                    });
+                  }
                 }}
                 className="flex items-center gap-1.5 px-3 py-1.5 rounded-full bg-primary/10 text-xs font-bold text-primary hover:bg-primary/20 transition-colors"
               >
