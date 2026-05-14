@@ -9,13 +9,25 @@ const SPRINT_DURATION_DAYS = 30;
 /**
  * Maps a Stripe price ID to its corresponding Plan enum value (or
  * `"SPRINT"` as a marker for the one-time pass).
+ *
+ * Guards against a misconfiguration trap: if a STRIPE_*_PRICE_ID env
+ * var is undefined, `priceId === undefined` would never match — but if
+ * BOTH sides are undefined the comparison is true, silently mapping a
+ * null price to a plan. We only compare against env vars that are
+ * actually set.
  */
 function planFromPriceId(priceId: string | null | undefined): Plan | "SPRINT" | null {
   if (!priceId) return null;
-  if (priceId === process.env.STRIPE_BOOST_PRICE_ID) return "BOOST";
-  if (priceId === process.env.STRIPE_PRO_PRICE_ID) return "PREMIUM";
-  if (priceId === process.env.STRIPE_FOUNDING_PRICE_ID) return "FOUNDING";
-  if (priceId === process.env.STRIPE_SPRINT_PRICE_ID) return "SPRINT";
+  const {
+    STRIPE_BOOST_PRICE_ID,
+    STRIPE_PRO_PRICE_ID,
+    STRIPE_FOUNDING_PRICE_ID,
+    STRIPE_SPRINT_PRICE_ID,
+  } = process.env;
+  if (STRIPE_BOOST_PRICE_ID && priceId === STRIPE_BOOST_PRICE_ID) return "BOOST";
+  if (STRIPE_PRO_PRICE_ID && priceId === STRIPE_PRO_PRICE_ID) return "PREMIUM";
+  if (STRIPE_FOUNDING_PRICE_ID && priceId === STRIPE_FOUNDING_PRICE_ID) return "FOUNDING";
+  if (STRIPE_SPRINT_PRICE_ID && priceId === STRIPE_SPRINT_PRICE_ID) return "SPRINT";
   return null;
 }
 
@@ -91,6 +103,17 @@ export async function POST(request: NextRequest) {
     return new Response("Signature invalide", { status: 400 });
   }
 
+  // ── Idempotency guard ──
+  // Stripe replays events on timeout/retry. If we've already fully
+  // processed this event id, acknowledge and do nothing.
+  const alreadyProcessed = await prisma.processedStripeEvent.findUnique({
+    where: { id: event.id },
+  });
+  if (alreadyProcessed) {
+    console.log(`[webhook] event ${event.id} already processed — skipping`);
+    return new Response("OK (already processed)", { status: 200 });
+  }
+
   try {
     switch (event.type) {
       case "checkout.session.completed": {
@@ -107,8 +130,14 @@ export async function POST(request: NextRequest) {
         const target = planFromPriceId(priceId);
 
         if (!target) {
-          console.warn("[webhook] checkout.session.completed with unknown priceId", priceId);
-          break;
+          // A user paid but we can't map the price to a plan — almost
+          // always a missing STRIPE_*_PRICE_ID env var. Return 500 so
+          // Stripe retries AND the failure is visible in the dashboard.
+          console.error(
+            `[webhook] checkout.session.completed: unmappable priceId "${priceId}". ` +
+              `Check STRIPE_*_PRICE_ID env vars — user ${userId} paid but stays FREE.`
+          );
+          return new Response("Unknown price — check env config", { status: 500 });
         }
 
         if (target === "SPRINT") {
@@ -181,9 +210,15 @@ export async function POST(request: NextRequest) {
       }
     }
 
+    // Mark the event as fully processed so a Stripe replay is a no-op.
+    await prisma.processedStripeEvent.create({
+      data: { id: event.id, type: event.type },
+    });
+
     return new Response("OK", { status: 200 });
   } catch (err) {
     console.error("Webhook handler error:", err);
+    // Do NOT record the event — return 500 so Stripe retries it.
     return new Response("Erreur interne", { status: 500 });
   }
 }

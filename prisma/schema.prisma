@@ -550,6 +550,21 @@ enum FoundingMemberApplicationStatus {
 }
 
 // ============================================================
+// Billing — Stripe webhook idempotency
+// ============================================================
+// Stripe can replay the same event (timeouts, retries). We record
+// every event id we've fully processed so a replay is a no-op instead
+// of double-activating a plan or sending a duplicate email.
+
+model ProcessedStripeEvent {
+  id          String   @id // the Stripe event id (evt_...)
+  type        String
+  processedAt DateTime @default(now())
+
+  @@map("processed_stripe_events")
+}
+
+// ============================================================
 // Deliverables (Sprint 3 — Livrables concrets / Portfolio)
 // ============================================================
 
