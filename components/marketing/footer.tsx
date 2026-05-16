@@ -12,7 +12,7 @@ export function Footer() {
             <span className="font-headline font-bold text-base text-foreground">NextMove AI</span>
           </div>
           <p className="text-xs text-muted-foreground leading-relaxed max-w-xs">
-            Le coach IA des cadres qui intègrent la data et l&apos;IA à leur expertise.
+            Le Career OS des cadres qui intègrent la data et l&apos;IA à leur expertise.
           </p>
         </div>
 

@@ -1,7 +1,7 @@
 import { ImageResponse } from "next/og";
 
 export const runtime = "edge";
-export const alt = "NextMove AI — Votre coach IA pour la transition data";
+export const alt = "NextMove AI — Career OS data-augmenté pour cadres";
 export const size = { width: 1200, height: 630 };
 export const contentType = "image/png";
 
@@ -114,7 +114,7 @@ export default async function Image() {
               display: "flex",
             }}
           >
-            Parcours personnalisé, opportunités, copilot intelligent.
+            Le Career OS des cadres qui intègrent la data à leur expertise.
           </div>
         </div>
 

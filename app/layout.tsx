@@ -18,22 +18,22 @@ const jakarta = Plus_Jakarta_Sans({
 const SITE_URL = "https://nextmove.sh";
 const SITE_NAME = "NextMove AI";
 const SITE_DESCRIPTION =
-  "Votre coach IA pour réussir votre transition vers un métier de la data. Parcours personnalisé, opportunités, copilot intelligent.";
+  "Le Career OS des cadres qui intègrent la data et l'IA à leur expertise — sans tout recommencer. Diagnostic, parcours, livrables et opportunités matchées.";
 
 export const metadata: Metadata = {
   metadataBase: new URL(SITE_URL),
   title: {
-    default: `${SITE_NAME} — Votre coach IA pour la transition data`,
+    default: `${SITE_NAME} — Career OS data-augmenté pour cadres`,
     template: `%s | ${SITE_NAME}`,
   },
   description: SITE_DESCRIPTION,
   keywords: [
-    "reconversion data",
-    "transition data analyst",
-    "data scientist reconversion",
-    "coach IA carrière",
-    "formation data",
-    "parcours data",
+    "career os data",
+    "cadre data-augmenté",
+    "transition data manager",
+    "upskill data IA",
+    "reconversion data cadres",
+    "portfolio data",
   ],
   authors: [{ name: "NextMove AI" }],
   creator: "NextMove AI",
@@ -45,12 +45,12 @@ export const metadata: Metadata = {
     locale: "fr_FR",
     url: SITE_URL,
     siteName: SITE_NAME,
-    title: `${SITE_NAME} — Votre coach IA pour la transition data`,
+    title: `${SITE_NAME} — Career OS data-augmenté pour cadres`,
     description: SITE_DESCRIPTION,
   },
   twitter: {
     card: "summary_large_image",
-    title: `${SITE_NAME} — Votre coach IA pour la transition data`,
+    title: `${SITE_NAME} — Career OS data-augmenté pour cadres`,
     description: SITE_DESCRIPTION,
     creator: "@nextmove_ai",
   },

@@ -354,11 +354,15 @@ export function DashboardView({ data, nextAction }: DashboardViewProps) {
             year: "numeric",
           })}{" "}
           — Plan{" "}
-          {user.plan === "PREMIUM"
-            ? "Premium"
-            : user.plan === "ENTERPRISE"
-              ? "Enterprise"
-              : "Free"}
+          {user.plan === "BOOST"
+            ? "Boost"
+            : user.plan === "PREMIUM"
+              ? "Pro"
+              : user.plan === "FOUNDING"
+                ? "Founding"
+                : user.plan === "ENTERPRISE"
+                  ? "Enterprise"
+                  : "Free"}
         </p>
       </div>
     </div>

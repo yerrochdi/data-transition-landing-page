@@ -45,10 +45,10 @@ export function Footer() {
           <div className="flex flex-col gap-3 text-xs text-background/40 md:flex-row md:items-center md:justify-between">
             <p>{"\u00a9 2026 Data Transition. Tous droits r\u00e9serv\u00e9s."}</p>
             <div className="flex gap-6">
-              <a href="#" className="transition-colors hover:text-background/60">
+              <a href="/legal/mentions-legales" className="transition-colors hover:text-background/60">
                 {"Mentions l\u00e9gales"}
               </a>
-              <a href="#" className="transition-colors hover:text-background/60">
+              <a href="/legal/confidentialite" className="transition-colors hover:text-background/60">
                 {"Politique de confidentialit\u00e9"}
               </a>
             </div>

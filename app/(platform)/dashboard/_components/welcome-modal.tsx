@@ -94,7 +94,7 @@ export function WelcomeModal({ userName, targetRole, careerScore, readinessScore
               <MessageSquare className="w-5 h-5 text-blue-400 shrink-0" />
               <div>
                 <p className="text-xs font-bold text-foreground">Copilot IA personnel</p>
-                <p className="text-[10px] text-muted-foreground">Un coach IA qui connait votre profil et vous guide</p>
+                <p className="text-[10px] text-muted-foreground">Une IA qui connait votre profil et vous oriente vers la prochaine action utile</p>
               </div>
             </div>
             <div className="flex items-center gap-3 p-3 rounded-xl bg-surface-container-lowest">

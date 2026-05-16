@@ -59,12 +59,23 @@ export function Topbar({ user }: TopbarProps) {
 
       {/* Actions */}
       <div className="flex items-center gap-3">
-        {user.plan === "PREMIUM" && (
-          <div className="hidden md:flex items-center gap-1.5 px-3 py-1 rounded-full bg-primary/10 border border-primary/20">
-            <Crown className="w-3 h-3 text-primary" />
-            <span className="text-[10px] font-bold text-primary uppercase tracking-widest">Pro</span>
-          </div>
-        )}
+        {(() => {
+          // Pastille plan visible pour tout user payant (Boost, Pro, Founding,
+          // Enterprise). Sprint pass non géré ici car la prop ne porte pas
+          // sprintExpiresAt — la sidebar (qui l'a) reste la source riche.
+          const label =
+            user.plan === "BOOST" ? "Boost" :
+            user.plan === "PREMIUM" ? "Pro" :
+            user.plan === "FOUNDING" ? "Founding" :
+            user.plan === "ENTERPRISE" ? "Enterprise" : null;
+          if (!label) return null;
+          return (
+            <div className="hidden md:flex items-center gap-1.5 px-3 py-1 rounded-full bg-primary/10 border border-primary/20">
+              <Crown className="w-3 h-3 text-primary" />
+              <span className="text-[10px] font-bold text-primary uppercase tracking-widest">{label}</span>
+            </div>
+          );
+        })()}
         <form action={signOut}>
           <button
             type="submit"
