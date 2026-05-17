@@ -124,45 +124,46 @@ export function HeroNarrative() {
             renderWord={(word, i, isLast) => {
               const isAccent = word === "3e";
               return (
-                <motion.span
-                  key={i}
-                  initial={{ opacity: 0, y: 12 }}
-                  animate={{ opacity: 1, y: 0 }}
-                  transition={{
-                    duration: 0.55,
-                    delay: lineDelays[2] + i * 0.04,
-                    ease: [0.25, 0.4, 0.25, 1],
-                  }}
-                  className={`inline-block ${isAccent ? "relative" : ""}`}
-                >
-                  {isAccent ? (
-                    <motion.span
-                      className="text-primary inline-block"
-                      style={{
-                        textShadow:
-                          "0 0 24px hsl(var(--primary) / 0.55), 0 0 60px hsl(var(--primary) / 0.25)",
-                      }}
-                      animate={{
-                        textShadow: [
-                          "0 0 24px hsl(var(--primary) / 0.55), 0 0 60px hsl(var(--primary) / 0.25)",
-                          "0 0 32px hsl(var(--primary) / 0.75), 0 0 80px hsl(var(--primary) / 0.35)",
-                          "0 0 24px hsl(var(--primary) / 0.55), 0 0 60px hsl(var(--primary) / 0.25)",
-                        ],
-                      }}
-                      transition={{
-                        duration: 3,
-                        repeat: Infinity,
-                        ease: "easeInOut",
-                        delay: 2,
-                      }}
-                    >
-                      {word}
-                    </motion.span>
-                  ) : (
-                    word
-                  )}
+                <span key={i}>
+                  <motion.span
+                    initial={{ opacity: 0, y: 12 }}
+                    animate={{ opacity: 1, y: 0 }}
+                    transition={{
+                      duration: 0.55,
+                      delay: lineDelays[2] + i * 0.04,
+                      ease: [0.25, 0.4, 0.25, 1],
+                    }}
+                    className="inline-block"
+                  >
+                    {isAccent ? (
+                      <motion.span
+                        className="text-primary inline-block"
+                        style={{
+                          textShadow:
+                            "0 0 24px hsl(var(--primary) / 0.55), 0 0 60px hsl(var(--primary) / 0.25)",
+                        }}
+                        animate={{
+                          textShadow: [
+                            "0 0 24px hsl(var(--primary) / 0.55), 0 0 60px hsl(var(--primary) / 0.25)",
+                            "0 0 32px hsl(var(--primary) / 0.75), 0 0 80px hsl(var(--primary) / 0.35)",
+                            "0 0 24px hsl(var(--primary) / 0.55), 0 0 60px hsl(var(--primary) / 0.25)",
+                          ],
+                        }}
+                        transition={{
+                          duration: 3,
+                          repeat: Infinity,
+                          ease: "easeInOut",
+                          delay: 2,
+                        }}
+                      >
+                        {word}
+                      </motion.span>
+                    ) : (
+                      word
+                    )}
+                  </motion.span>
                   {!isLast && " "}
-                </motion.span>
+                </span>
               );
             }}
           >
@@ -285,20 +286,21 @@ function AnimatedLine({
         const isLast = i === children.length - 1;
         if (renderWord) return renderWord(word, i, isLast);
         return (
-          <motion.span
-            key={i}
-            initial={{ opacity: 0, y: 12 }}
-            animate={{ opacity: 1, y: 0 }}
-            transition={{
-              duration: 0.55,
-              delay: delay + i * 0.04,
-              ease: [0.25, 0.4, 0.25, 1],
-            }}
-            className="inline-block"
-          >
-            {word}
+          <span key={i}>
+            <motion.span
+              initial={{ opacity: 0, y: 12 }}
+              animate={{ opacity: 1, y: 0 }}
+              transition={{
+                duration: 0.55,
+                delay: delay + i * 0.04,
+                ease: [0.25, 0.4, 0.25, 1],
+              }}
+              className="inline-block"
+            >
+              {word}
+            </motion.span>
             {!isLast && " "}
-          </motion.span>
+          </span>
         );
       })}
     </span>
