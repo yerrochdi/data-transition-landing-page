@@ -28,14 +28,22 @@ import { SkillGaps } from "./skill-gaps";
 // StreakTip and Achievements intentionally removed — see Phase A step 4.
 import { WelcomeModal } from "./welcome-modal";
 import { NextBestAction, type NextBestActionProps } from "./next-best-action";
+import { CareerOsCard } from "./career-os-card";
 import { cn } from "@/lib/utils";
+
+interface CareerOsStatus {
+  hasInflections: boolean;
+  hasLongTermVision: boolean;
+  hasAnchors: boolean;
+}
 
 interface DashboardViewProps {
   data: DashboardData;
   nextAction: NextBestActionProps | null;
+  careerOs: CareerOsStatus | null;
 }
 
-export function DashboardView({ data, nextAction }: DashboardViewProps) {
+export function DashboardView({ data, nextAction, careerOs }: DashboardViewProps) {
   const { user, profile, onboarding, journey } = data;
 
   const careerScore = profile?.careerScore ?? 0;
@@ -69,6 +77,16 @@ export function DashboardView({ data, nextAction }: DashboardViewProps) {
            feature-juxtaposition with a single fil rouge)
           ═══════════════════════════════════════════════════════════ */}
       {nextAction && <NextBestAction {...nextAction} />}
+
+      {/* Career OS card — permanent reminder that this product is a
+          long-term career companion, not a one-shot transition tool */}
+      <CareerOsCard
+        hasFirstBilan={hasCompletedOnboarding}
+        hasInflections={careerOs?.hasInflections ?? false}
+        hasLongTermVision={careerOs?.hasLongTermVision ?? false}
+        hasAnchors={careerOs?.hasAnchors ?? false}
+      />
+
 
       {/* ═══════════════════════════════════════════════════════════
           HERO — Score + Role Transition + KPIs

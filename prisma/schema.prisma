@@ -155,6 +155,27 @@ model OnboardingResponse {
   aiSummary        String?  @db.Text
   aiRecommendation String?  @db.Text
 
+  // Career OS enrichment — optional modules unlocked after the first
+  // bilan to push the product toward a long-term Career OS rather than
+  // a one-shot transition tool. Each field corresponds to a mini-flow
+  // the user can complete later for a richer bilan v2/v3.
+
+  // 3 key inflections of past career — what moves they made, why,
+  // what they learned. Stored as JSON [{year, from, to, why, lesson}].
+  careerInflections     Json?
+  careerInflectionsAt   DateTime?
+
+  // Long-term vision: 5y/10y projection, values, non-negotiables.
+  // Stored as JSON {fiveYears, tenYears, idealLife, dealbreakers}.
+  longTermVision        Json?
+  longTermVisionAt      DateTime?
+
+  // Anchors and breakpoints: geo constraints, sector exclusions,
+  // burnout triggers the user has identified.
+  // Stored as JSON {geoAnchors, sectorExclusions, burnoutTriggers}.
+  careerAnchors         Json?
+  careerAnchorsAt       DateTime?
+
   user User @relation(fields: [userId], references: [id], onDelete: Cascade)
 
   @@map("onboarding_responses")
