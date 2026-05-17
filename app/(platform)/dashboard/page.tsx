@@ -3,17 +3,21 @@ import { redirect } from "next/navigation";
 import { DashboardView } from "./_components/dashboard-view";
 import { UpgradeSuccess } from "./_components/upgrade-success";
 import { getNextActionForCurrentUser } from "@/lib/orchestrator/actions";
-import { getCareerOsEnrichment } from "@/lib/career-os/actions";
+import {
+  getCareerOsEnrichment,
+  getBilanSharingState,
+} from "@/lib/career-os/actions";
 
 export default async function DashboardPage({
   searchParams,
 }: {
   searchParams: Promise<{ upgraded?: string }>;
 }) {
-  const [data, nextAction, careerOs] = await Promise.all([
+  const [data, nextAction, careerOs, bilanSharing] = await Promise.all([
     getDashboardData(),
     getNextActionForCurrentUser(),
     getCareerOsEnrichment(),
+    getBilanSharingState(),
   ]);
 
   if (!data) {
@@ -26,7 +30,12 @@ export default async function DashboardPage({
   return (
     <>
       {justUpgraded && <UpgradeSuccess />}
-      <DashboardView data={data} nextAction={nextAction} careerOs={careerOs} />
+      <DashboardView
+        data={data}
+        nextAction={nextAction}
+        careerOs={careerOs}
+        bilanSharing={bilanSharing}
+      />
     </>
   );
 }

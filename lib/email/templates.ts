@@ -120,6 +120,42 @@ export function foundingMemberAcceptedEmail(
   `);
 }
 
+/**
+ * Monthly Career OS check-in email. Sent on the 1st of every month to
+ * users who finished their onboarding. Purpose: keep the Career OS
+ * relationship alive beyond the transition phase — a real career coach
+ * follows up monthly.
+ */
+export function careerOsCheckinEmail(
+  firstName: string,
+  monthLabel: string
+): string {
+  return layout(`
+    <h1 style="color:#fff;font-size:22px;margin:0 0 16px">Check-in mensuel — ${monthLabel}</h1>
+    <p>${firstName}, on est le 1er ${monthLabel}. Petit point sur votre carrière, comme on l&apos;avait convenu.</p>
+
+    <p style="margin-top:20px"><strong style="color:#e0e0e0">3 questions pour faire le point :</strong></p>
+
+    <ol style="padding-left:20px;margin:12px 0;line-height:1.8">
+      <li>Quelle est la <strong>victoire</strong> dont vous êtes le plus fier ce mois-ci (côté carrière ou data) ?</li>
+      <li>Quelle est la <strong>frustration</strong> ou le blocage qui revient ?</li>
+      <li>Sur une échelle de 1 à 10, à combien êtes-vous de votre <strong>objectif data-augmenté</strong> aujourd&apos;hui ?</li>
+    </ol>
+
+    <p style="margin-top:20px">Vous pouvez répondre directement à cet email — je lis tout. Ou aller mettre à jour votre Career OS depuis votre dashboard, et le bilan v2 s&apos;enrichira de vos réponses.</p>
+
+    <div style="text-align:center;margin:28px 0">
+      <a href="${SITE_URL}/dashboard" style="display:inline-block;background:linear-gradient(135deg,#4be277,#36d068);color:#000;font-weight:bold;font-size:14px;padding:12px 28px;border-radius:12px;text-decoration:none">
+        Mettre à jour mon Career OS
+      </a>
+    </div>
+
+    <p style="color:#888;font-size:12px;margin-top:24px">Un Career OS qui ne suit pas votre évolution n&apos;est pas un Career OS. Ces check-ins mensuels sont là pour que NextMove reste utile bien après votre transition.</p>
+
+    <p style="color:#888;font-size:12px;margin-top:16px">Yassine — Fondateur de NextMove</p>
+  `);
+}
+
 function escapeHtml(s: string): string {
   return s
     .replace(/&/g, "&amp;")

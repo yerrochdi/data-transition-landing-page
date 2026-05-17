@@ -155,6 +155,11 @@ model OnboardingResponse {
   aiSummary        String?  @db.Text
   aiRecommendation String?  @db.Text
 
+  // Public sharing of the bilan — opt-in by the user from the dashboard.
+  // Same pattern as deliverables (shareableSlug + isPublic).
+  bilanIsPublic        Boolean @default(false)
+  bilanShareableSlug   String? @unique
+
   // Career OS enrichment — optional modules unlocked after the first
   // bilan to push the product toward a long-term Career OS rather than
   // a one-shot transition tool. Each field corresponds to a mini-flow

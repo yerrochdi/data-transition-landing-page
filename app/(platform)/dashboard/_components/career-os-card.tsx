@@ -1,5 +1,6 @@
 "use client";
 
+import { useState, useTransition } from "react";
 import Link from "next/link";
 import {
   Route,
@@ -9,14 +10,20 @@ import {
   ArrowRight,
   Check,
   Lock,
+  Share2,
+  Copy,
+  Loader2,
 } from "lucide-react";
 import { cn } from "@/lib/utils";
+import { toggleBilanPublic } from "@/lib/career-os/actions";
 
 interface CareerOsCardProps {
   hasFirstBilan: boolean;
   hasInflections: boolean;
   hasLongTermVision: boolean;
   hasAnchors: boolean;
+  bilanIsPublic: boolean;
+  bilanShareableSlug: string | null;
 }
 
 /**
@@ -29,7 +36,34 @@ export function CareerOsCard({
   hasInflections,
   hasLongTermVision,
   hasAnchors,
+  bilanIsPublic,
+  bilanShareableSlug,
 }: CareerOsCardProps) {
+  const [isPending, startTransition] = useTransition();
+  const [localPublic, setLocalPublic] = useState(bilanIsPublic);
+  const [localSlug, setLocalSlug] = useState<string | null>(bilanShareableSlug);
+  const [copyHint, setCopyHint] = useState<string | null>(null);
+
+  const handleToggle = () => {
+    startTransition(async () => {
+      const result = await toggleBilanPublic();
+      if (result.ok) {
+        setLocalPublic(result.isPublic ?? false);
+        if (result.shareableSlug !== undefined) {
+          setLocalSlug(result.shareableSlug ?? localSlug);
+        }
+      }
+    });
+  };
+
+  const handleCopyLink = () => {
+    if (!localSlug || typeof window === "undefined") return;
+    const url = `${window.location.origin}/career-os-public/${localSlug}`;
+    navigator.clipboard.writeText(url).then(() => {
+      setCopyHint("Lien copié");
+      setTimeout(() => setCopyHint(null), 2000);
+    });
+  };
   const modules = [
     {
       key: "inflections",
@@ -108,6 +142,52 @@ export function CareerOsCard({
           <p className="text-muted-foreground mt-0.5">Croissance</p>
         </div>
       </div>
+
+      {/* Public share toggle — only when bilan exists */}
+      {hasFirstBilan && (
+        <div className="bg-surface-container-lowest rounded-xl p-3 space-y-2">
+          <div className="flex items-center justify-between gap-2 flex-wrap">
+            <div className="flex items-center gap-2">
+              <Share2 className="w-3.5 h-3.5 text-primary" />
+              <p className="text-xs font-bold text-foreground">
+                Partager mon bilan
+              </p>
+            </div>
+            <button
+              onClick={handleToggle}
+              disabled={isPending}
+              className={cn(
+                "text-[10px] font-bold px-2.5 py-1 rounded-md transition-colors disabled:opacity-50",
+                localPublic
+                  ? "bg-emerald-500/15 text-emerald-400 hover:bg-emerald-500/25"
+                  : "bg-surface-container text-muted-foreground hover:bg-surface-container-high"
+              )}
+            >
+              {isPending ? (
+                <Loader2 className="w-3 h-3 animate-spin inline" />
+              ) : localPublic ? (
+                "Public — cliquer pour rendre privé"
+              ) : (
+                "Rendre public"
+              )}
+            </button>
+          </div>
+          {localPublic && localSlug && (
+            <div className="flex items-center gap-2">
+              <code className="text-[10px] text-muted-foreground bg-surface-container px-2 py-1 rounded flex-1 truncate">
+                /career-os-public/{localSlug}
+              </code>
+              <button
+                onClick={handleCopyLink}
+                className="text-[10px] font-bold text-primary hover:bg-primary/10 px-2 py-1 rounded flex items-center gap-1"
+              >
+                <Copy className="w-3 h-3" />
+                {copyHint ?? "Copier"}
+              </button>
+            </div>
+          )}
+        </div>
+      )}
 
       {/* Enrichment modules */}
       {hasFirstBilan && (

@@ -13,3 +13,8 @@ ALTER TABLE onboarding_responses
   ADD COLUMN IF NOT EXISTS "longTermVisionAt"    TIMESTAMP(3),
   ADD COLUMN IF NOT EXISTS "careerAnchors"       JSONB,
   ADD COLUMN IF NOT EXISTS "careerAnchorsAt"     TIMESTAMP(3);
+
+-- Bilan public sharing (opt-in by user from dashboard).
+ALTER TABLE onboarding_responses
+  ADD COLUMN IF NOT EXISTS "bilanIsPublic"      BOOLEAN NOT NULL DEFAULT false,
+  ADD COLUMN IF NOT EXISTS "bilanShareableSlug" TEXT UNIQUE;

@@ -3,6 +3,10 @@
     {
       "path": "/api/cron/sync-opportunities",
       "schedule": "0 4 * * 1"
+    },
+    {
+      "path": "/api/cron/career-os-checkin",
+      "schedule": "0 9 1 * *"
     }
   ]
 }

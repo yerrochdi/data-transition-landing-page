@@ -63,7 +63,7 @@ const PHASES = [
     status: "soon" as const,
     icon: TrendingUp,
     intro:
-      "Tu es installé. NextMove devient ton coach permanent. Career radar, network compounding, salary intelligence en continu.",
+      "Tu es installé. NextMove devient ton compagnon de carrière permanent. Career radar, network compounding, salary intelligence en continu.",
     features: [
       { label: "Career radar — alertes sur les skills émergentes de ton secteur", done: false },
       { label: "Network compounding — actions hebdo pour entretenir ton réseau", done: false },

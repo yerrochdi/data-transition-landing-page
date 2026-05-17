@@ -37,13 +37,25 @@ interface CareerOsStatus {
   hasAnchors: boolean;
 }
 
+interface BilanSharingState {
+  isPublic: boolean;
+  shareableSlug: string | null;
+  hasBilan: boolean;
+}
+
 interface DashboardViewProps {
   data: DashboardData;
   nextAction: NextBestActionProps | null;
   careerOs: CareerOsStatus | null;
+  bilanSharing: BilanSharingState | null;
 }
 
-export function DashboardView({ data, nextAction, careerOs }: DashboardViewProps) {
+export function DashboardView({
+  data,
+  nextAction,
+  careerOs,
+  bilanSharing,
+}: DashboardViewProps) {
   const { user, profile, onboarding, journey } = data;
 
   const careerScore = profile?.careerScore ?? 0;
@@ -85,6 +97,8 @@ export function DashboardView({ data, nextAction, careerOs }: DashboardViewProps
         hasInflections={careerOs?.hasInflections ?? false}
         hasLongTermVision={careerOs?.hasLongTermVision ?? false}
         hasAnchors={careerOs?.hasAnchors ?? false}
+        bilanIsPublic={bilanSharing?.isPublic ?? false}
+        bilanShareableSlug={bilanSharing?.shareableSlug ?? null}
       />
 
 

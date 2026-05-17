@@ -3,6 +3,7 @@
 import { revalidatePath } from "next/cache";
 import { createClient } from "@/lib/supabase/server";
 import { prisma } from "@/lib/db";
+import { randomBytes } from "crypto";
 import type {
   CareerAnchors,
   CareerInflection,
@@ -132,6 +133,118 @@ export async function saveCareerAnchors(
 
   revalidatePath("/dashboard");
   return { ok: true };
+}
+
+// ─── Bilan public sharing ─────────────────────────────────────────
+
+/**
+ * Toggle the public visibility of the user's bilan. On first opt-in,
+ * we generate a stable opaque slug so the public URL is hard to guess.
+ */
+export async function toggleBilanPublic(): Promise<{
+  ok: boolean;
+  isPublic?: boolean;
+  shareableSlug?: string | null;
+  error?: string;
+}> {
+  const userId = await getCurrentUserId();
+  if (!userId) return { ok: false, error: "Not authenticated" };
+
+  const current = await prisma.onboardingResponse.findUnique({
+    where: { userId },
+    select: { bilanIsPublic: true, bilanShareableSlug: true, aiSummary: true },
+  });
+  if (!current?.aiSummary) {
+    return {
+      ok: false,
+      error: "Pas encore de bilan à partager. Termine ton diagnostic d'abord.",
+    };
+  }
+
+  const nextIsPublic = !current.bilanIsPublic;
+  // Generate slug on first opt-in; keep it stable afterwards.
+  const slug =
+    current.bilanShareableSlug ??
+    randomBytes(8).toString("hex"); // 16 chars, ~10^19 entropy
+
+  await prisma.onboardingResponse.update({
+    where: { userId },
+    data: {
+      bilanIsPublic: nextIsPublic,
+      bilanShareableSlug: slug,
+    },
+  });
+
+  revalidatePath("/dashboard");
+  return {
+    ok: true,
+    isPublic: nextIsPublic,
+    shareableSlug: nextIsPublic ? slug : null,
+  };
+}
+
+/**
+ * Read the public bilan for a given share slug. Returns null if the
+ * bilan doesn't exist or has been switched back to private.
+ */
+export async function getPublicBilan(slug: string): Promise<{
+  authorFirstName: string;
+  authorLastName: string;
+  currentRole: string | null;
+  targetRole: string | null;
+  generatedAt: Date;
+  aiSummary: string;
+} | null> {
+  const row = await prisma.onboardingResponse.findUnique({
+    where: { bilanShareableSlug: slug },
+    select: {
+      bilanIsPublic: true,
+      aiSummary: true,
+      currentRole: true,
+      targetRole: true,
+      completedAt: true,
+      user: { select: { firstName: true, lastName: true } },
+    },
+  });
+  if (!row || !row.bilanIsPublic || !row.aiSummary) return null;
+
+  return {
+    authorFirstName: row.user.firstName,
+    authorLastName: row.user.lastName,
+    currentRole: row.currentRole,
+    targetRole: row.targetRole,
+    generatedAt: row.completedAt ?? new Date(),
+    aiSummary: row.aiSummary,
+  };
+}
+
+/**
+ * Lightweight read of the bilan sharing state — used by the dashboard
+ * card to render the toggle button correctly.
+ */
+export async function getBilanSharingState(): Promise<{
+  isPublic: boolean;
+  shareableSlug: string | null;
+  hasBilan: boolean;
+} | null> {
+  const userId = await getCurrentUserId();
+  if (!userId) return null;
+  const row = await prisma.onboardingResponse.findUnique({
+    where: { userId },
+    select: {
+      bilanIsPublic: true,
+      bilanShareableSlug: true,
+      aiSummary: true,
+    },
+  });
+  if (!row) {
+    return { isPublic: false, shareableSlug: null, hasBilan: false };
+  }
+  return {
+    isPublic: row.bilanIsPublic,
+    shareableSlug: row.bilanShareableSlug,
+    hasBilan: !!row.aiSummary,
+  };
 }
 
 /**
