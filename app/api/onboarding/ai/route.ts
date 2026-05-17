@@ -124,7 +124,9 @@ export async function POST(request: NextRequest) {
         { role: "system", content: SYSTEM_PROMPT },
         { role: "user", content: userPrompt },
       ],
-      max_tokens: step === "summary" ? 1024 : 512,
+      // Summary needs room for a 800-1200 word consultant-style bilan.
+      // 3000 tokens gives a comfortable margin in French.
+      max_tokens: step === "summary" ? 3000 : 512,
       temperature: 0.7,
       stream: true,
     });

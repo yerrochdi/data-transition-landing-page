@@ -4,6 +4,7 @@ import { useState, useCallback, useEffect, useRef } from "react";
 import { Sparkles, RefreshCw, Loader2 } from "lucide-react";
 import type { OnboardingFormData } from "@/lib/onboarding/types";
 import { renderMarkdownBlock } from "@/lib/utils/render-markdown";
+import { CareerOsBilan } from "@/components/career-os/bilan-renderer";
 
 interface AiInsightPanelProps {
   label: string;
@@ -170,6 +171,11 @@ export function AiInsightPanel({
             {content}
             <span className="inline-block w-1.5 h-4 bg-primary ml-0.5 animate-pulse" />
           </span>
+        ) : step === "summary" ? (
+          // Final Career OS bilan — use the document-style renderer for
+          // the long-form consultant bilan (replaces the legacy 4-section
+          // rendering for the summary step only).
+          <CareerOsBilan content={content} bare />
         ) : (
           <div className="space-y-0">{renderMarkdownBlock(content)}</div>
         )}

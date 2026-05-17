@@ -103,10 +103,10 @@ export function StepSummary({
           </div>
           <div>
             <h3 className="font-headline text-lg font-bold text-foreground">
-              Votre diagnostic IA
+              Votre Career OS — version 1
             </h3>
             <p className="text-xs text-primary">
-              Analysé par NextMove Copilot
+              Bilan rédigé par NextMove · évolutif avec votre carrière
             </p>
           </div>
         </div>

@@ -4,10 +4,23 @@ import { Sparkles, Brain, ArrowRight, User, Zap, TrendingUp, Route } from "lucid
 import Link from "next/link";
 import { renderInlineMarkdown } from "@/lib/utils/render-markdown";
 import { cn } from "@/lib/utils";
+import { CareerOsBilan } from "@/components/career-os/bilan-renderer";
 
 interface AiSummaryProps {
   aiSummary: string | null;
   hasCompletedOnboarding: boolean;
+}
+
+/**
+ * Detect whether the stored summary follows the new Career OS bilan
+ * format (consultant-style, headings like "# Synthèse", "# Diagnostic")
+ * versus the legacy 4-section format ("**Profil détecté**", etc.).
+ *
+ * Old summaries (pre-2026-05-17) stay rendered with the legacy parser;
+ * new summaries get the document-style renderer.
+ */
+function isCareerOsBilanFormat(text: string): boolean {
+  return /^#\s+Synth[èe]se\b/m.test(text) && /^#\s+Diagnostic\b/m.test(text);
 }
 
 interface ParsedSection {
@@ -97,6 +110,11 @@ export function AiSummary({ aiSummary, hasCompletedOnboarding }: AiSummaryProps)
         </div>
       </div>
     );
+  }
+
+  // New Career OS bilan format → use the document-style renderer
+  if (isCareerOsBilanFormat(aiSummary)) {
+    return <CareerOsBilan content={aiSummary} />;
   }
 
   const sections = parseSections(aiSummary);

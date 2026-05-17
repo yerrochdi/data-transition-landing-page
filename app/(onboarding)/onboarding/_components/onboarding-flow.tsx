@@ -324,9 +324,12 @@ export function OnboardingFlow({ initialData, chosenPlan = "free" }: OnboardingF
       {/* ────── Sidebar stepper ────── */}
       <aside className="hidden lg:block lg:col-span-4">
         <div className="sticky top-24 space-y-1.5">
-          <h2 className="font-headline text-xs font-bold uppercase tracking-widest text-muted-foreground mb-4 px-2">
-            Votre diagnostic
+          <h2 className="font-headline text-xs font-bold uppercase tracking-widest text-muted-foreground mb-1 px-2">
+            Votre Career OS
           </h2>
+          <p className="text-[10px] text-muted-foreground px-2 mb-4 leading-relaxed">
+            On construit votre profil de carrière vivant. Il évoluera avec vous.
+          </p>
           {STEPS.map((s, i) => {
             const StepIcon = iconMap[s.icon] || User;
             const isCompleted = i < currentStep;
@@ -424,6 +427,29 @@ export function OnboardingFlow({ initialData, chosenPlan = "free" }: OnboardingF
             <p className="text-sm text-muted-foreground">{step.description}</p>
           </div>
         </div>
+
+        {/* Career OS intro — only on first step, sets the tone for the
+            whole product. We're not doing a "diagnostic", we're building
+            a living profile that the product will use for years. */}
+        {isFirst && (
+          <div className="mb-6 p-4 rounded-2xl bg-gradient-to-br from-primary/10 to-surface-container-lowest border border-primary/20">
+            <div className="flex items-start gap-3">
+              <Sparkles className="w-5 h-5 text-primary shrink-0 mt-0.5" />
+              <div className="space-y-2">
+                <p className="text-sm font-bold text-foreground">
+                  On va construire votre Career OS — pas un diagnostic ponctuel.
+                </p>
+                <p className="text-xs text-muted-foreground leading-relaxed">
+                  Les 10 prochaines minutes posent votre profil de carrière vivant.
+                  À la fin, vous aurez un bilan complet rédigé pour vous. Il
+                  évoluera avec vos prochains moves — nouveau poste, ambition à
+                  5 ans, retour de marché. Ce n&apos;est pas un examen, c&apos;est
+                  le point de départ.
+                </p>
+              </div>
+            </div>
+          </div>
+        )}
 
         {/* Step Content — pb-40 mobile to clear the fixed bottom nav (≈ 100px + safe-area) */}
         <div className="mb-8 pb-40 lg:pb-8 animate-fade-up" key={currentStep}>
