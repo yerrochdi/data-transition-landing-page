@@ -1,4 +1,5 @@
 import { BackgroundPaths } from "./_components/background-paths";
+import { AnxietyBento } from "./_components/anxiety-bento";
 
 /**
  * Landing v2 — work-in-progress.
@@ -13,6 +14,7 @@ export default function HomeV2Page() {
   return (
     <main className="bg-background text-foreground min-h-screen">
       <BackgroundPaths />
+      <AnxietyBento />
     </main>
   );
 }
