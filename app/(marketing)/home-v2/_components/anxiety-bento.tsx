@@ -1,47 +1,64 @@
 "use client";
 
+import { motion } from "framer-motion";
 import {
-  motion,
-  useSpring,
-  useTransform,
-  useInView,
-  type MotionValue,
-} from "framer-motion";
-import {
-  Hourglass,
+  Users,
   Brain,
   TrendingDown,
   AlertCircle,
 } from "lucide-react";
-import { ReactNode, useEffect, useRef, useState } from "react";
+import { ReactNode } from "react";
 import { cn } from "@/lib/utils";
+import { FoundingPlacesGrid } from "./founding-places-grid";
+import type {
+  FoundingPlace,
+  FoundingPlacesStatus,
+} from "@/lib/founding-members/places";
 
 /**
  * Section 2 — "L'angoisse silencieuse des cadres 35-50".
  *
  * Adapté du bento-grid Aceternity (21st.dev) à la palette NextMove.
  * Objectif : crée l'identification émotionnelle ("enfin quelqu'un
- * comprend"). Pas de CTA — cette section sert uniquement à nommer
- * 4 angoisses spécifiques et taboues.
+ * comprend"). Pas de CTA explicite — sauf la grande card qui injecte
+ * un mécanisme d'urgence concret (grille des places Founding).
  */
+
+interface AnxietyBentoProps {
+  foundingPlaces: FoundingPlacesStatus;
+}
 
 type Anxiety = {
   name: string;
   description: string;
-  Icon: typeof Hourglass;
+  Icon: typeof Users;
   className: string;
   background: ReactNode;
 };
 
-const anxieties: Anxiety[] = [
-  {
-    name: "Le compte à rebours silencieux",
-    description:
-      "Vous regardez votre fil LinkedIn et vous voyez tous ces titres « Director… Head of… » qui se font remplacer ou redimensionner par l'IA. Chaque mois qui passe, votre cote diminue sans que personne ne vous le dise.",
-    Icon: Hourglass,
-    className: "md:col-span-2 md:row-span-2",
-    background: <BgClockPulse />,
-  },
+function buildAnxieties(foundingPlaces: FoundingPlacesStatus): Anxiety[] {
+  return [
+    {
+      name:
+        foundingPlaces.remaining > 0
+          ? `${foundingPlaces.remaining} place${
+              foundingPlaces.remaining > 1 ? "s" : ""
+            } restante${foundingPlaces.remaining > 1 ? "s" : ""}.`
+          : "Programme complet.",
+      description:
+        foundingPlaces.remaining > 0
+          ? `Le programme Founding Member n'ouvre que 30 places. Chaque case verte est une candidature acceptée. Survolez pour voir leur profil. Cliquez une case vide pour candidater — sélection sous 48h.`
+          : "Le programme est complet. Vous pouvez encore rejoindre la liste d'attente — les premières places se libèrent dans 3 mois.",
+      Icon: Users,
+      className: "md:col-span-2 md:row-span-2",
+      background: (
+        <FoundingPlacesGrid
+          total={foundingPlaces.total}
+          taken={foundingPlaces.taken}
+          occupants={foundingPlaces.occupants}
+        />
+      ),
+    },
   {
     name: "L'imposteur inversé",
     description:
@@ -58,17 +75,19 @@ const anxieties: Anxiety[] = [
     className: "md:col-span-1",
     background: <BgDownArrow />,
   },
-  {
-    name: "Le silence du management",
-    description:
-      "Vos N+1 et le CODIR parlent IA en réunion sans vous regarder. Vous n'êtes ni invité aux groupes de travail, ni sollicité sur la stratégie. Et personne ne vous a encore dit pourquoi.",
-    Icon: AlertCircle,
-    className: "md:col-span-2",
-    background: <BgWhisper />,
-  },
-];
+    {
+      name: "Le silence du management",
+      description:
+        "Vos N+1 et le CODIR parlent IA en réunion sans vous regarder. Vous n'êtes ni invité aux groupes de travail, ni sollicité sur la stratégie. Et personne ne vous a encore dit pourquoi.",
+      Icon: AlertCircle,
+      className: "md:col-span-2",
+      background: <BgWhisper />,
+    },
+  ];
+}
 
-export function AnxietyBento() {
+export function AnxietyBento({ foundingPlaces }: AnxietyBentoProps) {
+  const anxieties = buildAnxieties(foundingPlaces);
   return (
     <section className="relative py-24 md:py-32 px-6 md:px-12">
       <div className="max-w-6xl mx-auto">
@@ -153,111 +172,10 @@ function BentoCard({ anxiety, index }: { anxiety: Anxiety; index: number }) {
 }
 
 // ────────────────────────────────────────────────────────────────
-// Backgrounds artistiques — un par card, en SVG / pure CSS
+// Backgrounds artistiques — un par card secondaire, en SVG / pure CSS
+// (La grande card utilise <FoundingPlacesGrid> directement, voir
+//  buildAnxieties au-dessus.)
 // ────────────────────────────────────────────────────────────────
-
-/** Card 1 (la grande) — Compteur live qui s'incrémente :
- *  chiffre énorme + caption narrative qui rend visceral le "temps qui
- *  passe sans rien faire". Inspiré du composant Animated Counter de
- *  21st.dev (digits qui slidant en spring), avec une mention "live"
- *  (dot vert pulsé) qui pose le ton "ça se passe MAINTENANT, en lisant
- *  ce paragraphe vous êtes en train de perdre du terrain". */
-function BgClockPulse() {
-  return (
-    <div className="absolute inset-0 overflow-hidden">
-      {/* Radial glow vert top-right */}
-      <div
-        className="absolute -top-10 -right-10 w-72 h-72 rounded-full"
-        style={{
-          background:
-            "radial-gradient(circle, hsl(var(--primary) / 0.18) 0%, transparent 70%)",
-          filter: "blur(40px)",
-        }}
-      />
-
-      {/* Zone centrale du compteur */}
-      <div className="absolute inset-x-7 top-12 flex flex-col items-center text-center pointer-events-none">
-        {/* Live indicator */}
-        <div className="inline-flex items-center gap-2 mb-3">
-          <motion.span
-            className="w-1.5 h-1.5 rounded-full bg-primary"
-            animate={{
-              opacity: [0.5, 1, 0.5],
-              boxShadow: [
-                "0 0 0 hsl(var(--primary))",
-                "0 0 10px hsl(var(--primary))",
-                "0 0 0 hsl(var(--primary))",
-              ],
-            }}
-            transition={{ duration: 1.5, repeat: Infinity, ease: "easeInOut" }}
-          />
-          <span className="text-[10px] font-bold uppercase tracking-[0.22em] text-primary/90">
-            En direct · marché data France
-          </span>
-        </div>
-
-        {/* Le grand chiffre animé */}
-        <LiveCounter target={847} />
-
-        {/* Caption narrative qui rend le chiffre vivant */}
-        <p className="text-xs md:text-sm text-muted-foreground/85 mt-3 max-w-[20rem] leading-relaxed">
-          cadres ont ajouté <span className="text-foreground font-semibold">«&nbsp;data&nbsp;»</span> à leur titre LinkedIn
-          <br />
-          <span className="text-primary/70 font-semibold">cette semaine</span>{" "}
-          dans votre secteur.
-        </p>
-      </div>
-    </div>
-  );
-}
-
-/**
- * Compteur qui s'anime de 0 vers `target` quand il entre dans la
- * viewport. Utilise un useSpring pour un mouvement organique (pas
- * linéaire). Les chiffres sont en tabular-nums pour ne pas faire
- * sauter la largeur.
- */
-function LiveCounter({ target }: { target: number }) {
-  const ref = useRef<HTMLDivElement>(null);
-  const isInView = useInView(ref, { once: false, margin: "-80px" });
-  const [shouldAnimate, setShouldAnimate] = useState(false);
-
-  useEffect(() => {
-    if (isInView) setShouldAnimate(true);
-  }, [isInView]);
-
-  const spring = useSpring(0, { stiffness: 50, damping: 20, mass: 1 });
-  const display = useTransform(spring, (latest) => Math.floor(latest));
-
-  useEffect(() => {
-    if (shouldAnimate) {
-      spring.set(target);
-    }
-  }, [shouldAnimate, spring, target]);
-
-  return (
-    <div ref={ref} className="relative">
-      <motion.div
-        className="font-headline text-6xl md:text-7xl font-extrabold tabular-nums tracking-tighter text-primary leading-none"
-        style={{
-          textShadow:
-            "0 0 32px hsl(var(--primary) / 0.5), 0 0 80px hsl(var(--primary) / 0.25)",
-        }}
-      >
-        <CounterDisplay value={display} />
-      </motion.div>
-    </div>
-  );
-}
-
-/** Affiche la valeur du MotionValue en se mettant à jour à chaque tick */
-function CounterDisplay({ value }: { value: MotionValue<number> }) {
-  const [v, setV] = useState(0);
-  useEffect(() => {
-    return value.on("change", (latest) => setV(latest));
-  }, [value]);
-  return <>+{v.toLocaleString("fr-FR")}</>;
-}
 
 /** Card 2 — réseau de connexions (pour "l'imposteur inversé" — Python qui vous rattrape) */
 function BgBrainPulse() {

@@ -1,5 +1,6 @@
 import { BackgroundPaths } from "./_components/background-paths";
 import { AnxietyBento } from "./_components/anxiety-bento";
+import { getFoundingPlacesStatus } from "@/lib/founding-members/places";
 
 /**
  * Landing v2 — work-in-progress.
@@ -10,11 +11,16 @@ import { AnxietyBento } from "./_components/anxiety-bento";
  *
  * Public URL: https://nextmove.sh/home-v2
  */
-export default function HomeV2Page() {
+export default async function HomeV2Page() {
+  // Server-side fetch of Founding program slot status (count of ACCEPTED
+  // applications). Read by AnxietyBento → FoundingPlacesGrid for the
+  // public-facing "X/30 places restantes" with hover tooltips.
+  const foundingPlaces = await getFoundingPlacesStatus();
+
   return (
     <main className="bg-background text-foreground min-h-screen">
       <BackgroundPaths />
-      <AnxietyBento />
+      <AnxietyBento foundingPlaces={foundingPlaces} />
     </main>
   );
 }
