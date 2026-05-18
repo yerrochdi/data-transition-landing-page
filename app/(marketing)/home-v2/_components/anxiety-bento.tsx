@@ -150,8 +150,16 @@ function BentoCard({ anxiety, index }: { anxiety: Anxiety; index: number }) {
 // Backgrounds artistiques — un par card, en SVG / pure CSS
 // ────────────────────────────────────────────────────────────────
 
-/** Card 1 (la grande) — sablier visuel : grille de points qui se vide */
+/** Card 1 (la grande) — visualisation littérale du "compte à rebours" :
+ *  grille 12 colonnes × 4 lignes = 48 cellules (= 4 ans de carrière).
+ *  Au scroll dans la viewport, les cellules s'allument de gauche à
+ *  droite, puis celles tout à droite s'éteignent une par une — l'effet
+ *  visuel du temps qui passe sans qu'on en profite. */
 function BgClockPulse() {
+  const cols = 12;
+  const rows = 4;
+  const total = cols * rows;
+
   return (
     <div className="absolute inset-0 overflow-hidden">
       {/* Top-right radial glow */}
@@ -159,37 +167,66 @@ function BgClockPulse() {
         className="absolute -top-10 -right-10 w-72 h-72 rounded-full"
         style={{
           background:
-            "radial-gradient(circle, hsl(var(--primary) / 0.15) 0%, transparent 70%)",
+            "radial-gradient(circle, hsl(var(--primary) / 0.18) 0%, transparent 70%)",
           filter: "blur(40px)",
         }}
       />
-      {/* Dot grid qui s'efface vers le bas (sablier) */}
-      <div className="absolute inset-0 opacity-[0.4]">
-        <svg className="w-full h-full" preserveAspectRatio="none">
-          <defs>
-            <pattern
-              id="dotsClock"
-              width="14"
-              height="14"
-              patternUnits="userSpaceOnUse"
-            >
-              <circle cx="2" cy="2" r="1.2" fill="hsl(var(--primary))" />
-            </pattern>
-            <linearGradient id="fadeOut" x1="0" y1="0" x2="0" y2="1">
-              <stop offset="0%" stopColor="white" stopOpacity="1" />
-              <stop offset="100%" stopColor="white" stopOpacity="0" />
-            </linearGradient>
-            <mask id="maskFade">
-              <rect width="100%" height="100%" fill="url(#fadeOut)" />
-            </mask>
-          </defs>
-          <rect
-            width="100%"
-            height="100%"
-            fill="url(#dotsClock)"
-            mask="url(#maskFade)"
-          />
-        </svg>
+
+      {/* Grille de "mois" dans la partie supérieure-droite de la card */}
+      <div className="absolute inset-x-7 top-20 bottom-32 flex items-center justify-end pointer-events-none">
+        <div
+          className="grid gap-[6px] md:gap-2"
+          style={{
+            gridTemplateColumns: `repeat(${cols}, minmax(0, 1fr))`,
+            width: "100%",
+            maxWidth: "560px",
+          }}
+        >
+          {Array.from({ length: total }).map((_, i) => {
+            const col = i % cols;
+            // intensité décroissante : à gauche = plein, à droite = vide
+            // formule progressive avec léger noise pour donner du rythme
+            const ratio = 1 - col / (cols - 1);
+            // les 3 dernières colonnes sont "éteintes" pour incarner les
+            // mois à venir où il ne se passe rien si on ne bouge pas
+            const isDying = col >= cols - 3;
+            const baseOpacity = isDying
+              ? 0.08 + (cols - 1 - col) * 0.06
+              : 0.18 + ratio * 0.55;
+
+            return (
+              <motion.div
+                key={i}
+                initial={{ opacity: 0, scale: 0.7 }}
+                whileInView={{
+                  opacity: baseOpacity,
+                  scale: 1,
+                }}
+                viewport={{ once: true, margin: "-40px" }}
+                transition={{
+                  delay: 0.4 + i * 0.012,
+                  duration: 0.35,
+                  ease: [0.25, 0.4, 0.25, 1],
+                }}
+                className="aspect-square rounded-sm bg-primary"
+                style={{
+                  boxShadow: isDying
+                    ? "none"
+                    : `0 0 ${4 + ratio * 8}px hsl(var(--primary) / ${
+                        ratio * 0.45
+                      })`,
+                }}
+              />
+            );
+          })}
+        </div>
+      </div>
+
+      {/* Étiquettes "PASSÉ" / "À VENIR" subtiles */}
+      <div className="absolute top-8 right-8 flex items-center gap-3 text-[9px] uppercase tracking-[0.25em] font-bold pointer-events-none">
+        <span className="text-primary/70">Passé</span>
+        <span className="w-8 h-px bg-gradient-to-r from-primary/40 to-muted-foreground/20" />
+        <span className="text-muted-foreground/50">À venir</span>
       </div>
     </div>
   );
