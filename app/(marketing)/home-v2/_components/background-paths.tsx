@@ -118,7 +118,7 @@ export function BackgroundPaths() {
           </motion.div>
 
           {/* Headline — character-by-character stagger sur 2 lignes */}
-          <h1 className="font-headline text-5xl sm:text-7xl md:text-8xl font-extrabold mb-10 md:mb-12 tracking-tighter leading-[1.02]">
+          <h1 className="font-headline text-4xl sm:text-5xl md:text-6xl lg:text-7xl font-extrabold mb-8 md:mb-10 tracking-tighter leading-[1.04]">
             <AnimatedWord text={line1} baseDelay={0.3} />
             <br />
             <AnimatedWord
