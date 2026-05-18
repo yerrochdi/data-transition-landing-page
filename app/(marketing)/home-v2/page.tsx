@@ -1,4 +1,4 @@
-import { HeroNarrative } from "./_components/hero-narrative";
+import { BackgroundPaths } from "./_components/background-paths";
 
 /**
  * Landing v2 — work-in-progress.
@@ -12,7 +12,7 @@ import { HeroNarrative } from "./_components/hero-narrative";
 export default function HomeV2Page() {
   return (
     <main className="bg-background text-foreground min-h-screen">
-      <HeroNarrative />
+      <BackgroundPaths />
     </main>
   );
 }
