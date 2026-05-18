@@ -90,7 +90,7 @@ export function AnxietyBento() {
         </motion.div>
 
         {/* Bento grid — asymétrique 3 colonnes */}
-        <div className="grid w-full grid-cols-1 md:grid-cols-3 md:auto-rows-[22rem] gap-4">
+        <div className="grid w-full grid-cols-1 md:grid-cols-3 md:auto-rows-[16rem] gap-4">
           {anxieties.map((a, i) => (
             <BentoCard key={a.name} anxiety={a} index={i} />
           ))}
@@ -127,15 +127,17 @@ function BentoCard({ anxiety, index }: { anxiety: Anxiety; index: number }) {
         {background}
       </div>
 
-      {/* Card content */}
-      <div className="relative z-10 flex flex-col h-full p-6 md:p-7 justify-end">
-        <Icon className="w-9 h-9 text-primary/80 mb-4 transition-all duration-500 group-hover:text-primary group-hover:scale-105 origin-left" />
-        <h3 className="font-headline text-lg md:text-xl font-bold text-foreground mb-2 leading-tight">
-          {name}
-        </h3>
-        <p className="text-sm text-muted-foreground/90 leading-relaxed max-w-md">
-          {description}
-        </p>
+      {/* Card content — icon top, text bottom, separated by flex spacer */}
+      <div className="relative z-10 flex flex-col h-full p-6 md:p-7">
+        <Icon className="w-8 h-8 text-primary/80 transition-all duration-500 group-hover:text-primary group-hover:scale-110 origin-top-left" />
+        <div className="mt-auto pt-6">
+          <h3 className="font-headline text-lg md:text-xl font-bold text-foreground mb-2 leading-tight">
+            {name}
+          </h3>
+          <p className="text-sm text-muted-foreground/90 leading-relaxed max-w-md">
+            {description}
+          </p>
+        </div>
       </div>
 
       {/* Subtle hover overlay vert */}
