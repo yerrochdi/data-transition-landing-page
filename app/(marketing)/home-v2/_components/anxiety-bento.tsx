@@ -1,13 +1,19 @@
 "use client";
 
-import { motion } from "framer-motion";
+import {
+  motion,
+  useSpring,
+  useTransform,
+  useInView,
+  type MotionValue,
+} from "framer-motion";
 import {
   Hourglass,
   Brain,
   TrendingDown,
   AlertCircle,
 } from "lucide-react";
-import { ReactNode } from "react";
+import { ReactNode, useEffect, useRef, useState } from "react";
 import { cn } from "@/lib/utils";
 
 /**
@@ -150,19 +156,16 @@ function BentoCard({ anxiety, index }: { anxiety: Anxiety; index: number }) {
 // Backgrounds artistiques — un par card, en SVG / pure CSS
 // ────────────────────────────────────────────────────────────────
 
-/** Card 1 (la grande) — visualisation littérale du "compte à rebours" :
- *  grille 12 colonnes × 4 lignes = 48 cellules (= 4 ans de carrière).
- *  Au scroll dans la viewport, les cellules s'allument de gauche à
- *  droite, puis celles tout à droite s'éteignent une par une — l'effet
- *  visuel du temps qui passe sans qu'on en profite. */
+/** Card 1 (la grande) — Compteur live qui s'incrémente :
+ *  chiffre énorme + caption narrative qui rend visceral le "temps qui
+ *  passe sans rien faire". Inspiré du composant Animated Counter de
+ *  21st.dev (digits qui slidant en spring), avec une mention "live"
+ *  (dot vert pulsé) qui pose le ton "ça se passe MAINTENANT, en lisant
+ *  ce paragraphe vous êtes en train de perdre du terrain". */
 function BgClockPulse() {
-  const cols = 12;
-  const rows = 4;
-  const total = cols * rows;
-
   return (
     <div className="absolute inset-0 overflow-hidden">
-      {/* Top-right radial glow */}
+      {/* Radial glow vert top-right */}
       <div
         className="absolute -top-10 -right-10 w-72 h-72 rounded-full"
         style={{
@@ -172,64 +175,88 @@ function BgClockPulse() {
         }}
       />
 
-      {/* Grille de "mois" dans la partie supérieure-droite de la card */}
-      <div className="absolute inset-x-7 top-20 bottom-32 flex items-center justify-end pointer-events-none">
-        <div
-          className="grid gap-[6px] md:gap-2"
-          style={{
-            gridTemplateColumns: `repeat(${cols}, minmax(0, 1fr))`,
-            width: "100%",
-            maxWidth: "560px",
-          }}
-        >
-          {Array.from({ length: total }).map((_, i) => {
-            const col = i % cols;
-            // intensité décroissante : à gauche = plein, à droite = vide
-            // formule progressive avec léger noise pour donner du rythme
-            const ratio = 1 - col / (cols - 1);
-            // les 3 dernières colonnes sont "éteintes" pour incarner les
-            // mois à venir où il ne se passe rien si on ne bouge pas
-            const isDying = col >= cols - 3;
-            const baseOpacity = isDying
-              ? 0.08 + (cols - 1 - col) * 0.06
-              : 0.18 + ratio * 0.55;
-
-            return (
-              <motion.div
-                key={i}
-                initial={{ opacity: 0, scale: 0.7 }}
-                whileInView={{
-                  opacity: baseOpacity,
-                  scale: 1,
-                }}
-                viewport={{ once: true, margin: "-40px" }}
-                transition={{
-                  delay: 0.4 + i * 0.012,
-                  duration: 0.35,
-                  ease: [0.25, 0.4, 0.25, 1],
-                }}
-                className="aspect-square rounded-sm bg-primary"
-                style={{
-                  boxShadow: isDying
-                    ? "none"
-                    : `0 0 ${4 + ratio * 8}px hsl(var(--primary) / ${
-                        ratio * 0.45
-                      })`,
-                }}
-              />
-            );
-          })}
+      {/* Zone centrale du compteur */}
+      <div className="absolute inset-x-7 top-12 flex flex-col items-center text-center pointer-events-none">
+        {/* Live indicator */}
+        <div className="inline-flex items-center gap-2 mb-3">
+          <motion.span
+            className="w-1.5 h-1.5 rounded-full bg-primary"
+            animate={{
+              opacity: [0.5, 1, 0.5],
+              boxShadow: [
+                "0 0 0 hsl(var(--primary))",
+                "0 0 10px hsl(var(--primary))",
+                "0 0 0 hsl(var(--primary))",
+              ],
+            }}
+            transition={{ duration: 1.5, repeat: Infinity, ease: "easeInOut" }}
+          />
+          <span className="text-[10px] font-bold uppercase tracking-[0.22em] text-primary/90">
+            En direct · marché data France
+          </span>
         </div>
-      </div>
 
-      {/* Étiquettes "PASSÉ" / "À VENIR" subtiles */}
-      <div className="absolute top-8 right-8 flex items-center gap-3 text-[9px] uppercase tracking-[0.25em] font-bold pointer-events-none">
-        <span className="text-primary/70">Passé</span>
-        <span className="w-8 h-px bg-gradient-to-r from-primary/40 to-muted-foreground/20" />
-        <span className="text-muted-foreground/50">À venir</span>
+        {/* Le grand chiffre animé */}
+        <LiveCounter target={847} />
+
+        {/* Caption narrative qui rend le chiffre vivant */}
+        <p className="text-xs md:text-sm text-muted-foreground/85 mt-3 max-w-[20rem] leading-relaxed">
+          cadres ont ajouté <span className="text-foreground font-semibold">«&nbsp;data&nbsp;»</span> à leur titre LinkedIn
+          <br />
+          <span className="text-primary/70 font-semibold">cette semaine</span>{" "}
+          dans votre secteur.
+        </p>
       </div>
     </div>
   );
+}
+
+/**
+ * Compteur qui s'anime de 0 vers `target` quand il entre dans la
+ * viewport. Utilise un useSpring pour un mouvement organique (pas
+ * linéaire). Les chiffres sont en tabular-nums pour ne pas faire
+ * sauter la largeur.
+ */
+function LiveCounter({ target }: { target: number }) {
+  const ref = useRef<HTMLDivElement>(null);
+  const isInView = useInView(ref, { once: false, margin: "-80px" });
+  const [shouldAnimate, setShouldAnimate] = useState(false);
+
+  useEffect(() => {
+    if (isInView) setShouldAnimate(true);
+  }, [isInView]);
+
+  const spring = useSpring(0, { stiffness: 50, damping: 20, mass: 1 });
+  const display = useTransform(spring, (latest) => Math.floor(latest));
+
+  useEffect(() => {
+    if (shouldAnimate) {
+      spring.set(target);
+    }
+  }, [shouldAnimate, spring, target]);
+
+  return (
+    <div ref={ref} className="relative">
+      <motion.div
+        className="font-headline text-6xl md:text-7xl font-extrabold tabular-nums tracking-tighter text-primary leading-none"
+        style={{
+          textShadow:
+            "0 0 32px hsl(var(--primary) / 0.5), 0 0 80px hsl(var(--primary) / 0.25)",
+        }}
+      >
+        <CounterDisplay value={display} />
+      </motion.div>
+    </div>
+  );
+}
+
+/** Affiche la valeur du MotionValue en se mettant à jour à chaque tick */
+function CounterDisplay({ value }: { value: MotionValue<number> }) {
+  const [v, setV] = useState(0);
+  useEffect(() => {
+    return value.on("change", (latest) => setV(latest));
+  }, [value]);
+  return <>+{v.toLocaleString("fr-FR")}</>;
 }
 
 /** Card 2 — réseau de connexions (pour "l'imposteur inversé" — Python qui vous rattrape) */
