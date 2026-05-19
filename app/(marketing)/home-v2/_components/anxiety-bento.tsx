@@ -111,11 +111,14 @@ export function AnxietyBento({ foundingPlaces }: AnxietyBentoProps) {
             </span>
           </div>
           <h2 className="font-headline text-3xl md:text-5xl font-extrabold tracking-tight leading-[1.1] text-foreground text-balance">
-            L&apos;angoisse silencieuse des cadres 35-50.
+            Le marché cadres en 2026.
           </h2>
           <p className="mt-5 text-base md:text-lg text-muted-foreground/90 leading-relaxed text-pretty max-w-2xl">
-            4 peurs que personne n&apos;ose nommer dans les conférences IA.
-            Mais que vous reconnaîtrez peut-être.
+            <span className="text-foreground font-semibold">3 angoisses</span>{" "}
+            que personne n&apos;ose nommer dans les conférences IA.
+            Et{" "}
+            <span className="text-primary font-semibold">30 places</span>{" "}
+            pour celles et ceux qui veulent les prendre de vitesse.
           </p>
         </motion.div>
 
