@@ -32,7 +32,6 @@ export function FoundingPlacesGrid({
   occupants,
 }: FoundingPlacesGridProps) {
   const [hoveredIdx, setHoveredIdx] = useState<number | null>(null);
-  const remaining = Math.max(0, total - taken);
 
   // Map des occupants par index pour rendu rapide
   // Les `taken` premières cases sont occupées, le reste est libre
@@ -79,8 +78,9 @@ export function FoundingPlacesGrid({
         </span>
       </div>
 
-      {/* Grille des 30 places, centrée */}
-      <div className="absolute inset-x-7 top-20 bottom-32 flex items-center justify-center pointer-events-none">
+      {/* Grille des 30 places, centrée et remontée pour laisser place au
+          texte en bas de la card (gradient overlay). */}
+      <div className="absolute inset-x-7 top-16 bottom-40 flex items-center justify-center pointer-events-none">
         <div
           className="grid gap-2 md:gap-2.5 pointer-events-auto"
           style={{
@@ -146,23 +146,8 @@ export function FoundingPlacesGrid({
         </div>
       </div>
 
-      {/* Hint nombre restant + CTA contextuel */}
-      <div className="absolute inset-x-7 top-[15.5rem] md:top-[16.5rem] flex items-center justify-center pointer-events-none">
-        <p className="text-[11px] text-muted-foreground/80 text-center">
-          {remaining > 0 ? (
-            <>
-              <span className="font-bold text-primary">{remaining}</span> place
-              {remaining > 1 ? "s" : ""} restante{remaining > 1 ? "s" : ""}
-              {" · "}cliquez une case verte pour candidater
-            </>
-          ) : (
-            <>
-              <span className="font-bold text-amber-400">Programme complet</span>
-              {" · "}rejoignez la liste d&apos;attente
-            </>
-          )}
-        </p>
-      </div>
+      {/* Hint cliquez supprimé — info déjà présente dans le titre + description
+          en bas de card, et superposait visuellement la grille. */}
 
       {/* Tooltip d'aperçu */}
       {hoveredIdx !== null && (

@@ -85,7 +85,7 @@ function buildAnxieties(foundingPlaces: FoundingPlacesStatus): Anxiety[] {
       description:
         "Vos N+1 et le CODIR parlent IA en réunion sans vous regarder. Vous n'êtes ni invité aux groupes de travail, ni sollicité sur la stratégie. Et personne ne vous a encore dit pourquoi.",
       Icon: AlertCircle,
-      className: "md:col-span-2",
+      className: "md:col-span-3",
       background: <BgWhisper />,
     },
   ];
@@ -168,8 +168,8 @@ function BentoCard({ anxiety, index }: { anxiety: Anxiety; index: number }) {
           bas (le background fournit déjà son propre header). */}
       {interactiveBackground ? (
         <div className="relative z-10 flex flex-col justify-end h-full p-6 md:p-7 pointer-events-none">
-          <div className="bg-gradient-to-t from-surface-container-lowest via-surface-container-lowest/95 to-transparent -mx-6 -mb-6 md:-mx-7 md:-mb-7 px-6 pb-6 md:px-7 md:pb-7 pt-12">
-            <h3 className="font-headline text-lg md:text-xl font-bold text-foreground mb-2 leading-tight">
+          <div className="bg-gradient-to-t from-surface-container-lowest via-surface-container-lowest/98 to-transparent -mx-6 -mb-6 md:-mx-7 md:-mb-7 px-6 pb-6 md:px-7 md:pb-7 pt-20">
+            <h3 className="font-headline text-xl md:text-2xl font-extrabold text-foreground mb-2 leading-tight">
               {name}
             </h3>
             <p className="text-sm text-muted-foreground/90 leading-relaxed max-w-md">
