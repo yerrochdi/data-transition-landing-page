@@ -168,6 +168,7 @@ export function FoundingPlacesGrid({
       {hoveredIdx !== null && (
         <FoundingTooltip
           cell={cells[hoveredIdx]}
+          memberNumber={hoveredIdx + 1}
           position={hoveredIdx}
           cols={COLS}
         />
@@ -183,10 +184,12 @@ export function FoundingPlacesGrid({
  */
 function FoundingTooltip({
   cell,
+  memberNumber,
   position,
   cols,
 }: {
   cell: { type: "taken"; occupant: FoundingPlace } | { type: "free" };
+  memberNumber: number;
   position: number;
   cols: number;
 }) {
@@ -199,50 +202,80 @@ function FoundingTooltip({
       animate={{ opacity: 1, y: 0, scale: 1 }}
       transition={{ duration: 0.15, ease: [0.25, 0.4, 0.25, 1] }}
       className={cn(
-        "absolute left-1/2 -translate-x-1/2 z-20 pointer-events-none",
-        "max-w-[280px] w-[280px]",
+        "absolute left-1/2 -translate-x-1/2 z-30 pointer-events-none",
+        "max-w-[320px] w-[320px]",
         isUpperHalf ? "top-[15.5rem] md:top-[16.5rem]" : "top-20"
       )}
     >
-      <div className="bg-surface-container-highest/95 backdrop-blur-md border border-primary/30 rounded-xl p-3.5 shadow-2xl">
+      <div className="bg-surface-container-highest/95 backdrop-blur-md border border-primary/30 rounded-xl p-4 shadow-2xl">
         {cell.type === "taken" ? (
           <>
-            <div className="flex items-center gap-2 mb-2">
-              <span className="w-1.5 h-1.5 rounded-full bg-primary/60" />
-              <span className="text-[9px] uppercase tracking-widest font-bold text-primary/80">
-                Founding Member
+            <div className="flex items-center justify-between mb-3">
+              <div className="flex items-center gap-2">
+                <span className="w-1.5 h-1.5 rounded-full bg-primary/60" />
+                <span className="text-[9px] uppercase tracking-widest font-bold text-primary/80">
+                  Founding Member
+                </span>
+              </div>
+              <span className="text-[9px] font-mono text-muted-foreground/70">
+                #{memberNumber.toString().padStart(2, "0")}
               </span>
             </div>
-            <p className="text-xs font-bold text-foreground mb-1.5 leading-tight">
+            <p className="text-sm font-bold text-foreground mb-3 leading-tight">
               {cell.occupant.role}
             </p>
-            <p className="text-[11px] text-muted-foreground italic leading-relaxed">
-              «&nbsp;{cell.occupant.quote}&nbsp;»
-            </p>
+
+            {cell.occupant.situation && (
+              <div className="mb-2.5">
+                <p className="text-[9px] uppercase tracking-widest font-bold text-muted-foreground/60 mb-1">
+                  Situation
+                </p>
+                <p className="text-[11px] text-muted-foreground/95 italic leading-relaxed">
+                  «&nbsp;{cell.occupant.situation}&nbsp;»
+                </p>
+              </div>
+            )}
+
+            {cell.occupant.motivation && (
+              <div className="mb-2">
+                <p className="text-[9px] uppercase tracking-widest font-bold text-muted-foreground/60 mb-1">
+                  Motivation
+                </p>
+                <p className="text-[11px] text-muted-foreground/95 italic leading-relaxed">
+                  «&nbsp;{cell.occupant.motivation}&nbsp;»
+                </p>
+              </div>
+            )}
+
             {cell.occupant.acceptedAt && (
-              <p className="text-[9px] text-muted-foreground/60 mt-2">
+              <p className="text-[9px] text-muted-foreground/60 mt-3 pt-2 border-t border-border/30">
                 Accepté le{" "}
                 {new Date(cell.occupant.acceptedAt).toLocaleDateString("fr-FR", {
                   day: "numeric",
                   month: "long",
+                  year: "numeric",
                 })}
               </p>
             )}
           </>
         ) : (
           <>
-            <div className="flex items-center gap-2 mb-2">
-              <span className="w-1.5 h-1.5 rounded-full bg-primary animate-pulse" />
-              <span className="text-[9px] uppercase tracking-widest font-bold text-primary">
-                Place libre
+            <div className="flex items-center justify-between mb-2">
+              <div className="flex items-center gap-2">
+                <span className="w-1.5 h-1.5 rounded-full bg-primary animate-pulse" />
+                <span className="text-[9px] uppercase tracking-widest font-bold text-primary">
+                  Place libre
+                </span>
+              </div>
+              <span className="text-[9px] font-mono text-muted-foreground/70">
+                #{memberNumber.toString().padStart(2, "0")}
               </span>
             </div>
             <p className="text-sm font-bold text-foreground mb-1">
               Votre place ?
             </p>
             <p className="text-[11px] text-muted-foreground leading-relaxed">
-              Cliquez pour accéder au formulaire de candidature. Sélection
-              sous 48h.
+              Cliquez pour accéder au formulaire de candidature. Sélection sous 48h.
             </p>
           </>
         )}

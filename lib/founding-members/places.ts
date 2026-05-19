@@ -7,8 +7,10 @@ const TOTAL_PLACES = 30;
 export interface FoundingPlace {
   /** Public-safe role label (no company name). */
   role: string;
-  /** Short anonymized quote, ~80 chars max, extracted from motivation. */
-  quote: string;
+  /** Short anonymized snippet from `situation` (≤100 chars). */
+  situation: string;
+  /** Short anonymized snippet from `motivation` (≤100 chars). */
+  motivation: string;
   /** Acceptance date — used for the tooltip ("acceptée le 12 mai"). */
   acceptedAt: Date | null;
 }
@@ -22,19 +24,20 @@ export interface FoundingPlacesStatus {
 }
 
 /**
- * Trim and clean the user-submitted motivation to make it tooltip-safe:
- *  - strip leading/trailing whitespace
+ * Trim and clean a user-submitted text snippet to make it tooltip-safe:
+ *  - strip whitespace
  *  - collapse internal whitespace
- *  - drop trailing punctuation
- *  - truncate to 80 chars with ellipsis
+ *  - truncate to `maxLen` chars on word boundary with ellipsis
+ *  Returns an empty string if input is falsy.
  */
-function cleanQuote(raw: string): string {
+function cleanSnippet(raw: string | null | undefined, maxLen = 100): string {
+  if (!raw) return "";
   const cleaned = raw.replace(/\s+/g, " ").trim();
-  if (cleaned.length <= 80) return cleaned;
-  // Don't cut mid-word; backtrack to last space within 80 chars window
-  const slice = cleaned.slice(0, 80);
+  if (cleaned.length <= maxLen) return cleaned;
+  const slice = cleaned.slice(0, maxLen);
   const lastSpace = slice.lastIndexOf(" ");
-  return (lastSpace > 60 ? slice.slice(0, lastSpace) : slice) + "…";
+  const cutoff = lastSpace > maxLen * 0.75 ? lastSpace : maxLen;
+  return slice.slice(0, cutoff) + "…";
 }
 
 /**
@@ -50,6 +53,7 @@ export async function getFoundingPlacesStatus(): Promise<FoundingPlacesStatus> {
     where: { status: "ACCEPTED" },
     select: {
       currentRole: true,
+      situation: true,
       motivation: true,
       reviewedAt: true,
       createdAt: true,
@@ -60,9 +64,8 @@ export async function getFoundingPlacesStatus(): Promise<FoundingPlacesStatus> {
 
   const occupants: FoundingPlace[] = accepted.map((a) => ({
     role: a.currentRole?.trim() || "Cadre data-augmenté",
-    quote: a.motivation
-      ? cleanQuote(a.motivation)
-      : "Cadre rejoint le programme Founding.",
+    situation: cleanSnippet(a.situation),
+    motivation: cleanSnippet(a.motivation),
     acceptedAt: a.reviewedAt ?? a.createdAt,
   }));
 

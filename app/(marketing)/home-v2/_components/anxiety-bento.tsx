@@ -34,6 +34,10 @@ type Anxiety = {
   Icon: typeof Users;
   className: string;
   background: ReactNode;
+  /** Quand true, le background est interactif (hover, clics) et on
+   *  masque le text-overlay pour ne pas le bloquer. Utilisé par la
+   *  grande card (grille des places Founding). */
+  interactiveBackground?: boolean;
 };
 
 function buildAnxieties(foundingPlaces: FoundingPlacesStatus): Anxiety[] {
@@ -58,6 +62,7 @@ function buildAnxieties(foundingPlaces: FoundingPlacesStatus): Anxiety[] {
           occupants={foundingPlaces.occupants}
         />
       ),
+      interactiveBackground: true,
     },
   {
     name: "L'imposteur inversé",
@@ -126,7 +131,7 @@ export function AnxietyBento({ foundingPlaces }: AnxietyBentoProps) {
 }
 
 function BentoCard({ anxiety, index }: { anxiety: Anxiety; index: number }) {
-  const { name, description, Icon, className, background } = anxiety;
+  const { name, description, Icon, className, background, interactiveBackground } = anxiety;
 
   return (
     <motion.div
@@ -147,23 +152,44 @@ function BentoCard({ anxiety, index }: { anxiety: Anxiety; index: number }) {
         className
       )}
     >
-      {/* Background art — derrière le texte */}
-      <div className="absolute inset-0 pointer-events-none opacity-60 group-hover:opacity-100 transition-opacity duration-500">
+      {/* Background art — derrière le texte. Quand interactiveBackground
+          est true (grande card), le background reçoit les events souris. */}
+      <div
+        className={cn(
+          "absolute inset-0 opacity-60 group-hover:opacity-100 transition-opacity duration-500",
+          interactiveBackground ? "pointer-events-auto" : "pointer-events-none"
+        )}
+      >
         {background}
       </div>
 
-      {/* Card content — icon top, text bottom, separated by flex spacer */}
-      <div className="relative z-10 flex flex-col h-full p-6 md:p-7">
-        <Icon className="w-8 h-8 text-primary/80 transition-all duration-500 group-hover:text-primary group-hover:scale-110 origin-top-left" />
-        <div className="mt-auto pt-6">
-          <h3 className="font-headline text-lg md:text-xl font-bold text-foreground mb-2 leading-tight">
-            {name}
-          </h3>
-          <p className="text-sm text-muted-foreground/90 leading-relaxed max-w-md">
-            {description}
-          </p>
+      {/* Card content — icon top, text bottom. Pour la grande card avec
+          background interactif, on rend juste le titre + description en
+          bas (le background fournit déjà son propre header). */}
+      {interactiveBackground ? (
+        <div className="relative z-10 flex flex-col justify-end h-full p-6 md:p-7 pointer-events-none">
+          <div className="bg-gradient-to-t from-surface-container-lowest via-surface-container-lowest/95 to-transparent -mx-6 -mb-6 md:-mx-7 md:-mb-7 px-6 pb-6 md:px-7 md:pb-7 pt-12">
+            <h3 className="font-headline text-lg md:text-xl font-bold text-foreground mb-2 leading-tight">
+              {name}
+            </h3>
+            <p className="text-sm text-muted-foreground/90 leading-relaxed max-w-md">
+              {description}
+            </p>
+          </div>
         </div>
-      </div>
+      ) : (
+        <div className="relative z-10 flex flex-col h-full p-6 md:p-7">
+          <Icon className="w-8 h-8 text-primary/80 transition-all duration-500 group-hover:text-primary group-hover:scale-110 origin-top-left" />
+          <div className="mt-auto pt-6">
+            <h3 className="font-headline text-lg md:text-xl font-bold text-foreground mb-2 leading-tight">
+              {name}
+            </h3>
+            <p className="text-sm text-muted-foreground/90 leading-relaxed max-w-md">
+              {description}
+            </p>
+          </div>
+        </div>
+      )}
 
       {/* Subtle hover overlay vert */}
       <div className="pointer-events-none absolute inset-0 bg-primary/[0.025] opacity-0 group-hover:opacity-100 transition-opacity duration-500" />
