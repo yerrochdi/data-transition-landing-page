@@ -3,6 +3,7 @@ import { AnxietyBento } from "./_components/anxiety-bento";
 import { ThreePaths } from "./_components/three-paths";
 import { CareerOsSteps } from "./_components/career-os-steps";
 import { ProfileCarousel } from "./_components/profile-carousel";
+import { BilanShowcase } from "./_components/bilan-showcase";
 import { getFoundingPlacesStatus } from "@/lib/founding-members/places";
 
 // La page lit le statut des places Founding en DB à chaque requête —
@@ -32,6 +33,7 @@ export default async function HomeV2Page() {
       <ThreePaths />
       <CareerOsSteps />
       <ProfileCarousel />
+      <BilanShowcase />
     </main>
   );
 }
