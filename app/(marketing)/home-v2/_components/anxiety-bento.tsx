@@ -51,7 +51,7 @@ function buildAnxieties(foundingPlaces: FoundingPlacesStatus): Anxiety[] {
           : "Programme complet.",
       description:
         foundingPlaces.remaining > 0
-          ? `Le programme Founding Member n'ouvre que 30 places. Chaque case verte est une candidature acceptée. Survolez pour voir leur profil. Cliquez une case vide pour candidater — sélection sous 48h.`
+          ? `Le programme Founding Member n'ouvre que 30 places. Les cases vertes lumineuses sont libres — cliquez pour candidater. Les cases éteintes sont déjà prises : survolez-les pour voir le profil. Sélection sous 48h.`
           : "Le programme est complet. Vous pouvez encore rejoindre la liste d'attente — les premières places se libèrent dans 3 mois.",
       Icon: Users,
       className: "md:col-span-2 md:row-span-2",
