@@ -1,6 +1,12 @@
 import { BackgroundPaths } from "./_components/background-paths";
 import { AnxietyBento } from "./_components/anxiety-bento";
+import { ThreePaths } from "./_components/three-paths";
 import { getFoundingPlacesStatus } from "@/lib/founding-members/places";
+
+// La page lit le statut des places Founding en DB à chaque requête —
+// on force le rendu dynamique pour éviter que Next tente un pré-rendu
+// statique au build (où la DB n'est pas joignable).
+export const dynamic = "force-dynamic";
 
 /**
  * Landing v2 — work-in-progress.
@@ -21,6 +27,7 @@ export default async function HomeV2Page() {
     <main className="bg-background text-foreground min-h-screen">
       <BackgroundPaths />
       <AnxietyBento foundingPlaces={foundingPlaces} />
+      <ThreePaths />
     </main>
   );
 }
