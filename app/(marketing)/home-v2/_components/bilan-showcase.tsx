@@ -1,7 +1,8 @@
 "use client";
 
-import { motion } from "framer-motion";
+import { motion, useInView } from "framer-motion";
 import Link from "next/link";
+import { useEffect, useRef, useState } from "react";
 import { Sparkles, ArrowRight, FileText, Check } from "lucide-react";
 
 /**
@@ -114,9 +115,19 @@ export function BilanShowcase() {
                   <h3 className="font-headline text-xl font-black text-foreground mb-1">
                     Bilan personnel
                   </h3>
-                  <p className="text-[10px] text-muted-foreground/60 mb-6">
+                  <p className="text-[10px] text-muted-foreground/60 mb-5">
                     Rédigé pour Marc · DAF · Industrie
                   </p>
+
+                  {/* Bloc visuel : jauge readiness + mini-stats */}
+                  <div className="flex items-center gap-5 mb-6 p-4 rounded-xl bg-surface-container-low border border-border/30">
+                    <ReadinessGauge target={68} />
+                    <div className="flex-1 grid grid-cols-3 gap-3">
+                      <MiniStat value="4" label="Forces" />
+                      <MiniStat value="3" label="Gaps" />
+                      <MiniStat value="82%" label="Réussite" accent />
+                    </div>
+                  </div>
 
                   {/* Synthèse */}
                   <h4 className="font-headline text-base font-bold text-foreground mt-6 mb-2">
@@ -182,5 +193,92 @@ export function BilanShowcase() {
         </div>
       </div>
     </section>
+  );
+}
+
+/** Jauge circulaire readiness, s'anime de 0 → target quand visible. */
+function ReadinessGauge({ target }: { target: number }) {
+  const ref = useRef<HTMLDivElement>(null);
+  const isInView = useInView(ref, { once: true, margin: "-40px" });
+  const [value, setValue] = useState(0);
+
+  useEffect(() => {
+    if (!isInView) return;
+    let frame = 0;
+    const duration = 40;
+    const timer = setInterval(() => {
+      frame++;
+      setValue(Math.round((frame / duration) * target));
+      if (frame >= duration) clearInterval(timer);
+    }, 25);
+    return () => clearInterval(timer);
+  }, [isInView, target]);
+
+  const r = 26;
+  const circumference = 2 * Math.PI * r;
+  const offset = circumference - (value / 100) * circumference;
+
+  return (
+    <div ref={ref} className="relative w-[68px] h-[68px] shrink-0">
+      <svg className="w-full h-full -rotate-90" viewBox="0 0 64 64">
+        <circle
+          cx="32"
+          cy="32"
+          r={r}
+          fill="none"
+          stroke="hsl(var(--surface-container-highest))"
+          strokeWidth="5"
+        />
+        <circle
+          cx="32"
+          cy="32"
+          r={r}
+          fill="none"
+          stroke="hsl(var(--primary))"
+          strokeWidth="5"
+          strokeLinecap="round"
+          strokeDasharray={circumference}
+          strokeDashoffset={offset}
+          style={{
+            transition: "stroke-dashoffset 0.05s linear",
+            filter: "drop-shadow(0 0 4px hsl(var(--primary) / 0.5))",
+          }}
+        />
+      </svg>
+      <div className="absolute inset-0 flex flex-col items-center justify-center">
+        <span className="font-headline text-base font-black text-foreground leading-none">
+          {value}%
+        </span>
+        <span className="text-[7px] uppercase tracking-widest text-muted-foreground/60 font-bold mt-0.5">
+          Ready
+        </span>
+      </div>
+    </div>
+  );
+}
+
+/** Mini-stat du bloc visuel (Forces / Gaps / Réussite). */
+function MiniStat({
+  value,
+  label,
+  accent,
+}: {
+  value: string;
+  label: string;
+  accent?: boolean;
+}) {
+  return (
+    <div className="text-center">
+      <p
+        className={`font-headline text-lg font-black leading-none ${
+          accent ? "text-primary" : "text-foreground"
+        }`}
+      >
+        {value}
+      </p>
+      <p className="text-[8px] uppercase tracking-widest text-muted-foreground/60 font-bold mt-1">
+        {label}
+      </p>
+    </div>
   );
 }
