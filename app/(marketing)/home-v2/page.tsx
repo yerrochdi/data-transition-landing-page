@@ -1,6 +1,7 @@
 import { BackgroundPaths } from "./_components/background-paths";
 import { AnxietyBento } from "./_components/anxiety-bento";
 import { ThreePaths } from "./_components/three-paths";
+import { CareerOsSteps } from "./_components/career-os-steps";
 import { getFoundingPlacesStatus } from "@/lib/founding-members/places";
 
 // La page lit le statut des places Founding en DB à chaque requête —
@@ -28,6 +29,7 @@ export default async function HomeV2Page() {
       <BackgroundPaths />
       <AnxietyBento foundingPlaces={foundingPlaces} />
       <ThreePaths />
+      <CareerOsSteps />
     </main>
   );
 }
