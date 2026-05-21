@@ -5,7 +5,9 @@ import { CareerOsSteps } from "./_components/career-os-steps";
 import { ProfileCarousel } from "./_components/profile-carousel";
 import { BilanShowcase } from "./_components/bilan-showcase";
 import { FoundingSection } from "./_components/founding-section";
+import { FaqSection } from "./_components/faq-section";
 import { getFoundingPlacesStatus } from "@/lib/founding-members/places";
+import { getLandingPhase } from "@/lib/landing/phase";
 
 // La page lit le statut des places Founding en DB à chaque requête —
 // on force le rendu dynamique pour éviter que Next tente un pré-rendu
@@ -26,16 +28,18 @@ export default async function HomeV2Page() {
   // applications). Read by AnxietyBento → FoundingPlacesGrid for the
   // public-facing "X/30 places restantes" with hover tooltips.
   const foundingPlaces = await getFoundingPlacesStatus();
+  const phase = getLandingPhase(foundingPlaces);
 
   return (
     <main className="bg-background text-foreground min-h-screen">
-      <BackgroundPaths />
+      <BackgroundPaths phase={phase} />
       <AnxietyBento foundingPlaces={foundingPlaces} />
       <ThreePaths />
       <CareerOsSteps />
       <ProfileCarousel />
       <BilanShowcase />
       <FoundingSection foundingPlaces={foundingPlaces} />
+      <FaqSection />
     </main>
   );
 }

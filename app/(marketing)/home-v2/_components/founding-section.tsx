@@ -14,6 +14,7 @@ import {
 } from "lucide-react";
 import { cn } from "@/lib/utils";
 import type { FoundingPlace, FoundingPlacesStatus } from "@/lib/founding-members/places";
+import { OpenPricing } from "./open-pricing";
 
 /**
  * Section 7 — Programme Founding Member.
@@ -34,6 +35,12 @@ interface FoundingSectionProps {
 
 export function FoundingSection({ foundingPlaces }: FoundingSectionProps) {
   const { total, taken, remaining, occupants } = foundingPlaces;
+
+  // Quand les 30 places sont prises, la section bascule en pricing
+  // classique (Boost / Pro / Sprint). Bascule automatique selon la DB.
+  if (remaining === 0) {
+    return <OpenPricing />;
+  }
 
   return (
     <section className="relative py-24 md:py-32 px-6 md:px-12 overflow-hidden">

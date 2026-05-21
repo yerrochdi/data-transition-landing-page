@@ -3,6 +3,7 @@
 import { motion } from "framer-motion";
 import Link from "next/link";
 import { ArrowRight } from "lucide-react";
+import type { LandingPhaseConfig } from "@/lib/landing/phase";
 
 /**
  * Hero "Background Paths" — composant kokonutd (21st.dev) adapté à
@@ -64,7 +65,7 @@ function FloatingPaths({ position }: { position: number }) {
   );
 }
 
-export function BackgroundPaths() {
+export function BackgroundPaths({ phase }: { phase: LandingPhaseConfig }) {
   // Headline en 2 morceaux : ce qu'on dit, puis le punch
   const line1 = "Vous avez 2 choix.";
   const line2 = "On vous propose le 3e.";
@@ -113,7 +114,7 @@ export function BackgroundPaths() {
               transition={{ duration: 2, repeat: Infinity, ease: "easeInOut" }}
             />
             <span className="text-[11px] font-semibold uppercase tracking-[0.18em] text-primary">
-              Career OS · Pré-lancement
+              {phase.eyebrow}
             </span>
           </motion.div>
 
@@ -152,7 +153,7 @@ export function BackgroundPaths() {
             className="flex flex-col items-center gap-4"
           >
             <Link
-              href="/founding-members"
+              href={phase.ctaHref}
               className="group relative inline-flex items-center gap-3 px-8 py-5 rounded-2xl bg-primary text-primary-foreground text-base font-bold overflow-hidden transition-transform duration-300 hover:scale-[1.03] shadow-[0_12px_40px_-12px_hsl(var(--primary)/0.7)]"
             >
               <motion.span
@@ -170,18 +171,12 @@ export function BackgroundPaths() {
                   repeatDelay: 1.5,
                 }}
               />
-              <span className="relative">
-                Candidate au programme Founding Member
-              </span>
+              <span className="relative">{phase.ctaLabel}</span>
               <ArrowRight className="relative w-4 h-4 transition-transform duration-300 group-hover:translate-x-1" />
             </Link>
 
             <p className="text-xs text-muted-foreground/80 mt-1">
-              <span className="text-primary font-semibold">9€/mois à vie</span>
-              {" · "}
-              <span className="text-foreground/80">30 places</span>
-              {" · "}
-              sélection sous 48h
+              {phase.ctaSubline}
             </p>
           </motion.div>
         </motion.div>
