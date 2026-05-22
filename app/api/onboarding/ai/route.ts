@@ -12,6 +12,12 @@ import {
 } from "@/lib/ai/prompts";
 import type { OnboardingFormData } from "@/lib/onboarding/types";
 
+// Le step "summary" génère un bilan consultant de 800-1200 mots
+// (max_tokens 3000). Kimi met 15-30s — sans ce maxDuration, Vercel
+// coupe le stream au timeout par défaut (10s) → "analyse indisponible".
+export const maxDuration = 60;
+export const dynamic = "force-dynamic";
+
 const stepPromptBuilders: Record<
   string,
   (data: Partial<OnboardingFormData>) => string
