@@ -189,10 +189,16 @@ export async function completeOnboarding(
       select: { email: true, firstName: true },
     });
 
-    // Send welcome email (non-blocking)
+    // Send welcome email with the bilan preview (non-blocking).
+    // aiSummary contient le bilan complet — l'email en extrait la
+    // Synthèse en aperçu + un CTA vers le bilan complet.
     import("@/lib/email/send").then(({ sendEmail }) =>
       import("@/lib/email/templates").then(({ welcomeEmail }) =>
-        sendEmail(updatedUser.email, "Bienvenue sur NextMove AI 🎯", welcomeEmail(updatedUser.firstName, data.targetRole || null))
+        sendEmail(
+          updatedUser.email,
+          `${updatedUser.firstName}, votre bilan Career OS est prêt ✨`,
+          welcomeEmail(updatedUser.firstName, data.targetRole || null, aiSummary)
+        )
       )
     ).catch(console.error);
 

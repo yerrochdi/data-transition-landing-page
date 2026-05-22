@@ -20,22 +20,55 @@ const layout = (content: string) => `
 </body>
 </html>`;
 
-export function welcomeEmail(firstName: string, targetRole: string | null): string {
+/**
+ * Extrait la 1re section "Synthèse" du bilan markdown pour l'aperçu
+ * dans l'email. Le bilan suit la structure consultant (cf.
+ * buildSummaryPrompt) : "# Synthèse\n<paragraphe>\n# Lecture...".
+ * Retourne le paragraphe de synthèse nettoyé, ou "" si introuvable.
+ */
+function extractSynthese(aiSummary: string | null): string {
+  if (!aiSummary) return "";
+  // Capture le texte entre "# Synthèse" et le prochain titre "#"
+  const match = aiSummary.match(/#\s*Synth[èe]se\s*\n+([\s\S]*?)(?:\n#\s|$)/i);
+  if (!match) return "";
+  return match[1]
+    .replace(/\*\*/g, "") // drop bold markers
+    .replace(/\s+/g, " ")
+    .trim()
+    .slice(0, 420); // garde l'aperçu raisonnable
+}
+
+export function welcomeEmail(
+  firstName: string,
+  targetRole: string | null,
+  aiSummary: string | null = null
+): string {
+  const synthese = extractSynthese(aiSummary);
+
+  // Bloc aperçu du bilan, affiché seulement si on a une synthèse exploitable
+  const bilanPreview = synthese
+    ? `
+    <div style="background:#0a0d0c;border:1px solid #1c2620;border-radius:12px;padding:20px;margin:20px 0">
+      <p style="color:#4be277;font-size:10px;text-transform:uppercase;letter-spacing:2px;font-weight:bold;margin:0 0 10px">
+        Votre bilan Career OS · version 1
+      </p>
+      <p style="color:#c8ccc8;font-size:13px;line-height:1.7;margin:0;font-style:italic">
+        «&nbsp;${synthese}…&nbsp;»
+      </p>
+    </div>`
+    : "";
+
   return layout(`
-    <h1 style="color:#fff;font-size:22px;margin:0 0 16px">Bienvenue ${firstName} 🎯</h1>
-    <p>Votre diagnostic NextMove AI est terminé${targetRole ? ` et votre objectif <strong style="color:#4be277">${targetRole}</strong> est enregistré` : ""}.</p>
-    <p>Voici ce qui vous attend :</p>
-    <ul style="padding-left:20px;margin:16px 0">
-      <li><strong>Parcours personnalisé</strong> — des micro-leçons IA adaptées à votre profil</li>
-      <li><strong>Copilot IA</strong> — posez vos questions carrière à tout moment</li>
-      <li><strong>Opportunités</strong> — suggestions ciblées basées sur vos compétences</li>
-    </ul>
+    <h1 style="color:#fff;font-size:22px;margin:0 0 16px">Votre bilan est prêt, ${firstName} ✨</h1>
+    <p>J'ai lu attentivement votre diagnostic${targetRole ? ` et votre objectif <strong style="color:#4be277">${targetRole}</strong>` : ""}. Voici votre bilan personnel — votre point de départ.</p>
+    ${bilanPreview}
+    <p>Le bilan complet vous attend dans votre espace : lecture de votre profil, diagnostic, recommandation, et votre plan d'action sur 6 mois.</p>
     <div style="text-align:center;margin:24px 0">
       <a href="${SITE_URL}/dashboard" style="display:inline-block;background:linear-gradient(135deg,#4be277,#36d068);color:#000;font-weight:bold;font-size:14px;padding:12px 28px;border-radius:12px;text-decoration:none">
-        Accéder à mon dashboard
+        Lire mon bilan complet
       </a>
     </div>
-    <p style="color:#888;font-size:12px">À bientôt sur NextMove !</p>
+    <p style="color:#888;font-size:12px">Votre Career OS évoluera avec vous, version après version. À bientôt.</p>
   `);
 }
 
