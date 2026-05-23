@@ -9,6 +9,16 @@ import { CareerOsBilan } from "@/components/career-os/bilan-renderer";
 interface AiSummaryProps {
   aiSummary: string | null;
   hasCompletedOnboarding: boolean;
+  /** Optional dataviz stats for the bilan header (readiness gauge, scores,
+   * skills). When provided, the new-format bilan shows the visual strip
+   * on top. */
+  stats?: {
+    readinessScore: number;
+    careerScore: number;
+    confidenceLevel: number;
+    topSkills: string[];
+    skillGaps: string[];
+  };
 }
 
 /**
@@ -83,7 +93,7 @@ function parseSections(text: string): ParsedSection[] {
   return sections;
 }
 
-export function AiSummary({ aiSummary, hasCompletedOnboarding }: AiSummaryProps) {
+export function AiSummary({ aiSummary, hasCompletedOnboarding, stats }: AiSummaryProps) {
   if (!aiSummary) {
     return (
       <div className="bg-surface-container-low rounded-2xl p-6 ghost-border">
@@ -114,7 +124,7 @@ export function AiSummary({ aiSummary, hasCompletedOnboarding }: AiSummaryProps)
 
   // New Career OS bilan format → use the document-style renderer
   if (isCareerOsBilanFormat(aiSummary)) {
-    return <CareerOsBilan content={aiSummary} />;
+    return <CareerOsBilan content={aiSummary} stats={stats} />;
   }
 
   const sections = parseSections(aiSummary);

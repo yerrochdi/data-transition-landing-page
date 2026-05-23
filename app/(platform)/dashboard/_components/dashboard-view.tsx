@@ -270,6 +270,17 @@ export function DashboardView({
       <AiSummary
         aiSummary={onboarding?.aiSummary ?? null}
         hasCompletedOnboarding={hasCompletedOnboarding}
+        stats={
+          hasCompletedOnboarding
+            ? {
+                readinessScore,
+                careerScore,
+                confidenceLevel,
+                topSkills: skills,
+                skillGaps,
+              }
+            : undefined
+        }
       />
 
       {/* ═══════════════════════════════════════════════════════════

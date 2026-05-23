@@ -6,9 +6,23 @@
  *
  * Markdown parsing is deliberately lightweight (no external lib) — the
  * prompt enforces a strict structure we can rely on.
+ *
+ * Direction B (2026-05-23) : when `stats` is provided, we add a header
+ * dataviz strip (readiness gauge + scores + skills). When the markdown
+ * contains a parseable "Plan d'action — 6 mois" section, we extract it
+ * and render it as a visual timeline (and remove it from the markdown
+ * flow to avoid duplication).
  */
 import { Sparkles } from "lucide-react";
 import { cn } from "@/lib/utils";
+import {
+  BilanHeaderStats,
+  type BilanHeaderStats as BilanHeaderStatsType,
+} from "./bilan-header-stats";
+import {
+  BilanPlanTimeline,
+  extractPlanPhases,
+} from "./bilan-plan-timeline";
 
 interface CareerOsBilanProps {
   content: string;
@@ -17,6 +31,9 @@ interface CareerOsBilanProps {
   /** Hides the surrounding chrome (header + signature). Use when the
    * bilan is rendered inside another shell, e.g. the public page. */
   bare?: boolean;
+  /** Optional — when provided, renders the visual header (readiness
+   * gauge + scores + skills) above the bilan text. */
+  stats?: BilanHeaderStatsType;
 }
 
 /**
@@ -126,8 +143,21 @@ export function CareerOsBilan({
   signerName = "Yassine Errochdi",
   signerTitle = "Fondateur de NextMove",
   bare = false,
+  stats,
 }: CareerOsBilanProps) {
-  const blocks = parseBlocks(content);
+  // Try to extract the "Plan d'action — 6 mois" section to render it as a
+  // visual timeline. If successful, we strip that section from the markdown
+  // (so it doesn't appear twice) and inject the timeline at the right spot
+  // in the block flow.
+  const planPhases = extractPlanPhases(content);
+  const contentForBlocks = planPhases
+    ? content.replace(
+        /#\s*Plan[\s\S]*?(?=\n#\s|\n# |$)/i,
+        "__BILAN_PLAN_PLACEHOLDER__"
+      )
+    : content;
+
+  const blocks = parseBlocks(contentForBlocks);
   const today = new Date().toLocaleDateString("fr-FR", {
     day: "numeric",
     month: "long",
@@ -159,9 +189,21 @@ export function CareerOsBilan({
         </header>
       )}
 
+      {/* Visual header — dataviz strip when stats are provided */}
+      {stats && <BilanHeaderStats stats={stats} />}
+
       {/* Document body */}
       <div className="space-y-1 font-serif-like">
         {blocks.map((block, i) => {
+          // Inject the visual plan timeline at the spot the placeholder
+          // was put (right after we stripped the markdown section).
+          if (
+            planPhases &&
+            block.type === "p" &&
+            block.text.trim() === "__BILAN_PLAN_PLACEHOLDER__"
+          ) {
+            return <BilanPlanTimeline key={i} phases={planPhases} />;
+          }
           switch (block.type) {
             case "h1":
               return (
