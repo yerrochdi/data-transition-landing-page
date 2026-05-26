@@ -4,11 +4,13 @@ import { prisma } from "@/lib/db";
 import { ai } from "@/lib/ai/client";
 import {
   SYSTEM_PROMPT,
+  REFORMULATION_SYSTEM_PROMPT,
   buildAmbitionsPrompt,
   buildSkillsPrompt,
   buildMotivationPrompt,
   buildConfidencePrompt,
   buildSummaryPrompt,
+  buildReformulationPrompt,
 } from "@/lib/ai/prompts";
 import type { OnboardingFormData } from "@/lib/onboarding/types";
 
@@ -28,6 +30,21 @@ const stepPromptBuilders: Record<
   confidence: buildConfidencePrompt,
   summary: (data) => buildSummaryPrompt(data as OnboardingFormData),
 };
+
+// Steps qui acceptent une "reformulation" live (bulle "J'entends que…").
+// Tous utilisent le même builder mais avec un focus différent.
+const REFORMULATION_STEPS = new Set([
+  "situation",
+  "role",
+  "education",
+  "technical",
+  "skills",
+  "blockers",
+  "motivation",
+  "confidence",
+  "ambitions",
+  "availability",
+]);
 
 export async function POST(request: NextRequest) {
   // Auth check
@@ -76,11 +93,58 @@ export async function POST(request: NextRequest) {
 
   try {
     const body = await request.json();
-    const { step, data } = body as {
+    const { step, data, mode } = body as {
       step: string;
       data: Partial<OnboardingFormData>;
+      mode?: "insight" | "reformulation";
     };
 
+    // ── Reformulation mode (bulle "J'entends que…") ──
+    // Court, vouvoiement, system prompt dédié. On stream comme un
+    // insight standard pour le même rendu côté client.
+    if (mode === "reformulation") {
+      if (!REFORMULATION_STEPS.has(step)) {
+        return new Response("Étape non reformulable", { status: 400 });
+      }
+
+      const userPrompt = buildReformulationPrompt(step, data);
+      const stream = await ai.chat.completions.create({
+        model: "moonshot-v1-8k",
+        messages: [
+          { role: "system", content: REFORMULATION_SYSTEM_PROMPT },
+          { role: "user", content: userPrompt },
+        ],
+        max_tokens: 220,
+        temperature: 0.55,
+        stream: true,
+      });
+
+      const encoder = new TextEncoder();
+      const readable = new ReadableStream({
+        async start(controller) {
+          try {
+            for await (const chunk of stream) {
+              const content = chunk.choices[0]?.delta?.content;
+              if (content) controller.enqueue(encoder.encode(content));
+            }
+            controller.close();
+          } catch (error) {
+            console.error("Reformulation stream error:", error);
+            controller.error(error);
+          }
+        },
+      });
+
+      return new Response(readable, {
+        headers: {
+          "Content-Type": "text/plain; charset=utf-8",
+          "Cache-Control": "no-cache",
+          "Transfer-Encoding": "chunked",
+        },
+      });
+    }
+
+    // ── Insight mode (mode historique : ambitions, skills, summary…) ──
     const promptBuilder = stepPromptBuilders[step];
     if (!promptBuilder) {
       return new Response("Étape invalide", { status: 400 });

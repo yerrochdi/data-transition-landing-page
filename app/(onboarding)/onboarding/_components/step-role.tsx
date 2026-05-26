@@ -1,9 +1,15 @@
 "use client";
 
+import type { OnboardingFormData } from "@/lib/onboarding/types";
+import { AiReformulation } from "./ai-reformulation";
+
 interface StepRoleProps {
   currentRole: string;
   currentSector: string;
   experienceYears: number | null;
+  /** Tout le formData courant — utilisé par la reformulation pour avoir
+   * le contexte (situation, etc.) déjà saisi. */
+  formData: OnboardingFormData;
   onFieldChange: (field: string, value: string | number | null) => void;
 }
 
@@ -11,8 +17,18 @@ export function StepRole({
   currentRole,
   currentSector,
   experienceYears,
+  formData,
   onFieldChange,
 }: StepRoleProps) {
+  // Signature stable basée sur les 3 champs clés du step. On ne déclenche
+  // la reformulation que quand au moins le rôle ET le secteur sont remplis
+  // (sinon l'IA n'a pas matière à reformuler de façon pertinente).
+  const reformulationReady =
+    currentRole.trim().length >= 3 && currentSector.trim().length >= 2;
+  const signature = reformulationReady
+    ? `${currentRole.trim().toLowerCase()}|${currentSector.trim().toLowerCase()}|${experienceYears ?? ""}`
+    : "";
+
   return (
     <div className="space-y-4">
       <div>
@@ -56,6 +72,9 @@ export function StepRole({
           className="w-full bg-surface-container-lowest rounded-xl p-4 text-sm text-foreground placeholder:text-muted-foreground focus:outline-none focus:ring-2 focus:ring-primary/50 transition-all"
         />
       </div>
+
+      {/* Reformulation live — apparaît quand rôle + secteur sont saisis */}
+      <AiReformulation step="role" data={formData} signature={signature} />
     </div>
   );
 }
