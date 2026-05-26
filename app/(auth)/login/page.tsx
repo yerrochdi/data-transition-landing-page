@@ -1,11 +1,19 @@
 "use client";
 
-import { useState } from "react";
+import { Suspense, useState } from "react";
+import { useSearchParams } from "next/navigation";
 import Link from "next/link";
-import { ArrowRight, Loader2, Mail } from "lucide-react";
+import { ArrowRight, Loader2, Crown } from "lucide-react";
 import { signIn, signInWithGoogle } from "@/lib/auth/actions";
 
-export default function LoginPage() {
+function LoginForm() {
+  const searchParams = useSearchParams();
+  // Query params for pre-fill / Founding activation flow
+  const prefilledEmail = searchParams.get("email") ?? "";
+  const nextParam = searchParams.get("next") ?? "";
+  const info = searchParams.get("info");
+  const isExistingAccountFlow = info === "existing";
+
   const [error, setError] = useState<string | null>(null);
   const [loading, setLoading] = useState(false);
 
@@ -40,6 +48,26 @@ export default function LoginPage() {
         </p>
       </div>
 
+      {/* Bandeau "Compte déjà existant" — affiché quand l'utilisateur arrive
+          ici depuis une tentative de signup avec un email déjà inscrit. */}
+      {isExistingAccountFlow && (
+        <div className="mb-6 flex items-start gap-3 bg-amber-500/5 border border-amber-500/30 rounded-xl p-4">
+          <div className="w-8 h-8 rounded-full bg-amber-500/15 flex items-center justify-center text-amber-300 shrink-0">
+            <Crown className="w-4 h-4" />
+          </div>
+          <div className="text-sm">
+            <p className="font-bold text-amber-200 mb-1">
+              Vous avez déjà un compte
+            </p>
+            <p className="text-muted-foreground leading-relaxed">
+              Un compte existe déjà avec{" "}
+              <strong className="text-foreground">{prefilledEmail}</strong>.
+              Connectez-vous ci-dessous pour finaliser votre activation.
+            </p>
+          </div>
+        </div>
+      )}
+
       {/* Google OAuth */}
       <form action={handleGoogle}>
         <button
@@ -66,6 +94,7 @@ export default function LoginPage() {
 
       {/* Email form */}
       <form action={handleSubmit} className="space-y-4">
+        {nextParam && <input type="hidden" name="next" value={nextParam} />}
         <div>
           <label className="text-xs font-bold text-muted-foreground uppercase tracking-widest mb-2 block">
             Email
@@ -74,6 +103,7 @@ export default function LoginPage() {
             type="email"
             name="email"
             required
+            defaultValue={prefilledEmail}
             placeholder="vous@example.com"
             className="w-full bg-surface-container-lowest rounded-xl p-4 text-sm text-foreground placeholder:text-muted-foreground focus:outline-none focus:ring-2 focus:ring-primary/50 transition-all"
           />
@@ -87,6 +117,7 @@ export default function LoginPage() {
             name="password"
             required
             placeholder="••••••••"
+            autoFocus={!!prefilledEmail}
             className="w-full bg-surface-container-lowest rounded-xl p-4 text-sm text-foreground placeholder:text-muted-foreground focus:outline-none focus:ring-2 focus:ring-primary/50 transition-all"
           />
         </div>
@@ -106,7 +137,7 @@ export default function LoginPage() {
             <Loader2 className="w-4 h-4 animate-spin" />
           ) : (
             <>
-              Se connecter
+              {isExistingAccountFlow ? "Finaliser mon activation" : "Se connecter"}
               <ArrowRight className="w-4 h-4" />
             </>
           )}
@@ -115,10 +146,31 @@ export default function LoginPage() {
 
       <p className="text-center text-sm text-muted-foreground mt-6">
         Pas encore de compte ?{" "}
-        <Link href="/signup" className="text-primary font-bold hover:underline">
+        <Link
+          href={
+            nextParam
+              ? `/signup?next=${encodeURIComponent(nextParam)}${prefilledEmail ? `&email=${encodeURIComponent(prefilledEmail)}` : ""}`
+              : "/signup"
+          }
+          className="text-primary font-bold hover:underline"
+        >
           Créer un compte
         </Link>
       </p>
     </div>
+  );
+}
+
+export default function LoginPage() {
+  return (
+    <Suspense
+      fallback={
+        <div className="flex items-center justify-center py-20">
+          <Loader2 className="w-6 h-6 animate-spin text-primary" />
+        </div>
+      }
+    >
+      <LoginForm />
+    </Suspense>
   );
 }

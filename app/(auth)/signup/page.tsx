@@ -1,12 +1,13 @@
 "use client";
 
 import { Suspense, useState } from "react";
-import { useSearchParams } from "next/navigation";
+import { useRouter, useSearchParams } from "next/navigation";
 import Link from "next/link";
 import { Loader2, Sparkles, Mail, CheckCircle, Crown } from "lucide-react";
 import { signUp, signInWithGoogle } from "@/lib/auth/actions";
 
 function SignupForm() {
+  const router = useRouter();
   const searchParams = useSearchParams();
   const planParam = searchParams.get("plan");
   const validPlans = ["boost", "pro", "sprint"];
@@ -14,6 +15,11 @@ function SignupForm() {
     ? (planParam as "boost" | "pro" | "sprint")
     : "free";
   const isPro = chosenPlan !== "free";
+
+  // Query params for pre-fill (used by Founding activation flow)
+  const prefilledEmail = searchParams.get("email") ?? "";
+  const prefilledFirstName = searchParams.get("firstName") ?? "";
+  const nextParam = searchParams.get("next") ?? "";
 
   const planLabel: Record<typeof chosenPlan, string> = {
     free: "Commencez gratuitement",
@@ -53,6 +59,18 @@ function SignupForm() {
     }
 
     const result = await signUp(formData);
+    if (result?.accountExists) {
+      // Compte déjà créé avec cet email → on redirige vers /login en
+      // pré-remplissant l'email + en propageant le `next` (typiquement
+      // l'activation Founding Member). Pas d'erreur affichée :
+      // c'est une transition fluide, pas un échec.
+      const params = new URLSearchParams();
+      params.set("email", result.email);
+      params.set("info", "existing");
+      if (nextParam) params.set("next", nextParam);
+      router.replace(`/login?${params.toString()}`);
+      return;
+    }
     if (result?.error) {
       setError(result.error);
       setLoading(false);
@@ -141,6 +159,7 @@ function SignupForm() {
       {/* Email form */}
       <form action={handleSubmit} className="space-y-4">
         <input type="hidden" name="chosenPlan" value={chosenPlan} />
+        {nextParam && <input type="hidden" name="next" value={nextParam} />}
         <div className="grid grid-cols-2 gap-4">
           <div>
             <label className="text-xs font-bold text-muted-foreground uppercase tracking-widest mb-2 block">
@@ -150,6 +169,7 @@ function SignupForm() {
               type="text"
               name="firstName"
               required
+              defaultValue={prefilledFirstName}
               placeholder="Prénom"
               className="w-full bg-surface-container-lowest rounded-xl p-4 text-sm text-foreground placeholder:text-muted-foreground focus:outline-none focus:ring-2 focus:ring-primary/50 transition-all"
             />
@@ -175,8 +195,10 @@ function SignupForm() {
             type="email"
             name="email"
             required
+            defaultValue={prefilledEmail}
+            readOnly={!!prefilledEmail}
             placeholder="vous@example.com"
-            className="w-full bg-surface-container-lowest rounded-xl p-4 text-sm text-foreground placeholder:text-muted-foreground focus:outline-none focus:ring-2 focus:ring-primary/50 transition-all"
+            className="w-full bg-surface-container-lowest rounded-xl p-4 text-sm text-foreground placeholder:text-muted-foreground focus:outline-none focus:ring-2 focus:ring-primary/50 transition-all read-only:bg-surface-container read-only:text-muted-foreground read-only:cursor-not-allowed"
           />
         </div>
         <div>

@@ -37,9 +37,12 @@ export async function signUp(formData: FormData) {
     return { error: error.message };
   }
 
-  // If email confirmation is required, user won't have a session yet
+  // Supabase ne renvoie PAS d'erreur quand l'email existe déjà (anti-énumération) :
+  // il renvoie un user avec `identities` vide. On le détecte ici et on renvoie un
+  // signal structuré pour que la page signup redirige proprement vers /login
+  // (au lieu d'afficher une erreur brute que l'utilisateur ne comprend pas).
   if (data.user?.identities?.length === 0) {
-    return { error: "Un compte existe déjà avec cet email" };
+    return { accountExists: true as const, email };
   }
 
   // Create user in our database
@@ -89,7 +92,10 @@ export async function signUp(formData: FormData) {
     return { success: true, confirmEmail: true };
   }
 
-  redirect("/onboarding");
+  // Honor `next` if it was passed (typically from /founding-activate),
+  // otherwise default to onboarding.
+  const next = formData.get("next") as string | null;
+  redirect(next && next.startsWith("/") ? next : "/onboarding");
 }
 
 export async function signIn(formData: FormData) {
@@ -97,6 +103,7 @@ export async function signIn(formData: FormData) {
 
   const email = formData.get("email") as string;
   const password = formData.get("password") as string;
+  const next = formData.get("next") as string | null;
 
   const { error } = await supabase.auth.signInWithPassword({
     email,
@@ -107,7 +114,9 @@ export async function signIn(formData: FormData) {
     return { error: error.message };
   }
 
-  redirect("/dashboard");
+  // Honor `next` if it was passed (typically from /founding-activate),
+  // otherwise default to dashboard.
+  redirect(next && next.startsWith("/") ? next : "/dashboard");
 }
 
 export async function signInWithGoogle() {
