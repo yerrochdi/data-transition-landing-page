@@ -3,6 +3,7 @@
 import { redirect } from "next/navigation";
 import { createClient } from "@/lib/supabase/server";
 import { prisma } from "@/lib/db";
+import { getCurrentEnvUrl } from "@/lib/utils/env-url";
 
 export async function signUp(formData: FormData) {
   const supabase = await createClient();
@@ -13,11 +14,9 @@ export async function signUp(formData: FormData) {
   const lastName = formData.get("lastName") as string;
   const chosenPlan = formData.get("chosenPlan") as string | null;
 
-  const siteUrl =
-    process.env.NEXT_PUBLIC_SITE_URL ||
-    (process.env.VERCEL_URL
-      ? `https://${process.env.VERCEL_URL}`
-      : "http://localhost:3000");
+  // Utilise l'URL du déploiement courant pour que le mail de confirmation
+  // ramène l'utilisateur sur le même environnement (prod / Preview / local).
+  const siteUrl = getCurrentEnvUrl();
 
   const validPaidPlans = ["boost", "pro", "sprint"];
   const callbackUrl = validPaidPlans.includes(chosenPlan ?? "")
@@ -122,11 +121,9 @@ export async function signIn(formData: FormData) {
 export async function signInWithGoogle() {
   const supabase = await createClient();
 
-  const siteUrl =
-    process.env.NEXT_PUBLIC_SITE_URL ||
-    (process.env.VERCEL_URL
-      ? `https://${process.env.VERCEL_URL}`
-      : "http://localhost:3000");
+  // URL du déploiement courant pour que Google OAuth ramène l'utilisateur
+  // sur le bon environnement (prod / Preview / local).
+  const siteUrl = getCurrentEnvUrl();
 
   const { data, error } = await supabase.auth.signInWithOAuth({
     provider: "google",
