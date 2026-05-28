@@ -252,7 +252,7 @@ export function OnboardingFlow({ initialData, chosenPlan = "free" }: OnboardingF
       case 1:
         return <StepLinkedIn onProfileParsed={handleLinkedInParsed} onSkip={handleLinkedInSkip} />;
       case 2:
-        return <StepRole currentRole={formData.currentRole} currentSector={formData.currentSector} experienceYears={formData.experienceYears} onFieldChange={handleFieldChange} />;
+        return <StepRole currentRole={formData.currentRole} currentSector={formData.currentSector} experienceYears={formData.experienceYears} formData={formData} onFieldChange={handleFieldChange} />;
       case 3:
         return (
           <StepEducation

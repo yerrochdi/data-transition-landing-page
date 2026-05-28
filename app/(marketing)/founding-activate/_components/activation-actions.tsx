@@ -95,6 +95,12 @@ export function ActivationActions({
   }
 
   // Case 3 — user is not logged in → must sign up or sign in with the matching email
+  // Si la candidate clique "Créer mon compte" mais qu'un compte Supabase existe
+  // déjà avec cet email (cas typique : tentative d'inscription antérieure
+  // restée en suspens), le signup détecte le conflit et redirige
+  // automatiquement vers /login avec un bandeau explicatif (cf signUp() dans
+  // lib/auth/actions.ts qui renvoie { accountExists: true }).
+  const nextUrl = `/founding-activate?token=${token}`;
   return (
     <div>
       <p className="text-sm text-muted-foreground mb-5">
@@ -102,14 +108,14 @@ export function ActivationActions({
       </p>
       <div className="grid grid-cols-1 sm:grid-cols-2 gap-3">
         <Link
-          href={`/signup?next=${encodeURIComponent(`/founding-activate?token=${token}`)}&email=${encodeURIComponent(expectedEmail)}&firstName=${encodeURIComponent(firstName)}`}
+          href={`/signup?next=${encodeURIComponent(nextUrl)}&email=${encodeURIComponent(expectedEmail)}&firstName=${encodeURIComponent(firstName)}`}
           className="inline-flex items-center justify-center gap-2 gradient-primary text-primary-foreground px-5 py-3 rounded-xl text-sm font-bold hover:scale-[1.02] transition-transform"
         >
           <UserPlus className="w-4 h-4" />
           Créer mon compte
         </Link>
         <Link
-          href={`/login?next=${encodeURIComponent(`/founding-activate?token=${token}`)}`}
+          href={`/login?next=${encodeURIComponent(nextUrl)}&email=${encodeURIComponent(expectedEmail)}`}
           className="inline-flex items-center justify-center gap-2 bg-surface-container-lowest ghost-border px-5 py-3 rounded-xl text-sm font-bold text-foreground hover:bg-surface-container transition-colors"
         >
           <LogIn className="w-4 h-4" />

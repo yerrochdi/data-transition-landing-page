@@ -3,6 +3,7 @@
 import { redirect } from "next/navigation";
 import { createClient } from "@/lib/supabase/server";
 import { prisma } from "@/lib/db";
+import { getCurrentEnvUrl } from "@/lib/utils/env-url";
 
 export async function signUp(formData: FormData) {
   const supabase = await createClient();
@@ -13,11 +14,9 @@ export async function signUp(formData: FormData) {
   const lastName = formData.get("lastName") as string;
   const chosenPlan = formData.get("chosenPlan") as string | null;
 
-  const siteUrl =
-    process.env.NEXT_PUBLIC_SITE_URL ||
-    (process.env.VERCEL_URL
-      ? `https://${process.env.VERCEL_URL}`
-      : "http://localhost:3000");
+  // Utilise l'URL du déploiement courant pour que le mail de confirmation
+  // ramène l'utilisateur sur le même environnement (prod / Preview / local).
+  const siteUrl = getCurrentEnvUrl();
 
   const validPaidPlans = ["boost", "pro", "sprint"];
   const callbackUrl = validPaidPlans.includes(chosenPlan ?? "")
@@ -37,9 +36,12 @@ export async function signUp(formData: FormData) {
     return { error: error.message };
   }
 
-  // If email confirmation is required, user won't have a session yet
+  // Supabase ne renvoie PAS d'erreur quand l'email existe déjà (anti-énumération) :
+  // il renvoie un user avec `identities` vide. On le détecte ici et on renvoie un
+  // signal structuré pour que la page signup redirige proprement vers /login
+  // (au lieu d'afficher une erreur brute que l'utilisateur ne comprend pas).
   if (data.user?.identities?.length === 0) {
-    return { error: "Un compte existe déjà avec cet email" };
+    return { accountExists: true as const, email };
   }
 
   // Create user in our database
@@ -89,7 +91,10 @@ export async function signUp(formData: FormData) {
     return { success: true, confirmEmail: true };
   }
 
-  redirect("/onboarding");
+  // Honor `next` if it was passed (typically from /founding-activate),
+  // otherwise default to onboarding.
+  const next = formData.get("next") as string | null;
+  redirect(next && next.startsWith("/") ? next : "/onboarding");
 }
 
 export async function signIn(formData: FormData) {
@@ -97,6 +102,7 @@ export async function signIn(formData: FormData) {
 
   const email = formData.get("email") as string;
   const password = formData.get("password") as string;
+  const next = formData.get("next") as string | null;
 
   const { error } = await supabase.auth.signInWithPassword({
     email,
@@ -107,17 +113,17 @@ export async function signIn(formData: FormData) {
     return { error: error.message };
   }
 
-  redirect("/dashboard");
+  // Honor `next` if it was passed (typically from /founding-activate),
+  // otherwise default to dashboard.
+  redirect(next && next.startsWith("/") ? next : "/dashboard");
 }
 
 export async function signInWithGoogle() {
   const supabase = await createClient();
 
-  const siteUrl =
-    process.env.NEXT_PUBLIC_SITE_URL ||
-    (process.env.VERCEL_URL
-      ? `https://${process.env.VERCEL_URL}`
-      : "http://localhost:3000");
+  // URL du déploiement courant pour que Google OAuth ramène l'utilisateur
+  // sur le bon environnement (prod / Preview / local).
+  const siteUrl = getCurrentEnvUrl();
 
   const { data, error } = await supabase.auth.signInWithOAuth({
     provider: "google",

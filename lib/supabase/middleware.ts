@@ -37,15 +37,24 @@ export async function updateSession(request: NextRequest) {
   );
 
   if (isProtected && !user) {
+    // On garde la page d'origine dans `next` pour pouvoir y revenir
+    // après login. Crucial pour les liens reçus par email (ex: bouton
+    // "Gérer les candidatures" dans la notif admin de candidature
+    // Founding : sans ça, l'admin atterrit sur /dashboard au lieu de
+    // /admin/founding-members).
     const url = request.nextUrl.clone();
     url.pathname = "/login";
+    const originalPath = request.nextUrl.pathname + request.nextUrl.search;
+    url.searchParams.set("next", originalPath);
     return NextResponse.redirect(url);
   }
 
-  // If authenticated user visits login/signup, redirect to dashboard
+  // If authenticated user visits login/signup, redirect to next (if any) or dashboard
   if (user && (request.nextUrl.pathname === "/login" || request.nextUrl.pathname === "/signup")) {
     const url = request.nextUrl.clone();
-    url.pathname = "/dashboard";
+    const next = request.nextUrl.searchParams.get("next");
+    url.pathname = next && next.startsWith("/") ? next : "/dashboard";
+    url.search = ""; // drop query params on redirect
     return NextResponse.redirect(url);
   }
 

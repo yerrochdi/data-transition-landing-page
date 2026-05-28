@@ -1,4 +1,16 @@
-const SITE_URL = process.env.NEXT_PUBLIC_SITE_URL || "https://nextmove.sh";
+import { getCurrentEnvUrl, getCanonicalUrl } from "@/lib/utils/env-url";
+
+// `SITE_URL` est résolu à chaque rendu de template, pour que les liens
+// des emails pointent vers le déploiement qui a envoyé le mail :
+//   - Production → https://nextmove.sh
+//   - Preview    → https://[hash].vercel.app
+//   - Local      → http://localhost:3000
+// Les liens "canoniques" (footer "© nextmove.sh", liens marketing) utilisent
+// CANONICAL_URL via getCanonicalUrl() pour rester sur nextmove.sh même en
+// Preview — tu veux pas qu'un Founding Member sur Preview ait un footer
+// pointant vers .vercel.app.
+const SITE_URL = () => getCurrentEnvUrl();
+const CANONICAL_URL = () => getCanonicalUrl();
 
 const layout = (content: string) => `
 <!DOCTYPE html>
@@ -14,7 +26,7 @@ const layout = (content: string) => `
       ${content}
     </div>
     <p style="text-align:center;color:#666;font-size:11px;margin-top:24px">
-      © ${new Date().getFullYear()} NextMove AI · <a href="${SITE_URL}" style="color:#4be277;text-decoration:none">nextmove.sh</a>
+      © ${new Date().getFullYear()} NextMove AI · <a href="${CANONICAL_URL()}" style="color:#4be277;text-decoration:none">nextmove.sh</a>
     </p>
   </div>
 </body>
@@ -64,7 +76,7 @@ export function welcomeEmail(
     ${bilanPreview}
     <p>Le bilan complet vous attend dans votre espace : lecture de votre profil, diagnostic, recommandation, et votre plan d'action sur 6 mois.</p>
     <div style="text-align:center;margin:24px 0">
-      <a href="${SITE_URL}/dashboard" style="display:inline-block;background:linear-gradient(135deg,#4be277,#36d068);color:#000;font-weight:bold;font-size:14px;padding:12px 28px;border-radius:12px;text-decoration:none">
+      <a href="${SITE_URL()}/dashboard" style="display:inline-block;background:linear-gradient(135deg,#4be277,#36d068);color:#000;font-weight:bold;font-size:14px;padding:12px 28px;border-radius:12px;text-decoration:none">
         Lire mon bilan complet
       </a>
     </div>
@@ -114,7 +126,7 @@ export function foundingMemberAdminNotification(application: {
       <p style="color:#e0e0e0;background:#0a0a0a;border-radius:8px;padding:12px;margin:0;white-space:pre-wrap">${escapeHtml(application.motivation)}</p>
     </div>
     <div style="text-align:center;margin:24px 0">
-      <a href="${SITE_URL}/admin/founding-members" style="display:inline-block;background:linear-gradient(135deg,#4be277,#36d068);color:#000;font-weight:bold;font-size:14px;padding:12px 28px;border-radius:12px;text-decoration:none">
+      <a href="${SITE_URL()}/admin/founding-members" style="display:inline-block;background:linear-gradient(135deg,#4be277,#36d068);color:#000;font-weight:bold;font-size:14px;padding:12px 28px;border-radius:12px;text-decoration:none">
         Gérer les candidatures
       </a>
     </div>
@@ -178,7 +190,7 @@ export function careerOsCheckinEmail(
     <p style="margin-top:20px">Vous pouvez répondre directement à cet email — je lis tout. Ou aller mettre à jour votre Career OS depuis votre dashboard, et le bilan v2 s&apos;enrichira de vos réponses.</p>
 
     <div style="text-align:center;margin:28px 0">
-      <a href="${SITE_URL}/dashboard" style="display:inline-block;background:linear-gradient(135deg,#4be277,#36d068);color:#000;font-weight:bold;font-size:14px;padding:12px 28px;border-radius:12px;text-decoration:none">
+      <a href="${SITE_URL()}/dashboard" style="display:inline-block;background:linear-gradient(135deg,#4be277,#36d068);color:#000;font-weight:bold;font-size:14px;padding:12px 28px;border-radius:12px;text-decoration:none">
         Mettre à jour mon Career OS
       </a>
     </div>
@@ -278,10 +290,10 @@ export function upgradeEmail(firstName: string, plan: string = "PREMIUM"): strin
       ${c.features.map((f) => `<li>${f}</li>`).join("\n      ")}
     </ul>
     <div style="text-align:center;margin:24px 0">
-      <a href="${SITE_URL}${c.ctaHref}" style="display:inline-block;background:linear-gradient(135deg,#4be277,#36d068);color:#000;font-weight:bold;font-size:14px;padding:12px 28px;border-radius:12px;text-decoration:none">
+      <a href="${SITE_URL()}${c.ctaHref}" style="display:inline-block;background:linear-gradient(135deg,#4be277,#36d068);color:#000;font-weight:bold;font-size:14px;padding:12px 28px;border-radius:12px;text-decoration:none">
         ${c.cta}
       </a>
     </div>
-    <p style="color:#888;font-size:12px">Tu peux gérer ton abonnement dans les <a href="${SITE_URL}/settings" style="color:#4be277">paramètres</a>.</p>
+    <p style="color:#888;font-size:12px">Tu peux gérer ton abonnement dans les <a href="${SITE_URL()}/settings" style="color:#4be277">paramètres</a>.</p>
   `);
 }

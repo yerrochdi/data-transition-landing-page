@@ -224,6 +224,202 @@ ${data.confidenceLevel !== undefined && data.confidenceLevel >= 8 ? "Le niveau e
 Maximum 150 mots.`;
 }
 
+// ════════════════════════════════════════════════════════════════════
+// REFORMULATIONS LIVE — bulle "J'entends que…" après chaque step.
+//
+// Différent des AiInsightPanel : ici on veut juste UNE phrase courte
+// qui prouve à l'utilisateur que l'IA a lu sa réponse et en a tiré une
+// observation pertinente. Ton consultant senior, vouvoiement,
+// pas de jugement, pas de conseil — juste l'écoute active.
+// ════════════════════════════════════════════════════════════════════
+
+export const REFORMULATION_SYSTEM_PROMPT = `Vous êtes un consultant senior en transition de carrière (cabinet type Bain / Korn Ferry), expert des métiers data/IA.
+
+Votre rôle dans CE message précis : reformuler en 1-2 phrases ce que vous venez de comprendre du profil — comme un coach qui écoute activement.
+
+RÈGLES ABSOLUES :
+1. Vouvoiement systématique. "Vous", "Votre", "Vous avez".
+2. Maximum 2 phrases. Idéalement 1 longue + 1 observation courte.
+3. JAMAIS de "C'est super !", "Bravo !", "Excellent !". Vous êtes posé, pas sycophant.
+4. JAMAIS de conseil ("Vous devriez…"). Juste une observation pertinente qui prouve l'écoute.
+5. Pas de bullet points. Pas de titres. Texte fluide.
+6. Pas de markdown sauf **gras** sur 1-2 mots-clés max.
+7. Français uniquement. Aucun caractère asiatique.
+8. Vocabulaire de consultant senior : "j'identifie", "je note", "le point d'attention", "l'angle d'attaque", "la trajectoire".
+9. Si une donnée est manquante ou floue, ne l'inventez pas — restez sur le factuel.
+
+FORMAT TYPE :
+"Je note [observation factuelle de leur réponse]. [Une lecture stratégique courte qui prouve que vous avez compris le contexte business / carrière.]"
+
+EXEMPLE BON :
+"Je note 12 ans à piloter du marketing en banque privée — un secteur où la data décide déjà du churn, du scoring et de la segmentation. Votre angle d'attaque sera vraisemblablement le management d'équipes analytiques plutôt que le code."
+
+EXEMPLE MAUVAIS (à NE PAS faire) :
+"Wow, 12 ans c'est incroyable ! Avec ton expérience tu vas cartonner dans la data 🚀"`;
+
+/**
+ * Construit le prompt utilisateur pour une reformulation live sur un step donné.
+ *
+ * Le step détermine sur QUOI l'IA doit se focaliser (la réponse qui vient
+ * d'être donnée), tout en ayant accès au contexte cumulé du formulaire.
+ */
+export function buildReformulationPrompt(
+  step: string,
+  data: Partial<OnboardingFormData>
+): string {
+  const role = data.currentRole || "non précisé";
+  const sector = data.currentSector || "non précisé";
+  const years = data.experienceYears ?? null;
+
+  // Contexte commun à toutes les reformulations
+  const baseContext = `CONTEXTE PROFIL (déjà recueilli) :
+- Rôle actuel : ${role}${sector !== "non précisé" ? ` dans ${sector}` : ""}${years !== null ? ` (${years} ans d'expérience)` : ""}
+- Situation : ${data.situation || "non précisée"}
+- Appétence technique : ${data.technicalAppetite || "non précisée"}`;
+
+  // Focus spécifique selon le step
+  switch (step) {
+    case "situation": {
+      const situationLabels: Record<string, string> = {
+        in_post_curious: "En poste, curieux d'explorer la data sans urgence",
+        in_post_blocked: "En poste mais bloqué, cherche activement une transition",
+        in_transition: "En transition (entre deux postes)",
+        recently_started: "Vient de prendre un nouveau poste",
+        executive_pivot: "Cadre dirigeant qui veut repositionner sa carrière",
+      };
+      const label =
+        situationLabels[data.situation || ""] || data.situation || "non précisée";
+      return `${baseContext}
+
+L'utilisateur vient de déclarer sa situation : "${label}".
+
+Reformulez en 1-2 phrases ce que cela vous dit de son urgence, de son énergie disponible et de l'angle qu'il faudra prendre pour son Career OS. Pas de conseil, juste une lecture de la situation.`;
+    }
+
+    case "role": {
+      return `${baseContext}
+
+L'utilisateur vient de renseigner son rôle actuel et son secteur :
+- Rôle : "${role}"
+- Secteur : "${sector}"
+- Expérience : ${years ?? "non précisée"} ans
+
+Reformulez en 1-2 phrases ce que ce parcours raconte : niveau de séniorité implicite, terrain de jeu, atout transposable vers la data. Sortez UNE observation non-évidente qui prouve que vous avez compris le secteur (pas un cliché).`;
+    }
+
+    case "education": {
+      const certs = data.certifications?.length
+        ? data.certifications.join(", ")
+        : "aucune";
+      return `${baseContext}
+
+L'utilisateur vient de renseigner sa formation :
+- Niveau : ${data.educationLevel || "non précisé"}
+- Certifications : ${certs}
+- A déjà fait de la data : ${data.hasDataTraining ? "Oui" : "Non"}
+
+Reformulez en 1-2 phrases ce que cette formation apporte (ou pas) au pivot data. Si la personne n'a aucune formation data, rassurez-la factuellement (sans flatter) : indiquez que ce n'est pas un blocage à son niveau.`;
+    }
+
+    case "technical": {
+      const techLabels: Record<string, string> = {
+        "no-code": "no-code — ne souhaite pas coder",
+        "low-code": "low-code — SQL/Excel avancé OK, pas de Python",
+        code: "code — motivé pour Python et outils techniques",
+        flexible: "flexible — à adapter selon le rôle cible",
+      };
+      const tech =
+        techLabels[data.technicalAppetite || "flexible"] ||
+        data.technicalAppetite;
+      return `${baseContext}
+
+L'utilisateur vient de déclarer son appétence technique : "${tech}".
+
+Reformulez en 1-2 phrases ce que ce choix oriente : quel type de rôles data lui correspond (pilotage / hybride / technique), et que ce n'est PAS un handicap mais un cadre. Pas de jugement, juste une observation stratégique.`;
+    }
+
+    case "skills": {
+      const skills =
+        data.skillLevels
+          ?.map((s) => `${s.name} (${s.level})`)
+          .join(", ") || "non précisées";
+      return `${baseContext}
+
+L'utilisateur vient de sélectionner ses compétences et leur niveau :
+${skills}
+
+Reformulez en 1-2 phrases ce que cette combinaison révèle : une force structurante non-évidente, un signal sur son positionnement futur. PAS de liste de gaps — c'est une reformulation, pas un diagnostic.`;
+    }
+
+    case "blockers": {
+      const blockers = data.blockers?.join(", ") || "aucun blocage déclaré";
+      return `${baseContext}
+
+L'utilisateur vient de déclarer ses freins : ${blockers}.
+
+Reformulez en 1-2 phrases ce que vous comprenez. Si "syndrome de l'imposteur" est mentionné, validez factuellement que c'est typique à son niveau de séniorité. Pas de "ne t'inquiète pas" — restez consultant.`;
+    }
+
+    case "motivation": {
+      const motivationType =
+        data.motivation === "attracted"
+          ? "attiré par la data (logique d'opportunité)"
+          : data.motivation === "fleeing"
+            ? "quitte son poste (logique de fuite)"
+            : data.motivation === "both"
+              ? "les deux (fuite + attirance)"
+              : "non précisée";
+      const achievements = data.keyAchievements?.slice(0, 300) || "";
+      return `${baseContext}
+
+L'utilisateur vient de partager sa motivation :
+- Type : ${motivationType}
+${achievements ? `- Réalisations clés (extrait) : ${achievements}` : ""}
+
+Reformulez en 1-2 phrases ce que cela révèle de sa trajectoire. Si "fuite", validez sans dramatiser. Si "attiré", pointez ce qui est cohérent avec son parcours.`;
+    }
+
+    case "confidence": {
+      const level = data.confidenceLevel ?? 5;
+      return `${baseContext}
+
+L'utilisateur vient de noter sa confiance pour réussir cette transition : ${level}/10.
+
+Reformulez en 1-2 phrases. Si ≤4 : factuellement rassurez sur le fait que ce score est sain et fréquent à son niveau (sénior + transition). Si ≥8 : canalisez vers l'action concrète. Si 5-7 : c'est le score le plus lucide, validez-le.`;
+    }
+
+    case "ambitions": {
+      return `${baseContext}
+
+L'utilisateur vient de choisir un rôle cible :
+- Rôle cible : ${data.targetRole || "non précisé"}
+- Secteur cible : ${data.targetSector || "non précisé"}
+- Type de transition : ${data.transitionType || "non précisé"}
+- Horizon : ${data.horizon || "non précisé"}
+
+Reformulez en 1-2 phrases la cohérence (ou la tension utile) entre ce rôle cible et son parcours actuel. Pas de validation type "excellent choix" — une observation stratégique.`;
+    }
+
+    case "availability": {
+      const hours = data.availableHoursPerWeek ?? 0;
+      const pace = data.preferredPace || "non précisé";
+      return `${baseContext}
+
+L'utilisateur vient de partager sa disponibilité et son rythme :
+- Heures par semaine : ${hours}h
+- Rythme préféré : ${pace}
+- Style d'apprentissage : ${data.learningStyle?.join(", ") || "non précisé"}
+
+Reformulez en 1-2 phrases ce que cette enveloppe permet réellement (réaliste, pas vendeur). Si très peu d'heures (≤3h), validez factuellement que c'est compatible avec un Career OS de pilotage, pas d'apprentissage technique intensif.`;
+    }
+
+    default:
+      return `${baseContext}
+
+L'utilisateur vient de compléter l'étape "${step}". Reformulez en 1-2 phrases ce que vous retenez de son profil global jusqu'ici.`;
+  }
+}
+
 export function buildSummaryPrompt(data: OnboardingFormData): string {
   const skillsDetail = data.skillLevels?.length
     ? data.skillLevels.map((s) => `${s.name} (${s.level})`).join(", ")

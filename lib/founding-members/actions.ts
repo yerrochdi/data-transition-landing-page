@@ -12,6 +12,7 @@ import {
 import { isAdmin } from "@/lib/auth/admin";
 import { createClient } from "@/lib/supabase/server";
 import { getStripe } from "@/lib/billing/stripe";
+import { getCurrentEnvUrl } from "@/lib/utils/env-url";
 import { TOTAL_SEATS } from "./constants";
 
 const ADMIN_EMAIL = "contact@nextmove.sh";
@@ -125,7 +126,9 @@ export async function getFoundingMembersSeatStatus(): Promise<{
   };
 }
 
-const SITE_URL = process.env.NEXT_PUBLIC_SITE_URL || "https://nextmove.sh";
+// Note: on utilise getCurrentEnvUrl() (résolu au runtime) au lieu d'une
+// constante module — sinon les liens d'activation envoyés depuis un Preview
+// Vercel pointent vers la prod (cf. lib/utils/env-url.ts).
 
 export async function updateFoundingMemberStatus(
   applicationId: string,
@@ -170,7 +173,7 @@ export async function updateFoundingMemberStatus(
 
   if (isNewlyAccepted && updated.activationToken) {
     const firstName = updated.name.split(" ")[0] ?? updated.name;
-    const activationUrl = `${SITE_URL}/founding-activate?token=${updated.activationToken}`;
+    const activationUrl = `${getCurrentEnvUrl()}/founding-activate?token=${updated.activationToken}`;
     await sendEmail(
       updated.email,
       "🎉 Tu es accepté Founding Member NextMove",
@@ -265,8 +268,8 @@ export async function createFoundingCheckout(
       customer_email: dbUser.email,
       metadata: { userId: dbUser.id, plan: "founding", foundingToken: token },
       line_items: [{ price: priceId, quantity: 1 }],
-      success_url: `${SITE_URL}/dashboard?upgraded=founding`,
-      cancel_url: `${SITE_URL}/founding-activate?token=${token}`,
+      success_url: `${getCurrentEnvUrl()}/dashboard?upgraded=founding`,
+      cancel_url: `${getCurrentEnvUrl()}/founding-activate?token=${token}`,
     });
     return { url: session.url };
   } catch (e) {
