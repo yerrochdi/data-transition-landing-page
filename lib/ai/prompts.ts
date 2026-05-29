@@ -53,38 +53,55 @@ export function buildAmbitionsPrompt(data: Partial<OnboardingFormData>): string 
   const role = data.currentRole || "non précisé";
   const sector = data.currentSector || "non précisé";
 
-  // Detect seniority level
+  // Detect seniority level — paliers RÉALISTES, alignés sur les conventions
+  // RH françaises (pas le hype US qui promet C-Level à tout le monde).
   const isAlreadyData = /data|analytics|bi|intelligence|machine learning|ml|ia|ai|scientist|engineer.*data/i.test(role);
   const isManager = /lead|head|director|manager|chief|vp|responsable|directeur|chef/i.test(role);
-  const isSenior = years >= 7 || isManager;
-  const isExpert = (years >= 12 || isAlreadyData) && isManager;
+  // C-Level réservé aux profils 15+ ans qui sont DÉJÀ managers seniors.
+  // Un consultant 6 ans n'est jamais Chief Officer dans 2 ans.
+  const isCLevelEligible = years >= 15 && isManager;
+  const isSeniorEligible = years >= 10 || (years >= 7 && isManager);
+  const isMidLevel = years >= 4 && years < 10;
+  const isJunior = years < 4;
 
   let seniorityContext: string;
-  if (isExpert) {
-    seniorityContext = `SÉNIORITÉ DÉTECTÉE : EXPERT/LEADER (${years} ans, rôle "${role}")
-Cette personne est déjà senior dans la data/IA. Propose UNIQUEMENT des rôles SUPÉRIEURS :
-- Chief Data Officer, VP Data & AI, Head of AI Strategy, Data Transformation Director
-- Rôles de scope plus large (passer d'une équipe à un département, d'un pays à l'international)
-- Rôles plus stratégiques (passer de l'exécution au board)
-NE PROPOSE JAMAIS un rôle en dessous de son niveau actuel. C'est INTERDIT.`;
-  } else if (isAlreadyData) {
-    seniorityContext = `SÉNIORITÉ DÉTECTÉE : DÉJÀ DANS LA DATA (${years} ans, rôle "${role}")
-Cette personne travaille déjà dans la data/IA. Propose des rôles qui représentent une PROGRESSION :
-- Plus de responsabilités (IC → Lead, Lead → Head, Head → VP)
-- Plus de scope (technique → technique + business, mono-produit → multi-produit)
-- Spécialisation plus poussée ou rôle plus stratégique
-NE PROPOSE JAMAIS un rôle au même niveau ou en dessous.`;
-  } else if (isSenior) {
-    seniorityContext = `SÉNIORITÉ DÉTECTÉE : SENIOR (${years} ans, rôle "${role}")
-Cette personne a une expérience significative. Propose des rôles de LEADERSHIP dans la data :
-- Head of Data, Director Analytics, VP Data, Data Strategy Lead
-- Rôles qui valorisent ses années de management/expertise métier
-NE PROPOSE PAS de rôles juniors (Data Analyst, BI Analyst de base).`;
+  if (isCLevelEligible) {
+    seniorityContext = `PALIER DÉTECTÉ : C-LEVEL / TRANSFORMATION (${years} ans, manager confirmé "${role}")
+Profil éligible aux rôles stratégiques de transformation data. Proposez :
+- COURT TERME (1-2 ans) : Head of [domaine] Analytics, VP Data & AI
+- MOYEN TERME (3-5 ans) : Chief Data Officer, Chief Analytics Officer
+- AMBITIEUX (5-7 ans) : Chief Digital Officer, Chief Transformation Officer
+Les rôles doivent valoriser 15+ ans d'expérience métier. PAS de rôles juniors.`;
+  } else if (isSeniorEligible || (isAlreadyData && isManager)) {
+    seniorityContext = `PALIER DÉTECTÉ : SENIOR / LEADERSHIP (${years} ans, rôle "${role}")
+Profil éligible aux rôles de leadership opérationnel data. Proposez :
+- COURT TERME (1-2 ans) : Senior [Domaine] Analytics Manager, Lead [Domaine] Data
+- MOYEN TERME (3-5 ans) : Head of [Domaine] Analytics, Director [Domaine] Data
+- AMBITIEUX (5-7 ans) : VP [Domaine] Analytics
+PAS de Chief Officer (réservé à 15+ ans). PAS de rôles d'entrée.`;
+  } else if (isAlreadyData || isMidLevel) {
+    seniorityContext = `PALIER DÉTECTÉ : CONFIRMÉ (${years} ans, rôle "${role}")
+Profil confirmé. La trajectoire data réaliste est :
+- COURT TERME (1-2 ans) : [Domaine] Analyst Senior, Specialist [Domaine] Data (ex: "People Analytics Specialist", "Finance Analytics Lead")
+- MOYEN TERME (3-5 ans) : Lead [Domaine] Analytics, Head of [Domaine] Data (start-up/scale-up uniquement, pas grand groupe)
+- AMBITIEUX (5-7 ans) : Director [Domaine] Analytics (scale-up) ou Senior Manager (grand groupe)
+
+INTERDICTIONS ABSOLUES :
+- PAS de Chief X Officer (rôle 15+ ans)
+- PAS de VP (rôle 10+ ans avec management d'équipe confirmée)
+- PAS de rôles juniors qui régressent le profil
+
+Réalisme : pour 6 ans d'XP, le saut maximum est de DEUX paliers vers le haut
+en 5 ans, pas TROIS. Une consultante 6 ans devient Senior puis Lead puis Head.
+Elle ne devient pas Chief Officer dans 2 ans, sauf création de boîte.`;
   } else {
-    seniorityContext = `SÉNIORITÉ DÉTECTÉE : EN TRANSITION (${years} ans, rôle "${role}")
-Cette personne débute sa transition vers la data. Propose un mix :
-- 2 rôles accessibles rapidement (Data Analyst, BI Analyst)
-- 2 rôles ambitieux à moyen terme (Senior Analyst, Analytics Manager)`;
+    seniorityContext = `PALIER DÉTECTÉ : EN TRANSITION / JUNIOR (${years} ans, rôle "${role}")
+Profil en début de carrière ou en transition complète. Proposez :
+- COURT TERME (immédiat) : Data Analyst Junior, BI Analyst, Analytics Associate
+- MOYEN TERME (2-4 ans) : Senior Data Analyst, [Domaine] Analyst Specialist
+- AMBITIEUX (4-6 ans) : Lead Data Analyst, [Domaine] Analytics Manager
+
+PAS de Head, Director, VP, Chief — réservés aux séniorités supérieures.`;
   }
 
   const educationContext = data.educationLevel
@@ -109,6 +126,13 @@ Cette personne débute sa transition vers la data. Propose un mix :
   // de rôles (pas les seuls champs déclaratifs qui peuvent être pauvres).
   // Sans ça, l'IA propose "Senior Data Analyst" générique pour un profil
   // RH/SIRH au lieu de "Head of People Analytics".
+  const clarifications = data.linkedinAnalysis?.clarification_answers
+    ? Object.entries(data.linkedinAnalysis.clarification_answers)
+        .filter(([, a]) => a && a !== "__skip__" && a.trim().length > 0)
+        .map(([q, a]) => `  Q: ${q}\n  R: ${a}`)
+        .join("\n")
+    : "";
+
   const linkedinContext = data.linkedinAnalysis
     ? `
 
@@ -118,6 +142,7 @@ ANALYSE LINKEDIN APPROFONDIE (à PRIORISER sur les champs déclaratifs) :
 - Compétences déduites des missions : ${data.linkedinAnalysis.real_skills_deduced?.join(", ") || "—"}
 - Patterns invisibles : ${data.linkedinAnalysis.hidden_patterns?.join(" | ") || "—"}
 - Angle de transition naturel identifié : ${data.linkedinAnalysis.transition_angle}
+${clarifications ? `\nCLARIFICATIONS APPORTÉES PAR LA PERSONNE (à intégrer pour affiner les rôles) :\n${clarifications}` : ""}
 
 RÈGLE ABSOLUE : les 4 rôles que vous proposez doivent CAPITALISER sur la
 spécialité réelle ci-dessus. Si la personne est RH/SIRH, proposez "Head of
@@ -136,9 +161,16 @@ PROFIL COMPLET :
 - Expérience data/IA : ${data.hasDataTraining ? "Oui" : "Non"}${techContext}
 - Situation : "${data.situation || "non précisée"}"${linkedinContext}
 
-MISSION : Propose EXACTEMENT 4 rôles de "next move" qui représentent une ÉVOLUTION VERS LE HAUT.
+MISSION : Propose EXACTEMENT 4 rôles de "next move" RÉALISTES, échelonnés dans le temps :
+- 1 rôle COURT TERME (1-2 ans) — accessible en montant juste d'un cran, match 80-88
+- 2 rôles MOYEN TERME (3-5 ans) — la cible naturelle à viser, match 70-85
+- 1 rôle AMBITIEUX (5-7 ans) — l'horizon long terme inspirant, match 70-78
+
 Chaque rôle doit combiner l'expertise dans le secteur "${sector}" avec la data/IA.
-Les rôles doivent être RÉALISTES mais ASPIRATIONNELS — toujours un cran au-dessus.
+RÉALISME ABSOLU : pas plus de 2 paliers d'écart entre le poste actuel et le rôle
+ambitieux. Si vous proposez Chief Officer à quelqu'un avec moins de 12 ans
+d'expérience, c'est un échec. Si vous proposez un rôle junior à quelqu'un avec
+plus de 10 ans, c'est aussi un échec.
 
 ${data.technicalAppetite === "no-code" ? "CONTRAINTE : Pas de code. Rôles business/stratégie/management uniquement." : ""}
 ${data.technicalAppetite === "low-code" ? "CONTRAINTE : SQL et outils BI OK, mais pas de rôles nécessitant du Python avancé." : ""}
@@ -148,18 +180,31 @@ CONTRAINTE LINGUISTIQUE ABSOLUE :
   Pas un seul. Si vous êtes tenté d'en mettre un, vous repassez en français pur.
 - Pas d'arrondi décimal des années (utilisez "4 ans 8 mois" ou "5 ans" — jamais "4.7 ans").
 
-Réponds UNIQUEMENT avec un JSON valide (pas de markdown, pas de texte avant/après) :
+Réponds UNIQUEMENT avec un JSON valide (pas de markdown, pas de texte avant/après).
+Les 4 rôles doivent être ORDONNÉS du plus accessible au plus ambitieux :
+
 [
   {
     "title": "Titre du rôle (français, jamais de caractère asiatique)",
     "sector": "Secteur cible",
-    "description": "2-3 phrases : pourquoi ce rôle est le bon next move, quelles compétences actuelles sont un atout, et ce que ça apporte (salaire, impact, scope). Français STRICT.",
-    "match": 85
+    "horizon": "short" | "mid" | "long",
+    "description": "2-3 phrases : pourquoi ce rôle est le bon next move, quelles compétences actuelles sont un atout, ET surtout : ce qu'il manque encore (formation, expérience, certification spécifique) pour y arriver. Format honnête, pas vendeur. Français STRICT.",
+    "match": 75
   }
 ]
 
-"match" : score de compatibilité entre 70 et 95. Du plus accessible au plus ambitieux.
-IMPORTANT : JSON brut uniquement, sans \`\`\`, sans texte autour. Français STRICT.`;
+RÈGLES DU CHAMP "horizon" :
+- "short" : 1 rôle (le plus accessible — 1-2 ans pour y arriver)
+- "mid" : 2 rôles (la cible naturelle — 3-5 ans)
+- "long" : 1 rôle (l'horizon ambitieux — 5-7 ans)
+
+RÈGLES DU CHAMP "match" :
+- "short" → 80-88 (accessible mais pas immédiat)
+- "mid" → 70-85
+- "long" → 70-78 (ambitieux donc moins probable à court terme)
+
+IMPORTANT : JSON brut uniquement, sans \`\`\`, sans texte autour. Français STRICT.
+Honnêteté > flatterie : si un rôle demande encore 3 ans de formation, dites-le.`;
 }
 
 export function buildSkillsPrompt(data: Partial<OnboardingFormData>): string {

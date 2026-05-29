@@ -61,6 +61,12 @@ interface LinkedInProfile {
 interface StepLinkedInProps {
   onProfileParsed: (profile: LinkedInProfile) => void;
   onSkip: () => void;
+  /**
+   * Callback appelé quand l'utilisateur·rice répond à une question de
+   * clarification posée par l'IA. Sert à enrichir le contexte propagé
+   * vers les prompts suivants (Ambitions, Skills, Summary).
+   */
+  onClarificationAnswer?: (question: string, answer: string) => void;
 }
 
 type Mode = "quick" | "pdf";
@@ -80,7 +86,11 @@ const SECTORS = [
   "Autre",
 ];
 
-export function StepLinkedIn({ onProfileParsed, onSkip }: StepLinkedInProps) {
+export function StepLinkedIn({
+  onProfileParsed,
+  onSkip,
+  onClarificationAnswer,
+}: StepLinkedInProps) {
   const [mode, setMode] = useState<Mode>("quick");
   const [status, setStatus] = useState<"idle" | "uploading" | "analyzing" | "done" | "error">("idle");
   const [error, setError] = useState<string | null>(null);
@@ -462,7 +472,10 @@ export function StepLinkedIn({ onProfileParsed, onSkip }: StepLinkedInProps) {
               (pas juste parsé). Si le diagnostic n'est pas dispo (vieux
               format ou erreur partielle), on retombe sur le summary brut. */}
           {profile.diagnostic ? (
-            <DiagnosticBlock diagnostic={profile.diagnostic} />
+            <DiagnosticBlock
+              diagnostic={profile.diagnostic}
+              onClarificationAnswer={onClarificationAnswer}
+            />
           ) : profile.summary ? (
             <div className="p-4 bg-surface-container-high/70 rounded-xl light-streak">
               <div className="flex items-center gap-2 mb-2">
@@ -603,7 +616,37 @@ function DeepAnalysisLoader({ status }: { status: "uploading" | "analyzing" }) {
  *   - Questions de clarification (montre qu'on creuse, pas qu'on diagnostique sans nuance)
  * Le tout en vouvoiement, ton consultant senior, pas vendeur.
  */
-function DiagnosticBlock({ diagnostic }: { diagnostic: LinkedInDiagnostic }) {
+function DiagnosticBlock({
+  diagnostic,
+  onClarificationAnswer,
+}: {
+  diagnostic: LinkedInDiagnostic;
+  onClarificationAnswer?: (question: string, answer: string) => void;
+}) {
+  // Réponses locales aux questions de clarification.
+  // On stocke côté composant pour debouncer la propagation vers le parent.
+  const [answers, setAnswers] = useState<Record<string, string>>({});
+
+  const handleAnswerChange = (question: string, value: string) => {
+    setAnswers((prev) => ({ ...prev, [question]: value }));
+  };
+
+  const handleAnswerBlur = (question: string) => {
+    // Propage la réponse au parent seulement quand l'utilisateur·rice
+    // a fini d'écrire (onBlur) — évite de spammer le state global.
+    const answer = answers[question];
+    if (answer !== undefined && onClarificationAnswer) {
+      onClarificationAnswer(question, answer.trim());
+    }
+  };
+
+  const handleSkip = (question: string) => {
+    setAnswers((prev) => ({ ...prev, [question]: "__skip__" }));
+    if (onClarificationAnswer) {
+      onClarificationAnswer(question, "__skip__");
+    }
+  };
+
   return (
     <div className="space-y-4">
       <div className="flex items-center gap-2">
@@ -679,24 +722,67 @@ function DiagnosticBlock({ diagnostic }: { diagnostic: LinkedInDiagnostic }) {
         </div>
       )}
 
-      {/* Questions ouvertes — pour creuser */}
+      {/* Questions ouvertes — INTERACTIVES.
+          La candidate peut répondre directement ou marquer "pas pertinent".
+          Les réponses sont propagées au parent pour enrichir les prompts
+          des étapes suivantes (Ambitions, Skills, Summary). */}
       {diagnostic.questions_to_clarify?.length > 0 && (
-        <div className="p-4 bg-amber-500/5 border border-amber-500/20 rounded-xl">
-          <p className="text-[10px] uppercase tracking-widest text-amber-400/80 font-bold mb-2 flex items-center gap-1.5">
-            <HelpCircle className="w-3 h-3" />
-            Ce que nous aimerions creuser avec vous
-          </p>
-          <ul className="space-y-1.5">
-            {diagnostic.questions_to_clarify.map((q, i) => (
-              <li
-                key={i}
-                className="flex items-start gap-2 text-xs text-foreground/80 leading-relaxed"
-              >
-                <span className="text-amber-400/60 mt-0.5">•</span>
-                <span>{q}</span>
-              </li>
-            ))}
-          </ul>
+        <div className="p-4 md:p-5 bg-amber-500/5 border border-amber-500/20 rounded-xl space-y-4">
+          <div className="flex items-start gap-2">
+            <HelpCircle className="w-4 h-4 text-amber-400/80 shrink-0 mt-0.5" />
+            <div>
+              <p className="text-[10px] uppercase tracking-widest text-amber-400/80 font-bold mb-1">
+                Aidez-nous à creuser
+              </p>
+              <p className="text-xs text-muted-foreground leading-relaxed">
+                Vos réponses ne sont pas obligatoires — elles affineront le
+                bilan final.
+              </p>
+            </div>
+          </div>
+          <div className="space-y-3">
+            {diagnostic.questions_to_clarify.map((q, i) => {
+              const value = answers[q] ?? "";
+              const isSkipped = value === "__skip__";
+              return (
+                <div
+                  key={i}
+                  className={cn(
+                    "space-y-2 transition-opacity",
+                    isSkipped && "opacity-40"
+                  )}
+                >
+                  <p className="text-xs text-foreground/90 leading-relaxed font-medium">
+                    {q}
+                  </p>
+                  {!isSkipped && (
+                    <div className="flex flex-col sm:flex-row gap-2">
+                      <textarea
+                        value={value === "__skip__" ? "" : value}
+                        onChange={(e) => handleAnswerChange(q, e.target.value)}
+                        onBlur={() => handleAnswerBlur(q)}
+                        placeholder="Votre réponse (1-2 phrases suffisent)…"
+                        rows={2}
+                        className="flex-1 bg-surface-container-lowest border border-amber-500/15 rounded-lg px-3 py-2 text-xs text-foreground placeholder:text-muted-foreground/50 focus:outline-none focus:border-amber-500/40 transition-colors resize-none"
+                      />
+                      <button
+                        type="button"
+                        onClick={() => handleSkip(q)}
+                        className="text-[10px] text-muted-foreground/70 hover:text-amber-400/80 transition-colors px-3 py-1 self-start"
+                      >
+                        Pas pertinent
+                      </button>
+                    </div>
+                  )}
+                  {isSkipped && (
+                    <p className="text-[10px] text-muted-foreground/60 italic">
+                      Marqué comme non pertinent.
+                    </p>
+                  )}
+                </div>
+              );
+            })}
+          </div>
         </div>
       )}
     </div>

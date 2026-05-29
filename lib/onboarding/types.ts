@@ -70,6 +70,13 @@ export interface OnboardingFormData {
     hidden_patterns: string[];
     transition_angle: string;
     questions_to_clarify: string[];
+    /**
+     * Réponses de l'utilisateur·rice aux questions de clarification.
+     * Clé = la question, valeur = la réponse libre (ou "" si pas répondu,
+     * "__skip__" si marqué pas pertinent). Ces réponses enrichissent les
+     * prompts suivants pour que l'IA ait un contexte plus précis.
+     */
+    clarification_answers?: Record<string, string>;
   } | null;
 
   // Step 10: Summary (AI-powered, read-only)

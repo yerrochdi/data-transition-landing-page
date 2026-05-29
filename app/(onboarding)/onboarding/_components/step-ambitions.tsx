@@ -10,6 +10,10 @@ interface SuggestedRole {
   sector: string;
   description: string;
   match: number;
+  /** "short" = 1-2 ans, "mid" = 3-5 ans, "long" = 5-7 ans.
+   * Optionnel pour la rétro-compat avec d'anciennes réponses qui
+   * ne contenaient pas ce champ. */
+  horizon?: "short" | "mid" | "long";
 }
 
 interface StepAmbitionsProps {
@@ -267,13 +271,27 @@ export function StepAmbitions({
                       </p>
                     </div>
                   </div>
-                  <div className={cn(
-                    "px-2.5 py-1 rounded-full text-[10px] font-bold shrink-0",
-                    role.match >= 85
-                      ? "bg-primary/10 text-primary"
-                      : "bg-surface-container text-muted-foreground"
-                  )}>
-                    {role.match}% match
+                  <div className="flex items-center gap-1.5 shrink-0">
+                    {role.horizon && (
+                      <div className={cn(
+                        "px-2 py-1 rounded-md text-[9px] font-bold uppercase tracking-wider",
+                        role.horizon === "short" && "bg-emerald-500/10 text-emerald-400 border border-emerald-500/20",
+                        role.horizon === "mid" && "bg-blue-500/10 text-blue-400 border border-blue-500/20",
+                        role.horizon === "long" && "bg-violet-500/10 text-violet-400 border border-violet-500/20"
+                      )}>
+                        {role.horizon === "short" && "1-2 ans"}
+                        {role.horizon === "mid" && "3-5 ans"}
+                        {role.horizon === "long" && "5-7 ans"}
+                      </div>
+                    )}
+                    <div className={cn(
+                      "px-2.5 py-1 rounded-full text-[10px] font-bold",
+                      role.match >= 85
+                        ? "bg-primary/10 text-primary"
+                        : "bg-surface-container text-muted-foreground"
+                    )}>
+                      {role.match}% match
+                    </div>
                   </div>
                 </div>
                 <p className="text-xs text-muted-foreground leading-relaxed ml-13 pl-13">

@@ -293,12 +293,39 @@ export function OnboardingFlow({ initialData, chosenPlan = "free" }: OnboardingF
     setCurrentStep((prev) => prev + 1);
   }, []);
 
+  /**
+   * Sauvegarde une réponse à une question de clarification posée par
+   * l'IA après le parsing LinkedIn. La réponse enrichit le contexte
+   * propagé aux prompts suivants (Ambitions, Skills, Summary).
+   */
+  const handleClarificationAnswer = useCallback(
+    (question: string, answer: string) => {
+      if (!formData.linkedinAnalysis) return;
+      const existing = formData.linkedinAnalysis.clarification_answers ?? {};
+      dispatch({
+        type: "SET_FIELD",
+        field: "linkedinAnalysis",
+        value: {
+          ...formData.linkedinAnalysis,
+          clarification_answers: { ...existing, [question]: answer },
+        },
+      });
+    },
+    [formData.linkedinAnalysis]
+  );
+
   const renderStep = () => {
     switch (currentStep) {
       case 0:
         return <StepSituation value={formData.situation} formData={formData} onChange={(v) => handleFieldChange("situation", v)} />;
       case 1:
-        return <StepLinkedIn onProfileParsed={handleLinkedInParsed} onSkip={handleLinkedInSkip} />;
+        return (
+          <StepLinkedIn
+            onProfileParsed={handleLinkedInParsed}
+            onSkip={handleLinkedInSkip}
+            onClarificationAnswer={handleClarificationAnswer}
+          />
+        );
       case 2:
         return <StepRole currentRole={formData.currentRole} currentSector={formData.currentSector} experienceYears={formData.experienceYears} formData={formData} onFieldChange={handleFieldChange} />;
       case 3:
