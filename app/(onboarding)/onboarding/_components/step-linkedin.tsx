@@ -1,8 +1,37 @@
 "use client";
 
-import { useState, useCallback, useRef } from "react";
-import { Linkedin, Upload, Loader2, Check, AlertCircle, ArrowRight, FileText, Sparkles, Zap } from "lucide-react";
+import { useState, useCallback, useRef, useEffect } from "react";
+import {
+  Linkedin,
+  Upload,
+  Loader2,
+  Check,
+  AlertCircle,
+  ArrowRight,
+  FileText,
+  Sparkles,
+  Zap,
+  Compass,
+  Target,
+  HelpCircle,
+} from "lucide-react";
 import { cn } from "@/lib/utils";
+
+/**
+ * Diagnostic narratif retourné par /api/onboarding/parse-linkedin.
+ * Ces champs permettent à NextMove de prouver à l'utilisateur·rice que
+ * son CV a vraiment été LU (pas juste parsé), via une lecture de
+ * consultant senior. Optionnel pour la rétro-compat avec d'anciennes
+ * réponses qui ne contenaient que les champs factuels.
+ */
+export interface LinkedInDiagnostic {
+  synthesis: string;
+  deduced_specialty: string;
+  real_skills_deduced: string[];
+  hidden_patterns: string[];
+  transition_angle: string;
+  questions_to_clarify: string[];
+}
 
 interface LinkedInProfile {
   currentRole: string | null;
@@ -25,6 +54,8 @@ interface LinkedInProfile {
   }[];
   summary: string | null;
   hasDataExperience: boolean;
+  /** Nouveau : diagnostic narratif du consultant senior IA. */
+  diagnostic?: LinkedInDiagnostic;
 }
 
 interface StepLinkedInProps {
@@ -350,17 +381,11 @@ export function StepLinkedIn({ onProfileParsed, onSkip }: StepLinkedInProps) {
         </>
       ) : null}
 
-      {/* Loading state */}
+      {/* Loading state — analyse approfondie avec messages progressifs.
+          On simule le travail du consultant senior : lecture, identification,
+          diagnostic. Donne du poids perçu au temps d'attente (15-30s). */}
       {status === "uploading" || status === "analyzing" ? (
-        <div className="border-2 border-primary/30 rounded-2xl p-10 text-center bg-primary/5">
-          <Loader2 className="w-10 h-10 text-primary mx-auto mb-3 animate-spin" />
-          <p className="text-sm font-bold text-primary mb-1">
-            {status === "uploading" ? "Upload en cours..." : "Analyse IA de votre profil..."}
-          </p>
-          <p className="text-xs text-muted-foreground">
-            L&apos;IA extrait vos postes, compétences et formations
-          </p>
-        </div>
+        <DeepAnalysisLoader status={status} />
       ) : null}
 
       {/* Success / done state */}
@@ -431,8 +456,14 @@ export function StepLinkedIn({ onProfileParsed, onSkip }: StepLinkedInProps) {
             </div>
           )}
 
-          {/* AI summary of profile */}
-          {profile.summary && (
+          {/* DIAGNOSTIC NARRATIF — la "lecture senior" du parcours.
+              C'est le bloc le plus important du step : il prouve à
+              l'utilisateur·rice que NextMove a vraiment LU son CV
+              (pas juste parsé). Si le diagnostic n'est pas dispo (vieux
+              format ou erreur partielle), on retombe sur le summary brut. */}
+          {profile.diagnostic ? (
+            <DiagnosticBlock diagnostic={profile.diagnostic} />
+          ) : profile.summary ? (
             <div className="p-4 bg-surface-container-high/70 rounded-xl light-streak">
               <div className="flex items-center gap-2 mb-2">
                 <Sparkles className="w-4 h-4 text-primary" />
@@ -442,7 +473,7 @@ export function StepLinkedIn({ onProfileParsed, onSkip }: StepLinkedInProps) {
               </div>
               <p className="text-xs text-muted-foreground leading-relaxed">{profile.summary}</p>
             </div>
-          )}
+          ) : null}
         </div>
       ) : null}
 
@@ -466,6 +497,208 @@ function PreviewCard({ label, value, sub }: { label: string; value: string; sub?
       <p className="text-[10px] uppercase tracking-widest text-muted-foreground font-bold mb-1">{label}</p>
       <p className="text-sm font-bold text-foreground">{value}</p>
       {sub && <p className="text-[10px] text-muted-foreground">{sub}</p>}
+    </div>
+  );
+}
+
+/**
+ * Loader "consultant en pleine lecture" — affiche 3 étapes successives
+ * pour donner du poids perçu au temps d'attente de l'IA (15-30s) :
+ *   1) Lecture du PDF
+ *   2) Identification du parcours
+ *   3) Diagnostic en cours
+ * Bien plus engageant qu'un Loader2 muet, et cohérent avec la promesse
+ * "vrai coach IA".
+ */
+function DeepAnalysisLoader({ status }: { status: "uploading" | "analyzing" }) {
+  const [stage, setStage] = useState(0);
+
+  const stages = [
+    { icon: FileText, label: "Lecture de votre profil", delay: 0 },
+    { icon: Compass, label: "Identification de votre parcours", delay: 4000 },
+    { icon: Sparkles, label: "Rédaction du diagnostic", delay: 9000 },
+  ];
+
+  useEffect(() => {
+    if (status === "uploading") {
+      setStage(0);
+      return;
+    }
+    // Cascade automatique pendant l'analyse — chaque étape s'éclaire
+    // après son délai. La dernière reste active jusqu'à la fin.
+    const timeouts = stages.slice(1).map((s, i) =>
+      window.setTimeout(() => setStage(i + 1), s.delay)
+    );
+    return () => timeouts.forEach((t) => window.clearTimeout(t));
+    // eslint-disable-next-line react-hooks/exhaustive-deps
+  }, [status]);
+
+  return (
+    <div className="border border-primary/30 rounded-2xl p-6 md:p-8 bg-gradient-to-br from-primary/5 to-surface-container-lowest/40">
+      <div className="flex items-center gap-2 mb-1">
+        <Sparkles className="w-4 h-4 text-primary animate-pulse" />
+        <span className="text-[10px] uppercase tracking-widest text-primary font-bold">
+          Analyse approfondie en cours
+        </span>
+      </div>
+      <p className="text-xs text-muted-foreground mb-6">
+        Notre consultant IA lit votre profil. Cela prend généralement entre 15
+        et 30 secondes — le temps d&apos;une vraie lecture senior.
+      </p>
+
+      <div className="space-y-3">
+        {stages.map((s, i) => {
+          const Icon = s.icon;
+          const isActive = i === stage;
+          const isDone = i < stage;
+          return (
+            <div
+              key={i}
+              className={cn(
+                "flex items-center gap-3 p-3 rounded-xl transition-all",
+                isActive && "bg-primary/10 border border-primary/30",
+                isDone && "opacity-60",
+                !isActive && !isDone && "opacity-40"
+              )}
+            >
+              <div
+                className={cn(
+                  "w-9 h-9 rounded-lg flex items-center justify-center shrink-0 transition-all",
+                  isActive && "bg-primary text-primary-foreground shadow-lg shadow-primary/30",
+                  isDone && "bg-primary/20 text-primary",
+                  !isActive && !isDone && "bg-surface-container-lowest text-muted-foreground"
+                )}
+              >
+                {isDone ? (
+                  <Check className="w-4 h-4" />
+                ) : isActive ? (
+                  <Loader2 className="w-4 h-4 animate-spin" />
+                ) : (
+                  <Icon className="w-4 h-4" />
+                )}
+              </div>
+              <p
+                className={cn(
+                  "text-sm font-bold",
+                  isActive && "text-primary",
+                  isDone && "text-foreground",
+                  !isActive && !isDone && "text-muted-foreground"
+                )}
+              >
+                {s.label}
+              </p>
+            </div>
+          );
+        })}
+      </div>
+    </div>
+  );
+}
+
+/**
+ * Bloc "Lecture senior" — affiche le diagnostic narratif du parcours :
+ *   - Synthèse + spécialité déduite (le "qui vous êtes")
+ *   - Patterns invisibles (les "clins d'œil" non-évidents)
+ *   - Angle de transition (ce qui distingue d'un wrapper ChatGPT)
+ *   - Questions de clarification (montre qu'on creuse, pas qu'on diagnostique sans nuance)
+ * Le tout en vouvoiement, ton consultant senior, pas vendeur.
+ */
+function DiagnosticBlock({ diagnostic }: { diagnostic: LinkedInDiagnostic }) {
+  return (
+    <div className="space-y-4">
+      <div className="flex items-center gap-2">
+        <div className="w-7 h-7 rounded-full bg-primary/15 flex items-center justify-center">
+          <Sparkles className="w-3.5 h-3.5 text-primary" />
+        </div>
+        <span className="text-[10px] uppercase tracking-widest text-primary font-bold">
+          Lecture senior de votre parcours
+        </span>
+      </div>
+
+      {/* Synthèse principale + spécialité déduite */}
+      <div className="p-5 bg-gradient-to-br from-primary/10 to-surface-container-lowest/40 border border-primary/20 rounded-2xl space-y-3">
+        <p className="text-sm leading-relaxed text-foreground/90">
+          {diagnostic.synthesis}
+        </p>
+        {diagnostic.deduced_specialty && (
+          <p className="text-xs text-primary font-bold italic">
+            {diagnostic.deduced_specialty}
+          </p>
+        )}
+      </div>
+
+      {/* Patterns invisibles — pastilles */}
+      {diagnostic.hidden_patterns?.length > 0 && (
+        <div>
+          <p className="text-[10px] uppercase tracking-widest text-muted-foreground font-bold mb-2 flex items-center gap-1.5">
+            <Target className="w-3 h-3" />
+            Ce que votre CV révèle (et que vous n&apos;avez pas écrit)
+          </p>
+          <div className="flex flex-wrap gap-1.5">
+            {diagnostic.hidden_patterns.map((p, i) => (
+              <span
+                key={i}
+                className="px-2.5 py-1.5 bg-primary/10 border border-primary/20 text-primary text-[11px] font-medium rounded-lg"
+              >
+                {p}
+              </span>
+            ))}
+          </div>
+        </div>
+      )}
+
+      {/* Compétences déduites (différent du auto-déclaratif) */}
+      {diagnostic.real_skills_deduced?.length > 0 && (
+        <div>
+          <p className="text-[10px] uppercase tracking-widest text-muted-foreground font-bold mb-2">
+            Vos compétences réelles (déduites de vos missions)
+          </p>
+          <div className="flex flex-wrap gap-1.5">
+            {diagnostic.real_skills_deduced.map((s, i) => (
+              <span
+                key={i}
+                className="px-2.5 py-1 bg-surface-container-lowest border border-border/30 text-foreground/80 text-[10px] font-medium rounded-md"
+              >
+                {s}
+              </span>
+            ))}
+          </div>
+        </div>
+      )}
+
+      {/* Angle de transition — l'observation stratégique clé */}
+      {diagnostic.transition_angle && (
+        <div className="p-4 bg-emerald-500/5 border border-emerald-500/20 rounded-xl">
+          <p className="text-[10px] uppercase tracking-widest text-emerald-400/80 font-bold mb-2 flex items-center gap-1.5">
+            <Compass className="w-3 h-3" />
+            Votre angle d&apos;attaque naturel
+          </p>
+          <p className="text-xs leading-relaxed text-foreground/90">
+            {diagnostic.transition_angle}
+          </p>
+        </div>
+      )}
+
+      {/* Questions ouvertes — pour creuser */}
+      {diagnostic.questions_to_clarify?.length > 0 && (
+        <div className="p-4 bg-amber-500/5 border border-amber-500/20 rounded-xl">
+          <p className="text-[10px] uppercase tracking-widest text-amber-400/80 font-bold mb-2 flex items-center gap-1.5">
+            <HelpCircle className="w-3 h-3" />
+            Ce que nous aimerions creuser avec vous
+          </p>
+          <ul className="space-y-1.5">
+            {diagnostic.questions_to_clarify.map((q, i) => (
+              <li
+                key={i}
+                className="flex items-start gap-2 text-xs text-foreground/80 leading-relaxed"
+              >
+                <span className="text-amber-400/60 mt-0.5">•</span>
+                <span>{q}</span>
+              </li>
+            ))}
+          </ul>
+        </div>
+      )}
     </div>
   );
 }

@@ -104,13 +104,37 @@ Cette personne débute sa transition vers la data. Propose un mix :
     ? `\nAppétence technique : ${techLabels[data.technicalAppetite] || data.technicalAppetite}`
     : "";
 
+  // Si une analyse LinkedIn approfondie est disponible, on l'injecte
+  // comme contexte privilégié — c'est elle qui doit guider les suggestions
+  // de rôles (pas les seuls champs déclaratifs qui peuvent être pauvres).
+  // Sans ça, l'IA propose "Senior Data Analyst" générique pour un profil
+  // RH/SIRH au lieu de "Head of People Analytics".
+  const linkedinContext = data.linkedinAnalysis
+    ? `
+
+ANALYSE LINKEDIN APPROFONDIE (à PRIORISER sur les champs déclaratifs) :
+- Synthèse : ${data.linkedinAnalysis.synthesis}
+- Spécialité réelle déduite : ${data.linkedinAnalysis.deduced_specialty}
+- Compétences déduites des missions : ${data.linkedinAnalysis.real_skills_deduced?.join(", ") || "—"}
+- Patterns invisibles : ${data.linkedinAnalysis.hidden_patterns?.join(" | ") || "—"}
+- Angle de transition naturel identifié : ${data.linkedinAnalysis.transition_angle}
+
+RÈGLE ABSOLUE : les 4 rôles que vous proposez doivent CAPITALISER sur la
+spécialité réelle ci-dessus. Si la personne est RH/SIRH, proposez "Head of
+People Analytics", "VP Talent Intelligence", "Director HRIS Strategy" —
+PAS "Senior Data Analyst" générique. Si finance, proposez "FP&A augmenté
+par la data", "Head of Finance Analytics" — pas "Data Engineer". Le but
+est de transformer son expertise métier en super-pouvoir data, pas de la
+faire abandonner.`
+    : "";
+
   return `${seniorityContext}
 
 PROFIL COMPLET :
 - Rôle actuel : "${role}" dans le secteur "${sector}"
 - Expérience : ${years} ans${educationContext}${certContext}
 - Expérience data/IA : ${data.hasDataTraining ? "Oui" : "Non"}${techContext}
-- Situation : "${data.situation || "non précisée"}"
+- Situation : "${data.situation || "non précisée"}"${linkedinContext}
 
 MISSION : Propose EXACTEMENT 4 rôles de "next move" qui représentent une ÉVOLUTION VERS LE HAUT.
 Chaque rôle doit combiner l'expertise dans le secteur "${sector}" avec la data/IA.
@@ -119,18 +143,23 @@ Les rôles doivent être RÉALISTES mais ASPIRATIONNELS — toujours un cran au-
 ${data.technicalAppetite === "no-code" ? "CONTRAINTE : Pas de code. Rôles business/stratégie/management uniquement." : ""}
 ${data.technicalAppetite === "low-code" ? "CONTRAINTE : SQL et outils BI OK, mais pas de rôles nécessitant du Python avancé." : ""}
 
+CONTRAINTE LINGUISTIQUE ABSOLUE :
+- Français UNIQUEMENT. AUCUN caractère asiatique (chinois 汉字, japonais, coréen).
+  Pas un seul. Si vous êtes tenté d'en mettre un, vous repassez en français pur.
+- Pas d'arrondi décimal des années (utilisez "4 ans 8 mois" ou "5 ans" — jamais "4.7 ans").
+
 Réponds UNIQUEMENT avec un JSON valide (pas de markdown, pas de texte avant/après) :
 [
   {
-    "title": "Titre du rôle",
+    "title": "Titre du rôle (français, jamais de caractère asiatique)",
     "sector": "Secteur cible",
-    "description": "2-3 phrases : pourquoi ce rôle est le bon next move, quelles compétences actuelles sont un atout, et ce que ça apporte (salaire, impact, scope). En français.",
+    "description": "2-3 phrases : pourquoi ce rôle est le bon next move, quelles compétences actuelles sont un atout, et ce que ça apporte (salaire, impact, scope). Français STRICT.",
     "match": 85
   }
 ]
 
 "match" : score de compatibilité entre 70 et 95. Du plus accessible au plus ambitieux.
-IMPORTANT : JSON brut uniquement, sans \`\`\`, sans texte autour.`;
+IMPORTANT : JSON brut uniquement, sans \`\`\`, sans texte autour. Français STRICT.`;
 }
 
 export function buildSkillsPrompt(data: Partial<OnboardingFormData>): string {

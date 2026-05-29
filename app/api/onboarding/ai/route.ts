@@ -176,6 +176,15 @@ export async function POST(request: NextRequest) {
       if (arrayMatch) {
         text = arrayMatch[0];
       }
+      // Purge any CJK characters that Kimi might leak despite the system prompt.
+      // Sans ça on a vu des "解决数据" ou "数据-driven" apparaître dans le rendu.
+      text = text
+        .replace(/[　-〿]/g, "")
+        .replace(/[぀-ゟ]/g, "")
+        .replace(/[゠-ヿ]/g, "")
+        .replace(/[一-鿿]/g, "")
+        .replace(/[豈-﫿]/g, "")
+        .replace(/[＀-￯]/g, "");
       // Validate JSON
       try {
         JSON.parse(text);

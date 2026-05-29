@@ -252,6 +252,14 @@ export function OnboardingFlow({ initialData, chosenPlan = "free" }: OnboardingF
       education: { degree: string; school: string; year: string }[];
       summary: string | null;
       hasDataExperience: boolean;
+      diagnostic?: {
+        synthesis: string;
+        deduced_specialty: string;
+        real_skills_deduced: string[];
+        hidden_patterns: string[];
+        transition_angle: string;
+        questions_to_clarify: string[];
+      };
     }) => {
       if (profile.currentRole) dispatch({ type: "SET_FIELD", field: "currentRole", value: profile.currentRole });
       if (profile.currentSector) dispatch({ type: "SET_FIELD", field: "currentSector", value: profile.currentSector });
@@ -267,6 +275,16 @@ export function OnboardingFlow({ initialData, chosenPlan = "free" }: OnboardingF
         });
       }
       dispatch({ type: "SET_FIELD", field: "hasDataTraining", value: profile.hasDataExperience });
+      // Stocke le diagnostic narratif pour que les prompts suivants
+      // (Ambitions, Skills, Summary) puissent l'utiliser comme contexte
+      // "lecture senior" — clé pour éviter les suggestions génériques.
+      if (profile.diagnostic) {
+        dispatch({
+          type: "SET_FIELD",
+          field: "linkedinAnalysis",
+          value: profile.diagnostic,
+        });
+      }
     },
     []
   );

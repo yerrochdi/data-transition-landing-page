@@ -56,6 +56,22 @@ export interface OnboardingFormData {
   learningStyle: string[]; // ["autodidact", "courses", "bootcamp", "mentoring", "projects"]
   priorities: string[]; // ordered: ["growth", "security", "salary", "impact", "freedom"]
 
+  /**
+   * Diagnostic narratif issu de l'analyse LinkedIn approfondie.
+   * Quand renseigné (PDF analysé avec succès), il est injecté dans les
+   * prompts suivants (Ambitions, Skills, Summary) pour donner à l'IA
+   * une "lecture senior" du parcours plutôt que les seuls champs déclaratifs.
+   * null si l'user a sauté LinkedIn ou utilisé la saisie rapide.
+   */
+  linkedinAnalysis: {
+    synthesis: string;
+    deduced_specialty: string;
+    real_skills_deduced: string[];
+    hidden_patterns: string[];
+    transition_angle: string;
+    questions_to_clarify: string[];
+  } | null;
+
   // Step 10: Summary (AI-powered, read-only)
 }
 
@@ -103,6 +119,7 @@ export const initialFormData: OnboardingFormData = {
   remotePreference: "flexible",
   learningStyle: [],
   priorities: [],
+  linkedinAnalysis: null,
 };
 
 export const initialAiInsights: AiInsights = {
