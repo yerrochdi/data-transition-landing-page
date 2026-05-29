@@ -114,7 +114,9 @@ export async function POST(request: NextRequest) {
           { role: "system", content: REFORMULATION_SYSTEM_PROMPT },
           { role: "user", content: userPrompt },
         ],
-        max_tokens: 220,
+        // 1 phrase max 25 mots ≈ 50-70 tokens. On laisse 120 de marge
+        // pour la marge de manœuvre stylistique, sans inviter à la verbosité.
+        max_tokens: 120,
         temperature: 0.55,
         stream: true,
       });

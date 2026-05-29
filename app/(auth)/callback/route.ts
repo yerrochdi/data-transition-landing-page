@@ -66,9 +66,31 @@ export async function GET(request: Request) {
       // Check if onboarding is completed
       const dbUser = await prisma.user.findUnique({
         where: { supabaseId: data.user.id },
-        select: { onboardingCompleted: true },
+        select: { onboardingCompleted: true, plan: true },
       });
 
+      // ── PRIORITÉ #1 : flow d'activation Founding Member ──
+      // Si l'utilisateur s'est inscrit depuis /founding-activate?token=XYZ
+      // (info stockée dans user_metadata.founding_token au signup, ou
+      // passée via ?next= côté URL), on le ramène à cette page pour qu'il
+      // finalise son paiement 9€/mois — sinon il fait l'onboarding gratuit
+      // sans jamais payer son abonnement Founding.
+      const foundingToken =
+        data.user.user_metadata?.founding_token ||
+        extractFoundingToken(searchParams.get("next"));
+      if (foundingToken && dbUser?.plan !== "FOUNDING") {
+        return NextResponse.redirect(
+          `${origin}/founding-activate?token=${foundingToken}`
+        );
+      }
+
+      // ── PRIORITÉ #2 : `next` générique (ex: lien admin reçu par mail) ──
+      const next = searchParams.get("next");
+      if (next && next.startsWith("/") && !next.startsWith("//")) {
+        return NextResponse.redirect(`${origin}${next}`);
+      }
+
+      // ── PRIORITÉ #3 : onboarding si pas encore fait ──
       // Pass chosen plan from signup (stored in user_metadata or URL param)
       const chosenPlan = searchParams.get("plan") || data.user.user_metadata?.chosen_plan;
       const validPaidPlans = ["boost", "pro", "sprint"];
@@ -86,4 +108,14 @@ export async function GET(request: Request) {
 
   // Auth error — redirect to login
   return NextResponse.redirect(`${origin}/login`);
+}
+
+/**
+ * Extrait le token Founding d'une URL `next` du type
+ * `/founding-activate?token=XYZ`. Renvoie null sinon.
+ */
+function extractFoundingToken(nextParam: string | null): string | null {
+  if (!nextParam) return null;
+  const match = nextParam.match(/\/founding-activate\?token=([^&]+)/);
+  return match ? match[1] : null;
 }

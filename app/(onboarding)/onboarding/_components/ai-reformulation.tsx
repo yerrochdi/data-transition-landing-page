@@ -20,6 +20,26 @@ import { useState, useCallback, useEffect, useRef } from "react";
 import { Sparkles, RefreshCw } from "lucide-react";
 import type { OnboardingFormData } from "@/lib/onboarding/types";
 
+/**
+ * Rendu inline minimaliste : convertit `**bold**` en <strong>.
+ * Le prompt autorise gras sur 1-2 mots-clés max — un parseur full markdown
+ * serait disproportionné. Si l'IA renvoie d'autres styles, on les laisse
+ * en texte (mieux que casser le rendu).
+ */
+function renderReformulation(text: string): React.ReactNode {
+  const parts = text.split(/(\*\*[^*]+\*\*)/g);
+  return parts.map((part, i) => {
+    if (part.startsWith("**") && part.endsWith("**")) {
+      return (
+        <strong key={i} className="font-semibold text-foreground">
+          {part.slice(2, -2)}
+        </strong>
+      );
+    }
+    return <span key={i}>{part}</span>;
+  });
+}
+
 type ReformulationStep =
   | "situation"
   | "role"
@@ -206,7 +226,7 @@ export function AiReformulation({
         <Sparkles className="w-3.5 h-3.5 text-primary" />
       </div>
       <p className="text-[13px] leading-relaxed text-foreground/90 flex-1">
-        {content}
+        {renderReformulation(content)}
         {streaming && (
           <span
             aria-hidden

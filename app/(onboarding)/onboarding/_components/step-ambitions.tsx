@@ -88,24 +88,54 @@ export function StepAmbitions({
     setRoles([]);
     onAiUpdate("");
 
-    try {
-      const res = await fetch("/api/onboarding/ai", {
-        method: "POST",
-        headers: { "Content-Type": "application/json" },
-        body: JSON.stringify({ step: "ambitions", data: formData }),
-      });
+    // Le step ambitions exige un JSON valide en sortie. Kimi rend parfois
+    // un JSON cassé (markdown, caractères asiatiques résiduels) → la route
+    // renvoie 502. On retry silencieusement jusqu'à 3 tentatives avant
+    // d'afficher l'erreur. Backoff léger pour laisser Kimi respirer.
+    const MAX_ATTEMPTS = 3;
+    let lastError: unknown = null;
 
-      if (!res.ok) {
-        throw new Error(await res.text());
+    for (let attempt = 1; attempt <= MAX_ATTEMPTS; attempt++) {
+      try {
+        const res = await fetch("/api/onboarding/ai", {
+          method: "POST",
+          headers: { "Content-Type": "application/json" },
+          body: JSON.stringify({ step: "ambitions", data: formData }),
+        });
+
+        if (!res.ok) {
+          throw new Error(await res.text());
+        }
+
+        const text = await res.text();
+        // Tentative de parse pour valider que le JSON est exploitable
+        // avant de pousser au reducer (sinon on accepte une réponse vide
+        // qui passe en .ok mais ne donne rien à afficher).
+        const cleaned = text
+          .trim()
+          .replace(/^```(?:json)?\s*/i, "")
+          .replace(/\s*```\s*$/, "");
+        const arrayMatch = cleaned.match(/\[[\s\S]*\]/);
+        const candidate = arrayMatch ? arrayMatch[0] : cleaned;
+        const parsed = JSON.parse(candidate);
+        if (!Array.isArray(parsed) || parsed.length === 0) {
+          throw new Error("Réponse IA vide");
+        }
+
+        onAiUpdate(text);
+        setLoading(false);
+        return; // succès → stop retry
+      } catch (e) {
+        lastError = e;
+        // backoff progressif (400ms, 900ms) — laisse Kimi se reprendre
+        if (attempt < MAX_ATTEMPTS) {
+          await new Promise((r) => setTimeout(r, 400 * attempt + 100));
+        }
       }
-
-      const text = await res.text();
-      onAiUpdate(text);
-    } catch (e) {
-      setError(e instanceof Error ? e.message : "Erreur inattendue");
-    } finally {
-      setLoading(false);
     }
+
+    setError(lastError instanceof Error ? lastError.message : "Erreur inattendue");
+    setLoading(false);
   }, [formData, onAiUpdate]);
 
   // Auto-trigger when we have enough data

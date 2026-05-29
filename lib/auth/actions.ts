@@ -13,21 +13,48 @@ export async function signUp(formData: FormData) {
   const firstName = formData.get("firstName") as string;
   const lastName = formData.get("lastName") as string;
   const chosenPlan = formData.get("chosenPlan") as string | null;
+  const next = formData.get("next") as string | null;
 
   // Utilise l'URL du déploiement courant pour que le mail de confirmation
   // ramène l'utilisateur sur le même environnement (prod / Preview / local).
   const siteUrl = getCurrentEnvUrl();
 
+  // Si l'utilisateur signe up depuis /founding-activate?token=XYZ (via
+  // next=/founding-activate?token=XYZ), on extrait le token pour le stocker
+  // dans le user_metadata Supabase. Le callback post-confirmation pourra
+  // alors rediriger vers /founding-activate?token=XYZ au lieu de
+  // /onboarding (sinon l'utilisateur saute l'étape de paiement et fait
+  // l'onboarding en FREE alors qu'elle devait être en FOUNDING).
+  const foundingTokenMatch = next?.match(/\/founding-activate\?token=([^&]+)/);
+  const foundingToken = foundingTokenMatch ? foundingTokenMatch[1] : null;
+
   const validPaidPlans = ["boost", "pro", "sprint"];
-  const callbackUrl = validPaidPlans.includes(chosenPlan ?? "")
-    ? `${siteUrl}/callback?plan=${chosenPlan}`
+  // Le callback URL préserve aussi le `next` (encodé) pour OAuth Google
+  // qui ne passe pas par signUp() — c'est lu par /callback/route.ts.
+  const callbackParams = new URLSearchParams();
+  if (validPaidPlans.includes(chosenPlan ?? "")) {
+    callbackParams.set("plan", chosenPlan!);
+  }
+  if (next && next.startsWith("/")) {
+    callbackParams.set("next", next);
+  }
+  const callbackQuery = callbackParams.toString();
+  const callbackUrl = callbackQuery
+    ? `${siteUrl}/callback?${callbackQuery}`
     : `${siteUrl}/callback`;
 
   const { data, error } = await supabase.auth.signUp({
     email,
     password,
     options: {
-      data: { first_name: firstName, last_name: lastName, chosen_plan: chosenPlan || "free" },
+      data: {
+        first_name: firstName,
+        last_name: lastName,
+        chosen_plan: chosenPlan || "free",
+        // Stocker dans le metadata Supabase pour récupération côté callback
+        // même si Google OAuth est utilisé (où on n'a pas accès au formData).
+        ...(foundingToken ? { founding_token: foundingToken } : {}),
+      },
       emailRedirectTo: callbackUrl,
     },
   });
@@ -92,8 +119,8 @@ export async function signUp(formData: FormData) {
   }
 
   // Honor `next` if it was passed (typically from /founding-activate),
-  // otherwise default to onboarding.
-  const next = formData.get("next") as string | null;
+  // otherwise default to onboarding. `next` est déjà extrait en début de
+  // fonction (cf. signature pour le stockage du founding token).
   redirect(next && next.startsWith("/") ? next : "/onboarding");
 }
 
