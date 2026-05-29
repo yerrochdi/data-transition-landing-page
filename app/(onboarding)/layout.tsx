@@ -16,7 +16,9 @@ export default function OnboardingLayout({ children }: { children: React.ReactNo
         </Link>
       </nav>
 
-      <main className="pt-24 pb-12 px-6 md:px-12 max-w-4xl mx-auto">
+      {/* max-w-7xl pour laisser respirer la grille 12-col en grand écran.
+          La sidebar reste 3 cols (250px env.), le contenu prend le reste. */}
+      <main className="pt-24 pb-12 px-6 md:px-12 max-w-7xl mx-auto">
         {children}
       </main>
     </div>

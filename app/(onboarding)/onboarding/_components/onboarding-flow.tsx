@@ -95,6 +95,36 @@ export function OnboardingFlow({ initialData, chosenPlan = "free" }: OnboardingF
     setMounted(true);
   }, []);
 
+  // Mesure la hauteur réelle de la nav mobile bottom (portal au body) et
+  // expose-la en CSS var --onboarding-nav-h pour que le padding bottom du
+  // step content s'adapte exactement — plus de chevauchement, plus de
+  // padding hardcodé "pb-40" qui marche par hasard.
+  useEffect(() => {
+    if (!mounted) return;
+    const update = () => {
+      const nav = document.querySelector<HTMLElement>("[data-onboarding-nav]");
+      if (!nav) {
+        document.documentElement.style.setProperty("--onboarding-nav-h", "2rem");
+        return;
+      }
+      const navH = nav.getBoundingClientRect().height;
+      // +24px d'air sous le dernier élément du step
+      document.documentElement.style.setProperty(
+        "--onboarding-nav-h",
+        `${Math.round(navH + 24)}px`
+      );
+    };
+    update();
+    window.addEventListener("resize", update);
+    // Re-mesure aussi sur changement d'orientation iOS
+    window.addEventListener("orientationchange", update);
+    return () => {
+      window.removeEventListener("resize", update);
+      window.removeEventListener("orientationchange", update);
+      document.documentElement.style.removeProperty("--onboarding-nav-h");
+    };
+  }, [mounted]);
+
   const step = STEPS[currentStep];
   const Icon = iconMap[step.icon] || User;
   const isLast = currentStep === STEPS.length - 1;
@@ -320,11 +350,14 @@ export function OnboardingFlow({ initialData, chosenPlan = "free" }: OnboardingF
   };
 
   return (
-    <div className="grid grid-cols-1 lg:grid-cols-12 gap-8">
+    // Grille flex/grid stable. La sidebar est sticky AU VIEWPORT (pas au
+    // col-span) grâce au `self-start` qui empêche le grid de l'étirer à
+    // la hauteur du contenu. Ainsi elle ne "bouge plus" avec le scroll.
+    <div className="grid grid-cols-1 lg:grid-cols-12 gap-10 items-start">
       {/* ────── Sidebar stepper ────── */}
-      <aside className="hidden lg:block lg:col-span-4">
-        <div className="sticky top-24 space-y-1.5">
-          <h2 className="font-headline text-xs font-bold uppercase tracking-widest text-muted-foreground mb-1 px-2">
+      <aside className="hidden lg:block lg:col-span-3 self-start sticky top-24 max-h-[calc(100vh-7rem)] overflow-y-auto onboarding-sidebar-scroll pr-2">
+        <div className="space-y-1.5">
+          <h2 className="font-headline text-[10px] font-bold uppercase tracking-widest text-muted-foreground mb-1 px-2">
             Votre Career OS
           </h2>
           <p className="text-[10px] text-muted-foreground px-2 mb-4 leading-relaxed">
@@ -391,7 +424,7 @@ export function OnboardingFlow({ initialData, chosenPlan = "free" }: OnboardingF
       </aside>
 
       {/* ────── Main content ────── */}
-      <div className="lg:col-span-8">
+      <div className="lg:col-span-9 min-w-0">
         {/* Mobile progress */}
         <div className="lg:hidden sticky top-16 z-40 bg-background/80 backdrop-blur-xl pb-4 pt-2 -mx-6 px-6 mb-8">
           <div className="flex items-center gap-1 mb-3">
@@ -417,14 +450,16 @@ export function OnboardingFlow({ initialData, chosenPlan = "free" }: OnboardingF
           </div>
         </div>
 
-        {/* Step Header */}
-        <div className="flex items-center gap-4 mb-8">
-          <div className="w-14 h-14 rounded-2xl bg-primary/10 flex items-center justify-center text-primary">
-            <Icon className="w-7 h-7" />
+        {/* Step Header — sticky sous la navbar pour donner un ancrage
+            visuel stable même quand le contenu scroll. La taille a été
+            réduite (icon 12, titre xl) pour rester compacte en sticky. */}
+        <div className="sticky top-16 z-30 -mx-6 px-6 py-4 bg-background/90 backdrop-blur-xl flex items-center gap-3 mb-6 border-b border-border/10">
+          <div className="w-11 h-11 rounded-xl bg-primary/10 flex items-center justify-center text-primary shrink-0">
+            <Icon className="w-5 h-5" />
           </div>
-          <div>
-            <h1 className="font-headline text-2xl font-extrabold text-foreground">{step.title}</h1>
-            <p className="text-sm text-muted-foreground">{step.description}</p>
+          <div className="min-w-0">
+            <h1 className="font-headline text-xl font-extrabold text-foreground truncate">{step.title}</h1>
+            <p className="text-xs text-muted-foreground truncate">{step.description}</p>
           </div>
         </div>
 
@@ -451,14 +486,26 @@ export function OnboardingFlow({ initialData, chosenPlan = "free" }: OnboardingF
           </div>
         )}
 
-        {/* Step Content — pb-40 mobile to clear the fixed bottom nav (≈ 100px + safe-area) */}
-        <div className="mb-8 pb-40 lg:pb-8 animate-fade-up" key={currentStep}>
+        {/* Step Content — le pb mobile est calculé dynamiquement via
+            CSS var --onboarding-nav-h (cf. effet plus bas) pour ne jamais
+            chevaucher la nav, même sur iOS avec gesture bar. Le `key`
+            force le remount à chaque step pour bénéficier de l'animation. */}
+        <div
+          className="mb-8 animate-fade-up-fast"
+          style={{ paddingBottom: "var(--onboarding-nav-h, 10rem)" }}
+          key={currentStep}
+        >
           {renderStep()}
         </div>
 
-        {/* Mobile nav — rendered via portal to body to escape any containing block */}
+        {/* Mobile nav — rendered via portal to body to escape any containing block.
+            data-onboarding-nav est utilisé pour mesurer la hauteur réelle de la
+            nav et l'exposer en CSS var (cf. useEffect plus haut). */}
         {mounted && createPortal(
-          <div className="lg:hidden fixed bottom-0 left-0 right-0 z-40 bg-background/95 backdrop-blur-xl py-4 px-6 flex items-center justify-between border-t border-border/10 pb-[max(1rem,env(safe-area-inset-bottom))]">
+          <div
+            data-onboarding-nav
+            className="lg:hidden fixed bottom-0 left-0 right-0 z-40 bg-background/95 backdrop-blur-xl py-4 px-6 flex items-center justify-between border-t border-border/10 pb-[max(1rem,env(safe-area-inset-bottom))]"
+          >
             <button
               onClick={handleBack}
               className={cn(

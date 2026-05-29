@@ -180,7 +180,7 @@ export function AiReformulation({
   // État erreur : message discret + bouton réessayer
   if (error) {
     return (
-      <div className="mt-4 flex items-start gap-2.5 p-3 rounded-xl bg-surface-container-lowest/60 ghost-border animate-fade-up">
+      <div className="mt-4 flex items-start gap-2.5 p-3 rounded-xl bg-surface-container-lowest/60 ghost-border animate-fade-up-fast">
         <Sparkles className="w-3.5 h-3.5 text-muted-foreground/50 shrink-0 mt-0.5" />
         <div className="flex-1 flex items-center justify-between gap-3">
           <p className="text-[11px] text-muted-foreground italic">
@@ -202,7 +202,7 @@ export function AiReformulation({
   // État loading initial (avant le 1er chunk)
   if (loading && !streaming) {
     return (
-      <div className="mt-4 flex items-start gap-2.5 p-3 rounded-xl bg-primary/5 border border-primary/15 animate-fade-up">
+      <div className="mt-4 flex items-start gap-2.5 p-3 rounded-xl bg-primary/5 border border-primary/15 animate-fade-up-fast">
         <Sparkles className="w-3.5 h-3.5 text-primary shrink-0 mt-0.5 animate-pulse" />
         <div className="flex-1 space-y-1.5">
           <div className="h-2.5 rounded-full bg-primary/20 animate-pulse w-3/4" />
@@ -215,10 +215,12 @@ export function AiReformulation({
   // Pas encore de contenu (signature pas mûre)
   if (!content) return null;
 
-  // Rendu final : bulle "J'entends que…" avec streaming visible
+  // Rendu final : bulle "J'entends que…" avec streaming visible.
+  // animation-delay-100 = petit retard derrière l'animation du step pour
+  // créer un effet de cascade ("d'abord le step, puis l'IA réagit").
   return (
     <div
-      className="mt-4 flex items-start gap-3 p-4 rounded-xl bg-gradient-to-br from-primary/8 to-surface-container-lowest/60 border border-primary/20 animate-fade-up"
+      className="mt-4 flex items-start gap-3 p-4 rounded-xl bg-gradient-to-br from-primary/10 to-surface-container-lowest/60 border border-primary/20 animate-fade-up-fast-fast animation-delay-100"
       role="status"
       aria-live="polite"
     >
