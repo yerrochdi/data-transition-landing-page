@@ -184,6 +184,59 @@ export async function updateFoundingMemberStatus(
   return { ok: true };
 }
 
+// ─── Pending activation lookup (dashboard banner) ───────────────────
+
+/**
+ * Pour l'user courant : récupère sa candidature Founding ACCEPTED qui
+ * n'a pas encore été activée (paiement non finalisé). Utilisé par la
+ * bannière du dashboard pour rappeler à la candidate de finaliser son
+ * paiement 9€/mois — sans ça elle reste en plan FREE et son siège peut
+ * être réattribué.
+ *
+ * Retourne null si :
+ *   - L'user n'est pas authentifié
+ *   - L'user n'a pas de candidature Founding ACCEPTED non activée
+ *   - L'user a déjà le plan FOUNDING (paiement passé)
+ */
+export async function getPendingFoundingActivation(): Promise<{
+  activationToken: string;
+  firstName: string;
+} | null> {
+  const supabase = await createClient();
+  const {
+    data: { user: authUser },
+  } = await supabase.auth.getUser();
+
+  if (!authUser?.email) return null;
+
+  // Si l'user est déjà FOUNDING, pas besoin de bannière
+  const dbUser = await prisma.user.findUnique({
+    where: { supabaseId: authUser.id },
+    select: { plan: true },
+  });
+  if (dbUser?.plan === "FOUNDING") return null;
+
+  const application = await prisma.foundingMemberApplication.findFirst({
+    where: {
+      email: authUser.email.toLowerCase(),
+      status: "ACCEPTED",
+      activatedAt: null,
+      activationToken: { not: null },
+    },
+    select: {
+      activationToken: true,
+      name: true,
+    },
+  });
+
+  if (!application?.activationToken) return null;
+
+  return {
+    activationToken: application.activationToken,
+    firstName: application.name.split(" ")[0] ?? application.name,
+  };
+}
+
 // ─── Activation flow (candidate clicks email link) ──────────────────
 
 type ActivationLookupResult =
