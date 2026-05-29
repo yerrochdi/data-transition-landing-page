@@ -3,6 +3,8 @@
 import { useState } from "react";
 import { GraduationCap, Award, BookOpen, Check } from "lucide-react";
 import { cn } from "@/lib/utils";
+import type { OnboardingFormData } from "@/lib/onboarding/types";
+import { AiReformulation } from "./ai-reformulation";
 
 const DATA_EXPERIENCE_LEVELS = [
   {
@@ -39,6 +41,7 @@ interface StepEducationProps {
   educationLevel: string;
   certifications: string[];
   hasDataTraining: boolean;
+  formData: OnboardingFormData;
   onFieldChange: (field: string, value: string | boolean) => void;
   onToggleCertification: (cert: string) => void;
 }
@@ -71,9 +74,17 @@ export function StepEducation({
   educationLevel,
   certifications,
   hasDataTraining,
+  formData,
   onFieldChange,
   onToggleCertification,
 }: StepEducationProps) {
+  // Signature : on attend que le niveau d'études soit choisi + une donnée
+  // sur l'expérience data (true ou false). Pas besoin des certifs pour
+  // déclencher — la reformulation n'a pas besoin d'attendre la sélection
+  // complète.
+  const signature = educationLevel
+    ? `edu:${educationLevel}|data:${hasDataTraining ? "1" : "0"}|certs:${certifications.length}`
+    : "";
   const [selectedDataLevel, setSelectedDataLevel] = useState<string | null>(
     () => {
       // No way to recover the exact level from a boolean, so leave unselected
@@ -188,6 +199,10 @@ export function StepEducation({
           })}
         </div>
       </div>
+
+      {/* Reformulation IA — apparaît quand le niveau d'études est choisi.
+          Permet à l'IA de rassurer factuellement si pas de formation data. */}
+      <AiReformulation step="education" data={formData} signature={signature} />
     </div>
   );
 }

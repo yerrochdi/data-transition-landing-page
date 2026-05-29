@@ -2,6 +2,8 @@
 
 import { Code, Blocks, MousePointerClick, Shuffle } from "lucide-react";
 import { cn } from "@/lib/utils";
+import type { OnboardingFormData } from "@/lib/onboarding/types";
+import { AiReformulation } from "./ai-reformulation";
 
 const OPTIONS = [
   {
@@ -52,10 +54,14 @@ const OPTIONS = [
 
 interface StepTechnicalProps {
   value: string;
+  formData: OnboardingFormData;
   onChange: (value: string) => void;
 }
 
-export function StepTechnical({ value, onChange }: StepTechnicalProps) {
+export function StepTechnical({ value, formData, onChange }: StepTechnicalProps) {
+  // Signature stable basée sur l'appétence choisie.
+  const signature = value ? `tech:${value}` : "";
+
   return (
     <div className="space-y-4">
       <p className="text-sm text-muted-foreground">
@@ -106,6 +112,9 @@ export function StepTechnical({ value, onChange }: StepTechnicalProps) {
           );
         })}
       </div>
+
+      {/* Reformulation IA — apparaît dès qu'une option est choisie */}
+      <AiReformulation step="technical" data={formData} signature={signature} />
     </div>
   );
 }

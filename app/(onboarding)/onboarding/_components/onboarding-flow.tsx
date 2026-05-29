@@ -278,7 +278,7 @@ export function OnboardingFlow({ initialData, chosenPlan = "free" }: OnboardingF
   const renderStep = () => {
     switch (currentStep) {
       case 0:
-        return <StepSituation value={formData.situation} onChange={(v) => handleFieldChange("situation", v)} />;
+        return <StepSituation value={formData.situation} formData={formData} onChange={(v) => handleFieldChange("situation", v)} />;
       case 1:
         return <StepLinkedIn onProfileParsed={handleLinkedInParsed} onSkip={handleLinkedInSkip} />;
       case 2:
@@ -289,12 +289,13 @@ export function OnboardingFlow({ initialData, chosenPlan = "free" }: OnboardingF
             educationLevel={formData.educationLevel}
             certifications={formData.certifications}
             hasDataTraining={formData.hasDataTraining}
+            formData={formData}
             onFieldChange={handleFieldChange}
             onToggleCertification={(cert) => dispatch({ type: "TOGGLE_CERTIFICATION", cert })}
           />
         );
       case 4:
-        return <StepTechnical value={formData.technicalAppetite} onChange={(v) => handleFieldChange("technicalAppetite", v)} />;
+        return <StepTechnical value={formData.technicalAppetite} formData={formData} onChange={(v) => handleFieldChange("technicalAppetite", v)} />;
       case 5:
         return <StepAmbitions targetRole={formData.targetRole} targetSector={formData.targetSector} formData={formData} aiContent={aiInsights.ambitions} onFieldChange={handleFieldChange} onAiUpdate={(c) => updateAiInsight("ambitions", c)} />;
       case 6:
@@ -322,7 +323,7 @@ export function OnboardingFlow({ initialData, chosenPlan = "free" }: OnboardingF
           />
         );
       case 8:
-        return <StepBlockers selected={formData.blockers} onToggle={(blocker) => dispatch({ type: "TOGGLE_BLOCKER", blocker })} />;
+        return <StepBlockers selected={formData.blockers} formData={formData} onToggle={(blocker) => dispatch({ type: "TOGGLE_BLOCKER", blocker })} />;
       case 9:
         return <StepConfidence level={formData.confidenceLevel} formData={formData} aiContent={aiInsights.confidence} onChange={(level) => handleFieldChange("confidenceLevel", level)} onAiUpdate={(c) => updateAiInsight("confidence", c)} />;
       case 10:
@@ -337,6 +338,7 @@ export function OnboardingFlow({ initialData, chosenPlan = "free" }: OnboardingF
             shortTermGoal={formData.shortTermGoal}
             longTermGoal={formData.longTermGoal}
             preferredPace={formData.preferredPace}
+            formData={formData}
             onFieldChange={handleFieldChange}
             onToggleLearningStyle={(style) => dispatch({ type: "TOGGLE_LEARNING_STYLE", style })}
             onReorderPriorities={(priorities) => dispatch({ type: "REORDER_PRIORITIES", priorities })}

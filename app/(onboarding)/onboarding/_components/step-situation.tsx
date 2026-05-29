@@ -1,6 +1,8 @@
 "use client";
 
 import { cn } from "@/lib/utils";
+import type { OnboardingFormData } from "@/lib/onboarding/types";
+import { AiReformulation } from "./ai-reformulation";
 
 const options = [
   "En poste — je veux évoluer",
@@ -12,10 +14,16 @@ const options = [
 
 interface StepSituationProps {
   value: string;
+  /** Tout le formData courant — utilisé par la reformulation IA. */
+  formData: OnboardingFormData;
   onChange: (v: string) => void;
 }
 
-export function StepSituation({ value, onChange }: StepSituationProps) {
+export function StepSituation({ value, formData, onChange }: StepSituationProps) {
+  // Signature stable basée sur la situation choisie.
+  // La reformulation se déclenche dès qu'une option est sélectionnée.
+  const signature = value ? `situation:${value}` : "";
+
   return (
     <div className="space-y-3">
       {options.map((opt) => (
@@ -32,6 +40,9 @@ export function StepSituation({ value, onChange }: StepSituationProps) {
           {opt}
         </button>
       ))}
+
+      {/* Reformulation live — apparaît dès qu'une situation est choisie */}
+      <AiReformulation step="situation" data={formData} signature={signature} />
     </div>
   );
 }

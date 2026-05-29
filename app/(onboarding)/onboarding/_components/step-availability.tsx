@@ -2,6 +2,8 @@
 
 import { Clock, Wallet, MapPin, Monitor, BookOpen, GripVertical } from "lucide-react";
 import { cn } from "@/lib/utils";
+import type { OnboardingFormData } from "@/lib/onboarding/types";
+import { AiReformulation } from "./ai-reformulation";
 
 interface StepAvailabilityProps {
   availableHoursPerWeek: number;
@@ -13,6 +15,7 @@ interface StepAvailabilityProps {
   shortTermGoal: string;
   longTermGoal: string;
   preferredPace: string;
+  formData: OnboardingFormData;
   onFieldChange: (field: string, value: string | number | string[]) => void;
   onToggleLearningStyle: (style: string) => void;
   onReorderPriorities: (priorities: string[]) => void;
@@ -59,6 +62,7 @@ export function StepAvailability({
   shortTermGoal,
   longTermGoal,
   preferredPace,
+  formData,
   onFieldChange,
   onToggleLearningStyle,
   onReorderPriorities,
@@ -71,6 +75,14 @@ export function StepAvailability({
       onReorderPriorities([...priorities, value]);
     }
   };
+
+  // Signature : on attend que les heures ET le rythme soient renseignés
+  // (les 2 inputs les plus discriminants). Le style d'apprentissage
+  // affine la signature pour relancer si l'user change d'avis.
+  const signature =
+    availableHoursPerWeek && preferredPace
+      ? `avail:${availableHoursPerWeek}|pace:${preferredPace}|style:${[...learningStyle].sort().join("-")}`
+      : "";
 
   return (
     <div className="space-y-8">
@@ -319,6 +331,10 @@ export function StepAvailability({
           })}
         </div>
       </div>
+
+      {/* Reformulation IA — calibre les attentes de l'utilisateur
+          (réaliste vs vendeur) selon les heures/rythme déclarés. */}
+      <AiReformulation step="availability" data={formData} signature={signature} />
     </div>
   );
 }

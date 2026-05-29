@@ -1,6 +1,8 @@
 "use client";
 
 import { cn } from "@/lib/utils";
+import type { OnboardingFormData } from "@/lib/onboarding/types";
+import { AiReformulation } from "./ai-reformulation";
 
 const blockers = [
   "Manque de confiance technique",
@@ -15,10 +17,16 @@ const blockers = [
 
 interface StepBlockersProps {
   selected: string[];
+  formData: OnboardingFormData;
   onToggle: (blocker: string) => void;
 }
 
-export function StepBlockers({ selected, onToggle }: StepBlockersProps) {
+export function StepBlockers({ selected, formData, onToggle }: StepBlockersProps) {
+  // Signature : la reformulation se déclenche dès qu'au moins 1 frein
+  // est coché. Elle se met à jour à chaque ajout/retrait.
+  const signature =
+    selected.length > 0 ? `blockers:${[...selected].sort().join("|")}` : "";
+
   return (
     <div className="space-y-3">
       {blockers.map((b) => (
@@ -35,6 +43,10 @@ export function StepBlockers({ selected, onToggle }: StepBlockersProps) {
           {b}
         </button>
       ))}
+
+      {/* Reformulation IA — valide les freins sans dramatiser et rassure
+          factuellement (ex: syndrome de l'imposteur typique au pivot). */}
+      <AiReformulation step="blockers" data={formData} signature={signature} />
     </div>
   );
 }
