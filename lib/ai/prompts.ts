@@ -494,6 +494,151 @@ L'utilisateur vient de compléter l'étape "${step}". Reformulez en 1-2 phrases 
   }
 }
 
+// ════════════════════════════════════════════════════════════════════
+// IKIGAI — Sprint 3 : les 4 modules de la quête du sweet spot.
+// Chaque module pose UNE question profonde et l'IA y répond en coach
+// senior : reformule, extrait des signaux, propose une lecture.
+// ════════════════════════════════════════════════════════════════════
+
+export const IKIGAI_SYSTEM_PROMPT = `Vous êtes un coach de transition de carrière expérimenté (Bain / Korn Ferry / coaching exécutif). Vous accompagnez une personne dans sa quête du sweet spot Ikigai — l'intersection entre ce qu'elle aime, ce dans quoi elle est douée, ce dont le marché a besoin, et ce pour quoi elle veut être payée.
+
+VOTRE STYLE :
+- Vouvoiement, ton posé, présent
+- Pas d'enthousiasme creux ("super !", "incroyable !", "bravo !")
+- Vous écoutez d'abord, vous interprétez avec finesse, vous proposez UNE lecture
+- Vous citez les mots exacts de la personne quand c'est pertinent (en italique markdown : *"ses mots"*)
+- Vous identifiez ce qui n'a PAS été dit mais qui se devine
+- Vous utilisez **gras** sur 1-2 concepts clés max par réponse
+
+CE QUE VOUS NE FAITES JAMAIS :
+- Inventer des choses qui ne sont pas dans le contexte
+- Sortir un cours théorique sur l'Ikigai
+- Faire la morale ("vous devriez", "il faut")
+- Sur-projeter (assumer ce que la personne n'a pas dit)
+- Caractères asiatiques (chinois, japonais, coréen). Aucun. Jamais.
+
+VOTRE RÉPONSE TYPE (200-280 mots) :
+1. Une reformulation courte qui montre que vous avez compris (*"vos mots"*)
+2. UN insight non-évident — quelque chose que la personne n'a pas formulé mais qui transparaît
+3. Une ouverture en 1 phrase : ce que cette dimension Ikigai vous dit sur sa trajectoire
+
+Pas de liste à puces. Pas de titres. Du texte continu, élégant, posé.`;
+
+/**
+ * Module Ikigai 1 — PASSION : ce que la personne AIME.
+ * Le but : extraire les sources d'énergie intrinsèque, pas les hobbies.
+ */
+export function buildIkigaiPassionPrompt(data: Partial<OnboardingFormData>): string {
+  const userText = data.ikigai?.passion?.userText || "";
+  const role = data.currentRole || "non précisé";
+  const linkedinSpec = data.linkedinAnalysis?.deduced_specialty || "";
+
+  return `CONTEXTE PROFIL :
+- Rôle actuel : ${role}${linkedinSpec ? `\n- Spécialité réelle : ${linkedinSpec}` : ""}
+
+LA PERSONNE VIENT DE RÉPONDRE À LA QUESTION : "À quel moment de votre vie professionnelle vous êtes-vous senti·e le plus vivant·e, le plus engagé·e ? Décrivez 1-2 souvenirs précis."
+
+SA RÉPONSE :
+"""
+${userText}
+"""
+
+VOTRE MISSION en tant que coach Ikigai (module PASSION) :
+- Reformulez ce que vous entendez de sa source d'énergie. Citez ses mots EXACTS en *italique* quand c'est pertinent.
+- Identifiez le PATTERN d'énergie sous-jacent (créer ? transmettre ? résoudre ? rassembler ? structurer ?). C'est rarement ce qui est dit en surface.
+- Faites le lien (1 phrase max) avec son métier actuel — y a-t-il une tension visible entre ce qui l'anime et ce qu'elle fait ?
+
+Réponse en 200-250 mots, vouvoiement, pas de titres ni de listes.`;
+}
+
+/**
+ * Module Ikigai 2 — FORCES : ce dans quoi la personne est DOUÉE,
+ * vu par les autres (pas auto-déclaré).
+ */
+export function buildIkigaiForcesPrompt(data: Partial<OnboardingFormData>): string {
+  const userText = data.ikigai?.forces?.userText || "";
+  const role = data.currentRole || "non précisé";
+  const linkedinSkills = data.linkedinAnalysis?.real_skills_deduced?.join(", ") || "";
+
+  return `CONTEXTE PROFIL :
+- Rôle actuel : ${role}${linkedinSkills ? `\n- Compétences déduites du CV : ${linkedinSkills}` : ""}
+
+LA PERSONNE VIENT DE RÉPONDRE À LA QUESTION : "De quoi vos collègues, managers ou clients vous remercient le plus souvent ? Sur quoi êtes-vous habituellement consulté·e ?"
+
+SA RÉPONSE :
+"""
+${userText}
+"""
+
+VOTRE MISSION en tant que coach Ikigai (module FORCES) :
+- Reformulez ses forces TELLES QUE VUES PAR LES AUTRES (pas auto-déclarées). Citez ses mots si pertinents.
+- Identifiez la force STRUCTURANTE — celle qui se cache derrière 2-3 talents apparents (ex: "transmettre" peut se cacher derrière "former" + "documenter" + "expliquer").
+- Pointez 1 force que la personne sous-estime peut-être — quelque chose qu'elle voit comme "évident" mais qui ne l'est pas pour tout le monde.
+
+Réponse en 200-250 mots, vouvoiement, pas de titres ni de listes.`;
+}
+
+/**
+ * Module Ikigai 4 — ALIGNEMENT : ce pour quoi la personne veut être PAYÉE.
+ * Non-négociables + rémunération + conditions de vie.
+ */
+export function buildIkigaiAlignmentPrompt(data: Partial<OnboardingFormData>): string {
+  const salary = data.ikigai?.alignment?.salaryExpectation || "non précisé";
+  const nonNeg = data.ikigai?.alignment?.nonNegotiables?.join(", ") || "non précisés";
+  const role = data.currentRole || "non précisé";
+  const targetRole = data.targetRole || "non précisé";
+
+  return `CONTEXTE PROFIL :
+- Rôle actuel : ${role}
+- Rôle cible identifié : ${targetRole}
+
+LA PERSONNE A RENSEIGNÉ SES NON-NÉGOCIABLES POUR SON PROCHAIN POSTE :
+- Attente salariale : ${salary}
+- Non-négociables : ${nonNeg}
+
+VOTRE MISSION en tant que coach Ikigai (module ALIGNEMENT) :
+- Reformulez ce qu'elle pose comme cadre — ce qu'elle DOIT préserver pour que cette transition soit réussie. Citez si pertinent.
+- Identifiez 1-2 TENSIONS potentielles entre ses non-négociables et le rôle cible (ex: "Head of People Analytics + télétravail 100% est rare en France hors scale-ups").
+- Donnez UNE ouverture honnête : ce qui est aligné, ce qu'il faudra peut-être ajuster.
+
+Réponse en 200-250 mots, vouvoiement, pas de titres ni de listes, honnêteté > flatterie.`;
+}
+
+/**
+ * Module Ikigai 3 — MARCHÉ : ce dont le marché a besoin.
+ * Différent des autres : nourri par les données France Travail réelles.
+ */
+export function buildIkigaiMarketPrompt(data: Partial<OnboardingFormData>): string {
+  const targetRole = data.ikigai?.market?.targetRole || data.targetRole || "non précisé";
+  const snapshot = data.ikigai?.market?.snapshot;
+
+  if (!snapshot) {
+    return `CONTEXTE : la personne vise le rôle "${targetRole}" mais nous n'avons pas encore récupéré les données marché France Travail.
+
+VOTRE MISSION : produisez une lecture qualitative honnête en 200 mots — quel est l'état du marché pour ce rôle en France selon votre connaissance générale ? Restez factuel, dites "tendances générales" pas "chiffres précis". Vouvoiement.`;
+  }
+
+  return `CONTEXTE — Données marché France Travail (réelles, 30 derniers jours) :
+- Rôle cible : ${targetRole}
+- Nombre d'offres actives : ${snapshot.totalOffers}
+- Offres récentes (30j) : ${snapshot.recentOffers}
+- Salaire médian observé : ${
+    snapshot.medianSalary
+      ? `${snapshot.medianSalary.min}€ - ${snapshot.medianSalary.max}€ / an`
+      : "non renseigné dans la majorité des offres"
+  }
+- Top compétences citées : ${snapshot.topSkills.join(", ") || "non agrégées"}
+- Top régions : ${snapshot.topRegions.join(", ") || "non agrégées"}
+
+VOTRE MISSION en tant que coach Ikigai (module MARCHÉ) :
+- Lisez ces données comme un consultant senior : qu'est-ce qu'elles racontent vraiment ? Volume = signal de maturité. Salaires = pouvoir de négociation. Compétences = ce qu'il faut absolument maîtriser.
+- Identifiez 1 BONNE nouvelle pour la personne (un signal favorable dans ces chiffres).
+- Identifiez 1 POINT DE VIGILANCE (ex: "marché concentré en IDF, peu d'options en région").
+- Donnez la "vraie" question qu'elle devrait se poser à partir de ces chiffres.
+
+Réponse en 200-250 mots, vouvoiement, pas de listes à puces. Restez factuel sur les chiffres — citez-les.`;
+}
+
 export function buildSummaryPrompt(data: OnboardingFormData): string {
   const skillsDetail = data.skillLevels?.length
     ? data.skillLevels.map((s) => `${s.name} (${s.level})`).join(", ")
@@ -570,6 +715,36 @@ CONTEXTE PERSONNEL ET CONTRAINTES
 - Mode de travail : ${data.remotePreference || "non précisé"}
 - Style d'apprentissage : ${data.learningStyle?.join(", ") || "non précisé"}
 - Priorités classées : ${prioritiesLabel}
+
+${data.ikigai && (data.ikigai.passion.userText || data.ikigai.forces.userText || data.ikigai.alignment.salaryExpectation) ? `
+IKIGAI — LES 4 DIMENSIONS DE LA TRANSITION (déclarées par la personne)
+
+PASSION (ce qu'elle aime, sa source d'énergie) :
+${data.ikigai.passion.userText ? `"${data.ikigai.passion.userText.slice(0, 500)}"` : "non renseignée"}
+${data.ikigai.passion.aiInsight ? `\nLecture coach :\n"${data.ikigai.passion.aiInsight.slice(0, 400)}"` : ""}
+
+FORCES (ce dans quoi elle est douée, vues par les autres) :
+${data.ikigai.forces.userText ? `"${data.ikigai.forces.userText.slice(0, 500)}"` : "non renseignées"}
+${data.ikigai.forces.aiInsight ? `\nLecture coach :\n"${data.ikigai.forces.aiInsight.slice(0, 400)}"` : ""}
+
+MARCHÉ (données France Travail sur le rôle cible) :
+${
+  data.ikigai.market.snapshot
+    ? `- ${data.ikigai.market.snapshot.totalOffers} offres actives (${data.ikigai.market.snapshot.recentOffers} récentes)
+- Salaire médian : ${data.ikigai.market.snapshot.medianSalary ? `${data.ikigai.market.snapshot.medianSalary.min}€-${data.ikigai.market.snapshot.medianSalary.max}€/an` : "non renseigné"}
+- Top compétences : ${data.ikigai.market.snapshot.topSkills.join(", ") || "non agrégées"}
+- Top régions : ${data.ikigai.market.snapshot.topRegions.join(", ") || "non agrégées"}`
+    : "non collectées"
+}
+${data.ikigai.market.aiInsight ? `\nLecture coach :\n"${data.ikigai.market.aiInsight.slice(0, 400)}"` : ""}
+
+ALIGNEMENT (ce pour quoi elle veut être payée + cadre de vie) :
+- Attente salariale : ${data.ikigai.alignment.salaryExpectation || "non précisée"}
+- Non-négociables : ${data.ikigai.alignment.nonNegotiables.join(", ") || "non précisés"}
+${data.ikigai.alignment.aiInsight ? `\nLecture coach :\n"${data.ikigai.alignment.aiInsight.slice(0, 400)}"` : ""}
+
+INSTRUCTION CRITIQUE : utilisez ces 4 dimensions pour identifier le SWEET SPOT Ikigai. Au lieu de juste lister des rôles, identifiez l'INTERSECTION entre Passion, Forces, Marché et Alignement. C'est ce qui distingue NextMove d'un site de roles génériques. Si une tension existe entre ces dimensions, dites-la honnêtement.
+` : ""}
 
 ────────────────────────────────────
 LIVRABLE ATTENDU — BILAN CAREER OS V1

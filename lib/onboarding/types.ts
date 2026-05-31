@@ -79,6 +79,49 @@ export interface OnboardingFormData {
     clarification_answers?: Record<string, string>;
   } | null;
 
+  /**
+   * Sprint 3 — IKIGAI : les 4 dimensions qui font le sweet spot d'une
+   * transition de carrière selon le concept japonais :
+   *   - passion : ce que la personne AIME (énergie intrinsèque)
+   *   - forces : ce dans quoi elle est DOUÉE (par regard externe + auto)
+   *   - market : ce dont le MARCHÉ a besoin (data France Travail)
+   *   - alignment : ce pour quoi elle veut être PAYÉE (rémunération + non-négociables)
+   *
+   * Chaque module stocke :
+   *   - la/les réponse(s) libre(s) de l'utilisateur·rice
+   *   - l'éventuel insight IA généré sur cette dimension
+   *   - les "signals" extraits pour le diagnostic croisé final
+   */
+  ikigai: {
+    passion: {
+      userText: string;
+      aiInsight: string | null;
+      signals: string[]; // ex: ["énergisée par la transmission", "fière des projets d'équipe"]
+    };
+    forces: {
+      userText: string;
+      aiInsight: string | null;
+      signals: string[]; // ex: ["pilotage transverse", "création de supports pédagogiques"]
+    };
+    market: {
+      targetRole: string; // pré-rempli depuis Ambitions
+      snapshot: {
+        totalOffers: number;
+        recentOffers: number;
+        medianSalary: { min: number; max: number } | null;
+        topSkills: string[];
+        topRegions: string[];
+        source: string;
+      } | null;
+      aiInsight: string | null;
+    };
+    alignment: {
+      salaryExpectation: string; // ex: "45-55k brut/an"
+      nonNegotiables: string[]; // ex: ["télétravail 3j/sem", "impact concret"]
+      aiInsight: string | null;
+    };
+  };
+
   // Step 10: Summary (AI-powered, read-only)
 }
 
@@ -127,6 +170,12 @@ export const initialFormData: OnboardingFormData = {
   learningStyle: [],
   priorities: [],
   linkedinAnalysis: null,
+  ikigai: {
+    passion: { userText: "", aiInsight: null, signals: [] },
+    forces: { userText: "", aiInsight: null, signals: [] },
+    market: { targetRole: "", snapshot: null, aiInsight: null },
+    alignment: { salaryExpectation: "", nonNegotiables: [], aiInsight: null },
+  },
 };
 
 export const initialAiInsights: AiInsights = {
@@ -146,7 +195,22 @@ export type FormAction =
   | { type: "TOGGLE_LEARNING_STYLE"; style: string }
   | { type: "TOGGLE_CERTIFICATION"; cert: string }
   | { type: "REORDER_PRIORITIES"; priorities: string[] }
-  | { type: "HYDRATE"; data: Partial<OnboardingFormData> };
+  | { type: "HYDRATE"; data: Partial<OnboardingFormData> }
+  // Sprint 3 — Ikigai actions (évitent les setters massifs côté composants)
+  | { type: "SET_IKIGAI_PASSION_TEXT"; value: string }
+  | { type: "SET_IKIGAI_PASSION_INSIGHT"; value: string }
+  | { type: "SET_IKIGAI_FORCES_TEXT"; value: string }
+  | { type: "SET_IKIGAI_FORCES_INSIGHT"; value: string }
+  | { type: "SET_IKIGAI_MARKET_ROLE"; value: string }
+  | {
+      type: "SET_IKIGAI_MARKET_SNAPSHOT";
+      value: OnboardingFormData["ikigai"]["market"]["snapshot"];
+    }
+  | { type: "SET_IKIGAI_MARKET_INSIGHT"; value: string }
+  | { type: "SET_IKIGAI_ALIGNMENT_SALARY"; value: string }
+  | { type: "ADD_IKIGAI_ALIGNMENT_NON_NEG"; value: string }
+  | { type: "REMOVE_IKIGAI_ALIGNMENT_NON_NEG"; value: string }
+  | { type: "SET_IKIGAI_ALIGNMENT_INSIGHT"; value: string };
 
 export function formReducer(state: OnboardingFormData, action: FormAction): OnboardingFormData {
   switch (action.type) {
@@ -196,6 +260,31 @@ export function formReducer(state: OnboardingFormData, action: FormAction): Onbo
       return { ...state, priorities: action.priorities };
     case "HYDRATE":
       return { ...state, ...action.data };
+    // Sprint 3 — Ikigai
+    case "SET_IKIGAI_PASSION_TEXT":
+      return { ...state, ikigai: { ...state.ikigai, passion: { ...state.ikigai.passion, userText: action.value } } };
+    case "SET_IKIGAI_PASSION_INSIGHT":
+      return { ...state, ikigai: { ...state.ikigai, passion: { ...state.ikigai.passion, aiInsight: action.value } } };
+    case "SET_IKIGAI_FORCES_TEXT":
+      return { ...state, ikigai: { ...state.ikigai, forces: { ...state.ikigai.forces, userText: action.value } } };
+    case "SET_IKIGAI_FORCES_INSIGHT":
+      return { ...state, ikigai: { ...state.ikigai, forces: { ...state.ikigai.forces, aiInsight: action.value } } };
+    case "SET_IKIGAI_MARKET_ROLE":
+      return { ...state, ikigai: { ...state.ikigai, market: { ...state.ikigai.market, targetRole: action.value } } };
+    case "SET_IKIGAI_MARKET_SNAPSHOT":
+      return { ...state, ikigai: { ...state.ikigai, market: { ...state.ikigai.market, snapshot: action.value } } };
+    case "SET_IKIGAI_MARKET_INSIGHT":
+      return { ...state, ikigai: { ...state.ikigai, market: { ...state.ikigai.market, aiInsight: action.value } } };
+    case "SET_IKIGAI_ALIGNMENT_SALARY":
+      return { ...state, ikigai: { ...state.ikigai, alignment: { ...state.ikigai.alignment, salaryExpectation: action.value } } };
+    case "ADD_IKIGAI_ALIGNMENT_NON_NEG":
+      return state.ikigai.alignment.nonNegotiables.includes(action.value)
+        ? state
+        : { ...state, ikigai: { ...state.ikigai, alignment: { ...state.ikigai.alignment, nonNegotiables: [...state.ikigai.alignment.nonNegotiables, action.value] } } };
+    case "REMOVE_IKIGAI_ALIGNMENT_NON_NEG":
+      return { ...state, ikigai: { ...state.ikigai, alignment: { ...state.ikigai.alignment, nonNegotiables: state.ikigai.alignment.nonNegotiables.filter((n) => n !== action.value) } } };
+    case "SET_IKIGAI_ALIGNMENT_INSIGHT":
+      return { ...state, ikigai: { ...state.ikigai, alignment: { ...state.ikigai.alignment, aiInsight: action.value } } };
     default:
       return state;
   }

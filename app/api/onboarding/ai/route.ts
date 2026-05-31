@@ -5,12 +5,17 @@ import { ai } from "@/lib/ai/client";
 import {
   SYSTEM_PROMPT,
   REFORMULATION_SYSTEM_PROMPT,
+  IKIGAI_SYSTEM_PROMPT,
   buildAmbitionsPrompt,
   buildSkillsPrompt,
   buildMotivationPrompt,
   buildConfidencePrompt,
   buildSummaryPrompt,
   buildReformulationPrompt,
+  buildIkigaiPassionPrompt,
+  buildIkigaiForcesPrompt,
+  buildIkigaiMarketPrompt,
+  buildIkigaiAlignmentPrompt,
 } from "@/lib/ai/prompts";
 import type { OnboardingFormData } from "@/lib/onboarding/types";
 
@@ -96,8 +101,63 @@ export async function POST(request: NextRequest) {
     const { step, data, mode } = body as {
       step: string;
       data: Partial<OnboardingFormData>;
-      mode?: "insight" | "reformulation";
+      mode?: "insight" | "reformulation" | "ikigai";
     };
+
+    // ── Ikigai mode (Sprint 3 : coach senior sur les 4 dimensions) ──
+    // Le step est de la forme "ikigai-passion" / "ikigai-forces" / etc.
+    // On stream 200-280 mots, system prompt dédié.
+    if (mode === "ikigai") {
+      const ikigaiBuilders: Record<
+        string,
+        (data: Partial<OnboardingFormData>) => string
+      > = {
+        "ikigai-passion": buildIkigaiPassionPrompt,
+        "ikigai-forces": buildIkigaiForcesPrompt,
+        "ikigai-market": buildIkigaiMarketPrompt,
+        "ikigai-alignment": buildIkigaiAlignmentPrompt,
+      };
+      const builder = ikigaiBuilders[step];
+      if (!builder) {
+        return new Response("Étape Ikigai invalide", { status: 400 });
+      }
+      const userPrompt = builder(data);
+      const stream = await ai.chat.completions.create({
+        model: "moonshot-v1-8k",
+        messages: [
+          { role: "system", content: IKIGAI_SYSTEM_PROMPT },
+          { role: "user", content: userPrompt },
+        ],
+        // 200-280 mots ≈ 400-560 tokens. On laisse 700 de marge.
+        max_tokens: 700,
+        temperature: 0.7,
+        stream: true,
+      });
+
+      const encoder = new TextEncoder();
+      const readable = new ReadableStream({
+        async start(controller) {
+          try {
+            for await (const chunk of stream) {
+              const content = chunk.choices[0]?.delta?.content;
+              if (content) controller.enqueue(encoder.encode(content));
+            }
+            controller.close();
+          } catch (error) {
+            console.error("Ikigai stream error:", error);
+            controller.error(error);
+          }
+        },
+      });
+
+      return new Response(readable, {
+        headers: {
+          "Content-Type": "text/plain; charset=utf-8",
+          "Cache-Control": "no-cache",
+          "Transfer-Encoding": "chunked",
+        },
+      });
+    }
 
     // ── Reformulation mode (bulle "J'entends que…") ──
     // Court, vouvoiement, system prompt dédié. On stream comme un

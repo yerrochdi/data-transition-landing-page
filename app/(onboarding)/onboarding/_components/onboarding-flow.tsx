@@ -18,6 +18,8 @@ import {
   ArrowLeft,
   Check,
   Cpu,
+  Globe,
+  Compass,
 } from "lucide-react";
 import { Linkedin } from "lucide-react";
 import { cn } from "@/lib/utils";
@@ -47,9 +49,15 @@ import { StepConfidence } from "./step-confidence";
 import { StepAvailability } from "./step-availability";
 import { StepTechnical } from "./step-technical";
 import { StepSummary } from "./step-summary";
+// Sprint 3 — Modules Ikigai
+import { StepIkigaiPassion } from "./step-ikigai-passion";
+import { StepIkigaiForces } from "./step-ikigai-forces";
+import { StepIkigaiMarket } from "./step-ikigai-market";
+import { StepIkigaiAlignment } from "./step-ikigai-alignment";
 
 // ───────────────────────────────────────────────────
-// Step definitions (10 steps)
+// Step definitions (16 steps — Sprint 3 ajoute les 4 Ikigai entre
+// Confidence et Préférences)
 // ───────────────────────────────────────────────────
 const STEPS = [
   { id: "situation", title: "Situation", description: "Votre contexte professionnel", icon: "User" },
@@ -62,12 +70,18 @@ const STEPS = [
   { id: "motivation", title: "Motivation", description: "Ce qui vous pousse", icon: "Heart" },
   { id: "blockers", title: "Freins", description: "Ce qui vous retient", icon: "Shield" },
   { id: "confidence", title: "Confiance", description: "Votre mindset actuel", icon: "Flame" },
+  // ── Sprint 3 : 4 modules Ikigai ──
+  { id: "ikigai-passion", title: "Ce qui vous anime", description: "Vos sources d'énergie", icon: "Flame" },
+  { id: "ikigai-forces", title: "Vos forces réelles", description: "Vues par les autres", icon: "Zap" },
+  { id: "ikigai-market", title: "Le marché", description: "Données réelles France Travail", icon: "Globe" },
+  { id: "ikigai-alignment", title: "Vos non-négociables", description: "Rémunération et cadre", icon: "Compass" },
+  // ────────────────────────────────
   { id: "availability", title: "Préférences", description: "Disponibilité et priorités", icon: "Settings" },
   { id: "summary", title: "Synthèse IA", description: "Votre profil analysé", icon: "Sparkles" },
 ];
 
 const iconMap: Record<string, React.ElementType> = {
-  User, Briefcase, GraduationCap, Target, Zap, Heart, Shield, Flame, Settings, Sparkles, Linkedin, Cpu,
+  User, Briefcase, GraduationCap, Target, Zap, Heart, Shield, Flame, Settings, Sparkles, Linkedin, Cpu, Globe, Compass,
 };
 
 type ChosenPlan = "free" | "boost" | "pro" | "sprint";
@@ -133,11 +147,24 @@ export function OnboardingFlow({ initialData, chosenPlan = "free" }: OnboardingF
   // ───────────────────────────────────────────────────
   // Save helpers
   // ───────────────────────────────────────────────────
-  // Map visual step index to save step index (LinkedIn step doesn't save separately)
+  // Map visual step index to save step index.
+  // LinkedIn (1) et les 4 Ikigai (10-13) n'ont pas de save serveur dédié —
+  // les données Ikigai sont persistées dans formData (complete final) et
+  // les analyses LinkedIn sont stockées en mémoire pour les prompts.
+  // Layout : situation(0) linkedin(1) role(2) edu(3) tech(4) ambitions(5)
+  //          skills(6) motivation(7) blockers(8) confidence(9)
+  //          ikigai-passion(10) ikigai-forces(11) ikigai-market(12)
+  //          ikigai-alignment(13) availability(14) summary(15)
   const getSaveStepIndex = (visualStep: number): number | null => {
-    if (visualStep === 1) return null; // LinkedIn step — no dedicated save
+    if (visualStep === 1) return null; // LinkedIn
+    if (visualStep >= 10 && visualStep <= 13) return null; // 4 modules Ikigai
     if (visualStep === 0) return 0;
-    return visualStep - 1; // shift by 1 after LinkedIn
+    // 2-9 -> 1-8 (shift -1 après LinkedIn)
+    if (visualStep >= 2 && visualStep <= 9) return visualStep - 1;
+    // 14 (availability) -> 9 (ancien index availability dans le save mapping)
+    if (visualStep === 14) return 9;
+    // 15 (summary) -> pas de save dédié, le complete final s'en charge
+    return null;
   };
 
   const getStepData = useCallback(
@@ -371,7 +398,44 @@ export function OnboardingFlow({ initialData, chosenPlan = "free" }: OnboardingF
         return <StepBlockers selected={formData.blockers} formData={formData} onToggle={(blocker) => dispatch({ type: "TOGGLE_BLOCKER", blocker })} />;
       case 9:
         return <StepConfidence level={formData.confidenceLevel} formData={formData} aiContent={aiInsights.confidence} onChange={(level) => handleFieldChange("confidenceLevel", level)} onAiUpdate={(c) => updateAiInsight("confidence", c)} />;
+      // ── Sprint 3 — 4 modules Ikigai ──
       case 10:
+        return (
+          <StepIkigaiPassion
+            formData={formData}
+            onChange={(v) => dispatch({ type: "SET_IKIGAI_PASSION_TEXT", value: v })}
+            onInsightChange={(v) => dispatch({ type: "SET_IKIGAI_PASSION_INSIGHT", value: v })}
+          />
+        );
+      case 11:
+        return (
+          <StepIkigaiForces
+            formData={formData}
+            onChange={(v) => dispatch({ type: "SET_IKIGAI_FORCES_TEXT", value: v })}
+            onInsightChange={(v) => dispatch({ type: "SET_IKIGAI_FORCES_INSIGHT", value: v })}
+          />
+        );
+      case 12:
+        return (
+          <StepIkigaiMarket
+            formData={formData}
+            onTargetRoleChange={(v) => dispatch({ type: "SET_IKIGAI_MARKET_ROLE", value: v })}
+            onSnapshotChange={(v) => dispatch({ type: "SET_IKIGAI_MARKET_SNAPSHOT", value: v })}
+            onInsightChange={(v) => dispatch({ type: "SET_IKIGAI_MARKET_INSIGHT", value: v })}
+          />
+        );
+      case 13:
+        return (
+          <StepIkigaiAlignment
+            formData={formData}
+            onSalaryChange={(v) => dispatch({ type: "SET_IKIGAI_ALIGNMENT_SALARY", value: v })}
+            onNonNegotiableAdd={(v) => dispatch({ type: "ADD_IKIGAI_ALIGNMENT_NON_NEG", value: v })}
+            onNonNegotiableRemove={(v) => dispatch({ type: "REMOVE_IKIGAI_ALIGNMENT_NON_NEG", value: v })}
+            onInsightChange={(v) => dispatch({ type: "SET_IKIGAI_ALIGNMENT_INSIGHT", value: v })}
+          />
+        );
+      // ─────────────────────────────────
+      case 14:
         return (
           <StepAvailability
             availableHoursPerWeek={formData.availableHoursPerWeek}
@@ -389,7 +453,7 @@ export function OnboardingFlow({ initialData, chosenPlan = "free" }: OnboardingF
             onReorderPriorities={(priorities) => dispatch({ type: "REORDER_PRIORITIES", priorities })}
           />
         );
-      case 11:
+      case 15:
         return <StepSummary formData={formData} aiContent={typeof aiInsights.summary === "string" ? aiInsights.summary : null} onAiUpdate={(c) => updateAiInsight("summary", c)} chosenPlan={chosenPlan} />;
       default:
         return null;
