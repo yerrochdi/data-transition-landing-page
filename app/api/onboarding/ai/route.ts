@@ -43,6 +43,7 @@ const REFORMULATION_STEPS = new Set([
   "role",
   "education",
   "technical",
+  "ai-usage",
   "skills",
   "blockers",
   "motivation",

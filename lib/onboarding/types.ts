@@ -20,6 +20,21 @@ export interface OnboardingFormData {
   // Step 4: Technical appetite
   technicalAppetite: "no-code" | "low-code" | "code" | "flexible";
 
+  /**
+   * Step 4b (Sprint 3.1) — Usage actuel de l'IA dans le poste.
+   * Crucial pour calibrer la transition : quelqu'un qui "code déjà avec
+   * l'IA" n'a pas le même point de départ que quelqu'un qui n'a jamais
+   * ouvert ChatGPT. Alimente le diagnostic et les recommandations.
+   */
+  aiUsage: {
+    /** Niveau d'usage déclaré. */
+    level: "none" | "occasional" | "regular" | "builder" | "";
+    /** Outils IA déjà utilisés (ChatGPT, Copilot, Claude, Midjourney…). */
+    tools: string[];
+    /** Contexte libre : comment / pour quoi elle utilise l'IA aujourd'hui. */
+    context: string;
+  };
+
   // Step 5: Ambitions (AI-powered)
   targetRole: string;
   targetSector: string;
@@ -147,6 +162,7 @@ export const initialFormData: OnboardingFormData = {
   certifications: [],
   hasDataTraining: false,
   technicalAppetite: "flexible",
+  aiUsage: { level: "", tools: [], context: "" },
   targetRole: "",
   targetSector: "",
   vertical: "",
@@ -210,7 +226,11 @@ export type FormAction =
   | { type: "SET_IKIGAI_ALIGNMENT_SALARY"; value: string }
   | { type: "ADD_IKIGAI_ALIGNMENT_NON_NEG"; value: string }
   | { type: "REMOVE_IKIGAI_ALIGNMENT_NON_NEG"; value: string }
-  | { type: "SET_IKIGAI_ALIGNMENT_INSIGHT"; value: string };
+  | { type: "SET_IKIGAI_ALIGNMENT_INSIGHT"; value: string }
+  // Usage IA
+  | { type: "SET_AI_USAGE_LEVEL"; value: OnboardingFormData["aiUsage"]["level"] }
+  | { type: "TOGGLE_AI_USAGE_TOOL"; value: string }
+  | { type: "SET_AI_USAGE_CONTEXT"; value: string };
 
 export function formReducer(state: OnboardingFormData, action: FormAction): OnboardingFormData {
   switch (action.type) {
@@ -285,6 +305,21 @@ export function formReducer(state: OnboardingFormData, action: FormAction): Onbo
       return { ...state, ikigai: { ...state.ikigai, alignment: { ...state.ikigai.alignment, nonNegotiables: state.ikigai.alignment.nonNegotiables.filter((n) => n !== action.value) } } };
     case "SET_IKIGAI_ALIGNMENT_INSIGHT":
       return { ...state, ikigai: { ...state.ikigai, alignment: { ...state.ikigai.alignment, aiInsight: action.value } } };
+    // Usage IA
+    case "SET_AI_USAGE_LEVEL":
+      return { ...state, aiUsage: { ...state.aiUsage, level: action.value } };
+    case "TOGGLE_AI_USAGE_TOOL":
+      return {
+        ...state,
+        aiUsage: {
+          ...state.aiUsage,
+          tools: state.aiUsage.tools.includes(action.value)
+            ? state.aiUsage.tools.filter((t) => t !== action.value)
+            : [...state.aiUsage.tools, action.value],
+        },
+      };
+    case "SET_AI_USAGE_CONTEXT":
+      return { ...state, aiUsage: { ...state.aiUsage, context: action.value } };
     default:
       return state;
   }

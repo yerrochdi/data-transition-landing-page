@@ -412,6 +412,26 @@ L'utilisateur vient de déclarer son appétence technique : "${tech}".
 Reformulez en 1-2 phrases ce que ce choix oriente : quel type de rôles data lui correspond (pilotage / hybride / technique), et que ce n'est PAS un handicap mais un cadre. Pas de jugement, juste une observation stratégique.`;
     }
 
+    case "ai-usage": {
+      const levelLabels: Record<string, string> = {
+        none: "n'utilise pas l'IA aujourd'hui",
+        occasional: "usage occasionnel de l'IA (dépannage ponctuel)",
+        regular: "usage régulier de l'IA au quotidien",
+        builder: "construit déjà AVEC l'IA (code, automatisations, agents)",
+      };
+      const lvl = levelLabels[data.aiUsage?.level || ""] || "non précisé";
+      const tools = data.aiUsage?.tools?.join(", ") || "aucun outil précisé";
+      const ctx = data.aiUsage?.context?.slice(0, 300) || "";
+      return `${baseContext}
+
+L'utilisateur vient de déclarer son usage actuel de l'IA :
+- Niveau : ${lvl}
+- Outils : ${tools}
+${ctx ? `- Contexte : ${ctx}` : ""}
+
+Reformulez en 1-2 phrases ce que ce niveau d'usage révèle de son AVANCE (ou de son retard) sur la transition. Si "builder" : soulignez que c'est une longueur d'avance énorme, beaucoup de cadres n'y sont pas. Si "none" : rassurez factuellement, c'est rattrapable vite à son niveau. Observation stratégique, pas de flatterie.`;
+    }
+
     case "skills": {
       const skills =
         data.skillLevels

@@ -12,8 +12,6 @@
 import { useCallback, useEffect, useRef, useState } from "react";
 import {
   Globe,
-  Loader2,
-  RefreshCw,
   Sparkles,
   TrendingUp,
   MapPin,
@@ -23,6 +21,7 @@ import {
 import type { OnboardingFormData } from "@/lib/onboarding/types";
 import type { IkigaiMarketSnapshot } from "@/lib/ikigai/market";
 import { getMarketSnapshotForRole } from "@/lib/ikigai/market";
+import { AiThinkingLoader, AiErrorState, renderInsightText } from "./ai-thinking";
 
 interface StepIkigaiMarketProps {
   formData: OnboardingFormData;
@@ -58,7 +57,10 @@ export function StepIkigaiMarket({
     if (fetchedFor.current === role) return;
     fetchedFor.current = role;
     setFetching(true);
-    getMarketSnapshotForRole(role)
+    getMarketSnapshotForRole(role, {
+      years: formData.experienceYears,
+      sector: formData.currentSector,
+    })
       .then((snap) => {
         onSnapshotChange(snap);
       })
@@ -223,14 +225,27 @@ export function StepIkigaiMarket({
       )}
 
       {/* AI insight — lecture des chiffres */}
-      {(aiLoading || aiStreaming || insight) && (
-        <MarketInsight
-          loading={aiLoading && !aiStreaming}
-          streaming={aiStreaming}
-          content={insight ?? ""}
-          error={aiError}
-          onRetry={generateInsight}
-        />
+      {aiError && <AiErrorState onRetry={generateInsight} />}
+      {!aiError && aiLoading && !aiStreaming && <AiThinkingLoader />}
+      {!aiError && (aiStreaming || insight) && (
+        <div
+          className="flex items-start gap-3 p-4 rounded-xl bg-gradient-to-br from-primary/10 to-surface-container-lowest/60 border border-primary/20"
+          role="status"
+          aria-live="polite"
+        >
+          <div className="w-7 h-7 rounded-full bg-primary/15 flex items-center justify-center shrink-0">
+            <Sparkles className="w-3.5 h-3.5 text-primary" />
+          </div>
+          <div className="flex-1 text-[13px] leading-relaxed text-foreground/90">
+            {renderInsightText(insight ?? "")}
+            {aiStreaming && (
+              <span
+                aria-hidden
+                className="inline-block w-1 h-3.5 bg-primary ml-0.5 align-middle animate-pulse"
+              />
+            )}
+          </div>
+        </div>
       )}
     </div>
   );
@@ -248,13 +263,13 @@ function SnapshotCards({ snapshot }: { snapshot: IkigaiMarketSnapshot }) {
         />
         <StatCard
           icon={Wallet}
-          label="Salaire médian"
+          label={snapshot.medianSalary?.estimated ? "Salaire estimé" : "Salaire médian"}
           value={
             snapshot.medianSalary
               ? `${Math.round(snapshot.medianSalary.min / 1000)}k - ${Math.round(snapshot.medianSalary.max / 1000)}k`
               : "—"
           }
-          sub="brut/an"
+          sub={snapshot.medianSalary?.estimated ? "estimation · brut/an" : "brut/an"}
         />
         <StatCard
           icon={TrendingUp}
@@ -323,90 +338,3 @@ function StatCard({
   );
 }
 
-function MarketInsight({
-  loading,
-  streaming,
-  content,
-  error,
-  onRetry,
-}: {
-  loading: boolean;
-  streaming: boolean;
-  content: string;
-  error: string | null;
-  onRetry: () => void;
-}) {
-  const render = (text: string): React.ReactNode => {
-    const parts = text.split(/(\*\*[^*]+\*\*)/g);
-    return parts.map((p, i) =>
-      p.startsWith("**") && p.endsWith("**") ? (
-        <strong key={i} className="font-semibold text-foreground">
-          {p.slice(2, -2)}
-        </strong>
-      ) : (
-        <span key={i}>{p}</span>
-      )
-    );
-  };
-
-  if (error) {
-    return (
-      <div className="flex items-center justify-between gap-3 p-3 rounded-xl bg-surface-container-lowest/60 ghost-border">
-        <p className="text-[11px] text-muted-foreground italic">
-          L&apos;IA prend une pause — réessayez quand vous voulez.
-        </p>
-        <button
-          type="button"
-          onClick={onRetry}
-          className="flex items-center gap-1 text-[10px] text-primary/80 hover:text-primary"
-        >
-          <RefreshCw className="w-3 h-3" />
-          Réessayer
-        </button>
-      </div>
-    );
-  }
-
-  if (loading) {
-    return (
-      <div className="flex items-start gap-3 p-4 rounded-xl bg-primary/5 border border-primary/15">
-        <Loader2 className="w-4 h-4 text-primary animate-spin shrink-0 mt-0.5" />
-        <div className="flex-1 space-y-1.5">
-          <div className="h-2.5 rounded-full bg-primary/20 animate-pulse w-3/4" />
-          <div className="h-2.5 rounded-full bg-primary/15 animate-pulse w-1/2" />
-        </div>
-      </div>
-    );
-  }
-
-  return (
-    <div
-      className="flex items-start gap-3 p-4 rounded-xl bg-gradient-to-br from-primary/10 to-surface-container-lowest/60 border border-primary/20"
-      role="status"
-      aria-live="polite"
-    >
-      <div className="w-7 h-7 rounded-full bg-primary/15 flex items-center justify-center shrink-0">
-        <Sparkles className="w-3.5 h-3.5 text-primary" />
-      </div>
-      <div className="flex-1 text-[13px] leading-relaxed text-foreground/90">
-        {render(content)}
-        {streaming && (
-          <span
-            aria-hidden
-            className="inline-block w-1 h-3.5 bg-primary ml-0.5 align-middle animate-pulse"
-          />
-        )}
-      </div>
-      {!streaming && content && (
-        <button
-          type="button"
-          onClick={onRetry}
-          aria-label="Régénérer"
-          className="text-muted-foreground/50 hover:text-primary transition-colors shrink-0"
-        >
-          <RefreshCw className="w-3 h-3" />
-        </button>
-      )}
-    </div>
-  );
-}

@@ -12,9 +12,10 @@
  * Sprint 3 — Le but : faire sentir un vrai coach, pas un Typeform.
  */
 import { useCallback, useEffect, useRef, useState } from "react";
-import { Sparkles, RefreshCw, Loader2 } from "lucide-react";
+import { Sparkles, RefreshCw } from "lucide-react";
 import { cn } from "@/lib/utils";
 import type { OnboardingFormData } from "@/lib/onboarding/types";
+import { AiThinkingLoader, AiErrorState, renderInsightText } from "./ai-thinking";
 
 export type IkigaiStep = "passion" | "forces" | "alignment";
 
@@ -43,6 +44,12 @@ interface IkigaiModuleProps {
   onInsightChange: (insight: string) => void;
   /** Seuil minimal de caractères avant de proposer l'appel IA. Défaut 50. */
   minCharsForAi?: number;
+  /**
+   * Amorces de réponse cliquables. Au clic, l'amorce est insérée dans le
+   * textarea (concaténée si déjà du texte) pour aider la personne à
+   * démarrer sans partir d'une page blanche. Elle complète ensuite librement.
+   */
+  suggestions?: string[];
 }
 
 export function IkigaiModule({
@@ -58,6 +65,7 @@ export function IkigaiModule({
   onChange,
   onInsightChange,
   minCharsForAi = 50,
+  suggestions,
 }: IkigaiModuleProps) {
   const [loading, setLoading] = useState(false);
   const [streaming, setStreaming] = useState(false);
@@ -65,6 +73,14 @@ export function IkigaiModule({
   const abortRef = useRef<AbortController | null>(null);
 
   const isReady = value.trim().length >= minCharsForAi;
+
+  // Insère une amorce dans le textarea. Si du texte existe déjà, on
+  // l'ajoute proprement à la suite (nouvelle phrase). Sinon on démarre avec.
+  const insertSuggestion = (s: string) => {
+    const current = value.trim();
+    const next = current ? `${current} ${s}` : s;
+    onChange(next);
+  };
 
   const generate = useCallback(async () => {
     abortRef.current?.abort();
@@ -134,10 +150,32 @@ export function IkigaiModule({
 
       {/* Question + textarea — la "vraie" question Ikigai */}
       <div className="space-y-3">
+        <p className="text-sm font-bold text-foreground leading-snug">
+          {question}
+        </p>
+
+        {/* Amorces cliquables — aident à démarrer sans page blanche */}
+        {suggestions && suggestions.length > 0 && (
+          <div className="space-y-1.5">
+            <p className="text-[10px] uppercase tracking-widest text-muted-foreground/70 font-bold">
+              Besoin d&apos;un coup de pouce ? Cliquez pour démarrer
+            </p>
+            <div className="flex flex-wrap gap-2">
+              {suggestions.map((s) => (
+                <button
+                  key={s}
+                  type="button"
+                  onClick={() => insertSuggestion(s)}
+                  className="px-3 py-1.5 rounded-lg text-xs text-left bg-surface-container-lowest border border-border/30 text-muted-foreground hover:border-primary/30 hover:text-foreground transition-all"
+                >
+                  {s}
+                </button>
+              ))}
+            </div>
+          </div>
+        )}
+
         <label className="block">
-          <p className="text-sm font-bold text-foreground mb-2 leading-snug">
-            {question}
-          </p>
           <textarea
             value={value}
             onChange={(e) => onChange(e.target.value)}
@@ -153,113 +191,38 @@ export function IkigaiModule({
         </p>
       </div>
 
-      {/* AI insight — apparaît quand l'utilisateur·rice a tapé assez */}
-      {(loading || streaming || aiInsight) && (
-        <IkigaiAiInsight
-          loading={loading && !streaming}
-          streaming={streaming}
-          content={aiInsight ?? ""}
-          error={error}
-          onRetry={generate}
-        />
-      )}
-    </div>
-  );
-}
-
-/**
- * Bulle IA — affiche l'insight du coach senior en streaming caractère
- * par caractère, comme dans <AiReformulation>. Bouton régénérer à la fin.
- */
-function IkigaiAiInsight({
-  loading,
-  streaming,
-  content,
-  error,
-  onRetry,
-}: {
-  loading: boolean;
-  streaming: boolean;
-  content: string;
-  error: string | null;
-  onRetry: () => void;
-}) {
-  // Parsing minimaliste : **bold** en <strong>
-  const render = (text: string): React.ReactNode => {
-    const parts = text.split(/(\*\*[^*]+\*\*)/g);
-    return parts.map((p, i) =>
-      p.startsWith("**") && p.endsWith("**") ? (
-        <strong key={i} className="font-semibold text-foreground">
-          {p.slice(2, -2)}
-        </strong>
-      ) : (
-        <span key={i}>{p}</span>
-      )
-    );
-  };
-
-  if (error) {
-    return (
-      <div className="flex items-start gap-2.5 p-3 rounded-xl bg-surface-container-lowest/60 ghost-border">
-        <Sparkles className="w-3.5 h-3.5 text-muted-foreground/50 shrink-0 mt-0.5" />
-        <div className="flex-1 flex items-center justify-between gap-3">
-          <p className="text-[11px] text-muted-foreground italic">
-            L&apos;IA prend une pause — réessayez quand vous voulez.
-          </p>
-          <button
-            type="button"
-            onClick={onRetry}
-            className="flex items-center gap-1 text-[10px] text-primary/80 hover:text-primary"
-          >
-            <RefreshCw className="w-3 h-3" />
-            Réessayer
-          </button>
-        </div>
-      </div>
-    );
-  }
-
-  if (loading) {
-    return (
-      <div className="flex items-start gap-3 p-4 rounded-xl bg-primary/5 border border-primary/15">
-        <Loader2 className="w-4 h-4 text-primary animate-spin shrink-0 mt-0.5" />
-        <div className="flex-1 space-y-1.5">
-          <div className="h-2.5 rounded-full bg-primary/20 animate-pulse w-3/4" />
-          <div className="h-2.5 rounded-full bg-primary/15 animate-pulse w-1/2" />
-        </div>
-      </div>
-    );
-  }
-
-  return (
-    <div
-      className={cn(
-        "flex items-start gap-3 p-4 rounded-xl bg-gradient-to-br from-primary/10 to-surface-container-lowest/60 border border-primary/20"
-      )}
-      role="status"
-      aria-live="polite"
-    >
-      <div className="w-7 h-7 rounded-full bg-primary/15 flex items-center justify-center shrink-0">
-        <Sparkles className="w-3.5 h-3.5 text-primary" />
-      </div>
-      <div className="flex-1 text-[13px] leading-relaxed text-foreground/90">
-        {render(content)}
-        {streaming && (
-          <span
-            aria-hidden
-            className="inline-block w-1 h-3.5 bg-primary ml-0.5 align-middle animate-pulse"
-          />
-        )}
-      </div>
-      {!streaming && content && (
-        <button
-          type="button"
-          onClick={onRetry}
-          aria-label="Régénérer l'insight"
-          className="text-muted-foreground/50 hover:text-primary transition-colors shrink-0"
+      {/* AI insight — états mutualisés via ai-thinking.tsx */}
+      {error && <AiErrorState onRetry={generate} />}
+      {!error && loading && !streaming && <AiThinkingLoader />}
+      {!error && (streaming || aiInsight) && (
+        <div
+          className="flex items-start gap-3 p-4 rounded-xl bg-gradient-to-br from-primary/10 to-surface-container-lowest/60 border border-primary/20"
+          role="status"
+          aria-live="polite"
         >
-          <RefreshCw className="w-3 h-3" />
-        </button>
+          <div className="w-7 h-7 rounded-full bg-primary/15 flex items-center justify-center shrink-0">
+            <Sparkles className="w-3.5 h-3.5 text-primary" />
+          </div>
+          <div className="flex-1 text-[13px] leading-relaxed text-foreground/90">
+            {renderInsightText(aiInsight ?? "")}
+            {streaming && (
+              <span
+                aria-hidden
+                className="inline-block w-1 h-3.5 bg-primary ml-0.5 align-middle animate-pulse"
+              />
+            )}
+          </div>
+          {!streaming && aiInsight && (
+            <button
+              type="button"
+              onClick={generate}
+              aria-label="Régénérer l'insight"
+              className="text-muted-foreground/50 hover:text-primary transition-colors shrink-0"
+            >
+              <RefreshCw className="w-3 h-3" />
+            </button>
+          )}
+        </div>
       )}
     </div>
   );

@@ -33,6 +33,13 @@ export function StepIkigaiPassion({
       onChange={onChange}
       onInsightChange={onInsightChange}
       minCharsForAi={60}
+      suggestions={[
+        "Quand je résolvais un problème complexe que personne d'autre n'arrivait à démêler",
+        "Quand j'ai accompagné quelqu'un et vu sa progression",
+        "Quand j'ai construit quelque chose de nouveau de A à Z",
+        "Quand j'ai fédéré une équipe autour d'un objectif",
+        "Quand j'ai transformé des données en décision concrète",
+      ]}
     />
   );
 }

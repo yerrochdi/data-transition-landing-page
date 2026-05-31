@@ -20,6 +20,7 @@ import {
   Cpu,
   Globe,
   Compass,
+  Bot,
 } from "lucide-react";
 import { Linkedin } from "lucide-react";
 import { cn } from "@/lib/utils";
@@ -49,6 +50,7 @@ import { StepConfidence } from "./step-confidence";
 import { StepAvailability } from "./step-availability";
 import { StepTechnical } from "./step-technical";
 import { StepSummary } from "./step-summary";
+import { StepAiUsage } from "./step-ai-usage";
 // Sprint 3 — Modules Ikigai
 import { StepIkigaiPassion } from "./step-ikigai-passion";
 import { StepIkigaiForces } from "./step-ikigai-forces";
@@ -65,6 +67,7 @@ const STEPS = [
   { id: "role", title: "Métier & Secteur", description: "Votre rôle et expérience", icon: "Briefcase" },
   { id: "education", title: "Formation", description: "Diplômes et certifications", icon: "GraduationCap" },
   { id: "technical", title: "Profil technique", description: "Votre appétence pour le code", icon: "Cpu" },
+  { id: "ai-usage", title: "Votre usage de l'IA", description: "Où vous en êtes aujourd'hui", icon: "Bot" },
   { id: "ambitions", title: "Ambitions", description: "Votre rôle cible data/IA", icon: "Target" },
   { id: "skills", title: "Compétences", description: "Vos forces et niveaux", icon: "Zap" },
   { id: "motivation", title: "Motivation", description: "Ce qui vous pousse", icon: "Heart" },
@@ -81,7 +84,7 @@ const STEPS = [
 ];
 
 const iconMap: Record<string, React.ElementType> = {
-  User, Briefcase, GraduationCap, Target, Zap, Heart, Shield, Flame, Settings, Sparkles, Linkedin, Cpu, Globe, Compass,
+  User, Briefcase, GraduationCap, Target, Zap, Heart, Shield, Flame, Settings, Sparkles, Linkedin, Cpu, Globe, Compass, Bot,
 };
 
 type ChosenPlan = "free" | "boost" | "pro" | "sprint";
@@ -147,24 +150,28 @@ export function OnboardingFlow({ initialData, chosenPlan = "free" }: OnboardingF
   // ───────────────────────────────────────────────────
   // Save helpers
   // ───────────────────────────────────────────────────
-  // Map visual step index to save step index.
-  // LinkedIn (1) et les 4 Ikigai (10-13) n'ont pas de save serveur dédié —
-  // les données Ikigai sont persistées dans formData (complete final) et
-  // les analyses LinkedIn sont stockées en mémoire pour les prompts.
-  // Layout : situation(0) linkedin(1) role(2) edu(3) tech(4) ambitions(5)
-  //          skills(6) motivation(7) blockers(8) confidence(9)
-  //          ikigai-passion(10) ikigai-forces(11) ikigai-market(12)
-  //          ikigai-alignment(13) availability(14) summary(15)
+  // Map visual step index to save step index (serveur attend 0-9).
+  // Layout 17 steps (Sprint 3.1) :
+  //  0 situation   1 linkedin   2 role        3 education   4 technical
+  //  5 ai-usage    6 ambitions  7 skills      8 motivation  9 blockers
+  //  10 confidence 11 ikigai-passion 12 ikigai-forces 13 ikigai-market
+  //  14 ikigai-alignment 15 availability 16 summary
+  // Sans save serveur dédié : linkedin, ai-usage, 4 Ikigai, summary
+  // (conservés en formData + persistés au complete final).
+  const SAVE_INDEX_MAP: Record<number, number> = {
+    0: 0, // situation
+    2: 1, // role
+    3: 2, // education
+    4: 3, // technical
+    6: 4, // ambitions
+    7: 5, // skills
+    8: 6, // motivation
+    9: 7, // blockers
+    10: 8, // confidence
+    15: 9, // availability
+  };
   const getSaveStepIndex = (visualStep: number): number | null => {
-    if (visualStep === 1) return null; // LinkedIn
-    if (visualStep >= 10 && visualStep <= 13) return null; // 4 modules Ikigai
-    if (visualStep === 0) return 0;
-    // 2-9 -> 1-8 (shift -1 après LinkedIn)
-    if (visualStep >= 2 && visualStep <= 9) return visualStep - 1;
-    // 14 (availability) -> 9 (ancien index availability dans le save mapping)
-    if (visualStep === 14) return 9;
-    // 15 (summary) -> pas de save dédié, le complete final s'en charge
-    return null;
+    return SAVE_INDEX_MAP[visualStep] ?? null;
   };
 
   const getStepData = useCallback(

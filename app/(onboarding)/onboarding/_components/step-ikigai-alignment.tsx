@@ -266,48 +266,8 @@ function AlignmentInsight({
   error: string | null;
   onRetry: () => void;
 }) {
-  const render = (text: string): React.ReactNode => {
-    const parts = text.split(/(\*\*[^*]+\*\*)/g);
-    return parts.map((p, i) =>
-      p.startsWith("**") && p.endsWith("**") ? (
-        <strong key={i} className="font-semibold text-foreground">
-          {p.slice(2, -2)}
-        </strong>
-      ) : (
-        <span key={i}>{p}</span>
-      )
-    );
-  };
-
-  if (error) {
-    return (
-      <div className="flex items-center justify-between gap-3 p-3 rounded-xl bg-surface-container-lowest/60 ghost-border">
-        <p className="text-[11px] text-muted-foreground italic">
-          L&apos;IA prend une pause — réessayez quand vous voulez.
-        </p>
-        <button
-          type="button"
-          onClick={onRetry}
-          className="flex items-center gap-1 text-[10px] text-primary/80 hover:text-primary"
-        >
-          <RefreshCw className="w-3 h-3" />
-          Réessayer
-        </button>
-      </div>
-    );
-  }
-
-  if (loading) {
-    return (
-      <div className="flex items-start gap-3 p-4 rounded-xl bg-primary/5 border border-primary/15">
-        <Loader2 className="w-4 h-4 text-primary animate-spin shrink-0 mt-0.5" />
-        <div className="flex-1 space-y-1.5">
-          <div className="h-2.5 rounded-full bg-primary/20 animate-pulse w-3/4" />
-          <div className="h-2.5 rounded-full bg-primary/15 animate-pulse w-1/2" />
-        </div>
-      </div>
-    );
-  }
+  if (error) return <AiErrorState onRetry={onRetry} />;
+  if (loading && !streaming) return <AiThinkingLoader />;
 
   return (
     <div
@@ -319,7 +279,7 @@ function AlignmentInsight({
         <Sparkles className="w-3.5 h-3.5 text-primary" />
       </div>
       <div className="flex-1 text-[13px] leading-relaxed text-foreground/90">
-        {render(content)}
+        {renderInsightText(content)}
         {streaming && (
           <span
             aria-hidden
@@ -327,16 +287,6 @@ function AlignmentInsight({
           />
         )}
       </div>
-      {!streaming && content && (
-        <button
-          type="button"
-          onClick={onRetry}
-          aria-label="Régénérer"
-          className="text-muted-foreground/50 hover:text-primary transition-colors shrink-0"
-        >
-          <RefreshCw className="w-3 h-3" />
-        </button>
-      )}
     </div>
   );
 }

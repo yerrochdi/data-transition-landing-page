@@ -11,11 +11,14 @@
  */
 
 import { searchOffers, type FranceTravailOffer } from "@/lib/opportunities/france-travail";
+import { ai } from "@/lib/ai/client";
 
 export type IkigaiMarketSnapshot = {
   totalOffers: number;
   recentOffers: number;
-  medianSalary: { min: number; max: number } | null;
+  /** `estimated: true` quand la fourchette vient d'une estimation IA
+   * (France Travail n'avait pas de salaire exploitable). */
+  medianSalary: { min: number; max: number; estimated: boolean } | null;
   topSkills: string[];
   topRegions: string[];
   source: string;
@@ -49,7 +52,70 @@ function computeMedianRange(
   const mins = salaries.map((s) => s[0]).sort((a, b) => a - b);
   const maxs = salaries.map((s) => s[1]).sort((a, b) => a - b);
   const mid = Math.floor(mins.length / 2);
-  return { min: mins[mid], max: maxs[mid] };
+  return { min: mins[mid], max: maxs[mid], estimated: false };
+}
+
+/**
+ * Estime une fourchette salariale réaliste (France, marché 2026) pour un
+ * rôle donné via Kimi, quand France Travail ne fournit pas de salaire
+ * exploitable. Renvoie null si l'IA échoue — l'UI gère l'absence.
+ *
+ * @param role       Rôle cible (ex: "Head of People Analytics")
+ * @param years      Années d'expérience (pour calibrer la séniorité)
+ * @param sector     Secteur (pour ajuster — finance paie + que assoc)
+ */
+export async function estimateSalaryForRole(
+  role: string,
+  years: number | null,
+  sector: string | null
+): Promise<{ min: number; max: number; estimated: boolean } | null> {
+  if (!process.env.MOONSHOT_API_KEY || !role || role.trim().length < 3) {
+    return null;
+  }
+
+  const prompt = `Tu es un expert en rémunération du marché de l'emploi français (cabinet type Robert Walters / Michael Page), édition 2026.
+
+Estime la fourchette de salaire ANNUEL BRUT réaliste en France pour :
+- Rôle : "${role}"
+- Expérience : ${years ?? "non précisée"} ans
+- Secteur : ${sector || "non précisé"}
+
+RÈGLES :
+- Fourchette réaliste France 2026 (pas USA, pas hype). Un Head 6 ans ≠ un Head 15 ans.
+- Réponds UNIQUEMENT avec ce JSON, aucun texte autour, aucun caractère asiatique :
+{"min": 45000, "max": 60000}
+- min et max en euros bruts annuels, nombres entiers, sans espace ni symbole.`;
+
+  try {
+    const completion = await ai.chat.completions.create({
+      model: "moonshot-v1-8k",
+      messages: [{ role: "user", content: prompt }],
+      max_tokens: 60,
+      temperature: 0.3,
+    });
+    let text = (completion.choices[0]?.message?.content || "").trim();
+    text = text.replace(/^```(?:json)?\s*/i, "").replace(/\s*```\s*$/, "");
+    const match = text.match(/\{[^}]*\}/);
+    if (!match) return null;
+    const parsed = JSON.parse(match[0]) as { min?: number; max?: number };
+    if (
+      typeof parsed.min !== "number" ||
+      typeof parsed.max !== "number" ||
+      parsed.min < 10_000 ||
+      parsed.max > 500_000 ||
+      parsed.min > parsed.max
+    ) {
+      return null;
+    }
+    return {
+      min: Math.round(parsed.min),
+      max: Math.round(parsed.max),
+      estimated: true,
+    };
+  } catch (err) {
+    console.error("[ikigai-market] salary estimate failed:", err);
+    return null;
+  }
 }
 
 function aggregateSkills(offers: FranceTravailOffer[]): string[] {
@@ -92,9 +158,14 @@ function aggregateRegions(offers: FranceTravailOffer[]): string[] {
  * qualitatif.
  */
 export async function getMarketSnapshotForRole(
-  targetRole: string
+  targetRole: string,
+  opts: { years?: number | null; sector?: string | null } = {}
 ): Promise<IkigaiMarketSnapshot | null> {
   if (!targetRole || targetRole.trim().length < 3) return null;
+
+  // Estimation salaire IA en fallback — toujours dispo même si FT muet.
+  const estimateSalary = () =>
+    estimateSalaryForRole(targetRole, opts.years ?? null, opts.sector ?? null);
 
   try {
     const offers = await searchOffers({
@@ -103,27 +174,35 @@ export async function getMarketSnapshotForRole(
     });
 
     if (offers.length === 0) {
+      // Aucune offre FR (souvent un rôle au titre anglais) → on garde une
+      // valeur : estimation salaire IA pour ne pas laisser l'écran vide.
+      const medianSalary = await estimateSalary();
       return {
         totalOffers: 0,
         recentOffers: 0,
-        medianSalary: null,
+        medianSalary,
         topSkills: [],
         topRegions: [],
-        source: "France Travail (aucune offre trouvée)",
+        source: medianSalary
+          ? "Estimation NextMove (peu d'offres au titre exact)"
+          : "France Travail (aucune offre trouvée)",
       };
     }
 
-    // Salaires
+    // Salaires réels depuis les offres
     const salaries = offers
       .map((o) => parseSalary(o.salaire?.libelle))
       .filter((s): s is [number, number] => s !== null);
-    const medianSalary = computeMedianRange(salaries);
+    let medianSalary = computeMedianRange(salaries);
 
-    // Skills / Regions
+    // Si trop peu de salaires renseignés dans les offres → estimation IA
+    if (!medianSalary) {
+      medianSalary = await estimateSalary();
+    }
+
     const topSkills = aggregateSkills(offers);
     const topRegions = aggregateRegions(offers);
 
-    // "Récentes" = offres des 30 derniers jours
     const now = Date.now();
     const recentOffers = offers.filter((o) => {
       const created = new Date(o.dateCreation).getTime();
@@ -140,6 +219,18 @@ export async function getMarketSnapshotForRole(
     };
   } catch (err) {
     console.error("[ikigai-market] snapshot failed:", err);
+    // Même en cas d'erreur FT, on tente de donner une estimation salaire
+    const medianSalary = await estimateSalary().catch(() => null);
+    if (medianSalary) {
+      return {
+        totalOffers: 0,
+        recentOffers: 0,
+        medianSalary,
+        topSkills: [],
+        topRegions: [],
+        source: "Estimation NextMove",
+      };
+    }
     return null;
   }
 }

@@ -35,6 +35,13 @@ export function StepIkigaiForces({
       onChange={onChange}
       onInsightChange={onInsightChange}
       minCharsForAi={60}
+      suggestions={[
+        "On me consulte pour clarifier ce qui est confus",
+        "On me remercie pour ma rigueur et ma fiabilité",
+        "On me dit que je sais expliquer simplement",
+        "On compte sur moi pour faire avancer les projets",
+        "On apprécie ma capacité à fédérer les gens",
+      ]}
     />
   );
 }
