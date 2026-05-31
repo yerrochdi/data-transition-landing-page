@@ -123,7 +123,7 @@ export interface OnboardingFormData {
       snapshot: {
         totalOffers: number;
         recentOffers: number;
-        medianSalary: { min: number; max: number } | null;
+        medianSalary: { min: number; max: number; estimated: boolean } | null;
         topSkills: string[];
         topRegions: string[];
         source: string;

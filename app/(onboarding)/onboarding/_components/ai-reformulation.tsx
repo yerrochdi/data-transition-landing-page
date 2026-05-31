@@ -45,6 +45,7 @@ type ReformulationStep =
   | "role"
   | "education"
   | "technical"
+  | "ai-usage"
   | "skills"
   | "blockers"
   | "motivation"

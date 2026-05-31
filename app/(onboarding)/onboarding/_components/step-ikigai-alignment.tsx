@@ -9,15 +9,12 @@
  * différente — on a besoin de chips pour les non-négociables.
  */
 import { useCallback, useEffect, useRef, useState } from "react";
+import { Compass, Sparkles, Wallet, Plus, X } from "lucide-react";
 import {
-  Compass,
-  Loader2,
-  RefreshCw,
-  Sparkles,
-  Wallet,
-  Plus,
-  X,
-} from "lucide-react";
+  AiThinkingLoader,
+  AiErrorState,
+  renderInsightText,
+} from "./ai-thinking";
 import { cn } from "@/lib/utils";
 import type { OnboardingFormData } from "@/lib/onboarding/types";
 
@@ -56,6 +53,22 @@ export function StepIkigaiAlignment({
   const salary = formData.ikigai.alignment.salaryExpectation;
   const nonNeg = formData.ikigai.alignment.nonNegotiables;
   const insight = formData.ikigai.alignment.aiInsight;
+
+  // Pré-remplissage : si le champ salaire est vide et que le module Marché
+  // a produit une fourchette (FT ou estimée), on l'utilise comme point de
+  // départ ajustable. La personne voit une suggestion concrète.
+  const marketSalary = formData.ikigai.market.snapshot?.medianSalary;
+  const prefilledOnce = useRef(false);
+  useEffect(() => {
+    if (prefilledOnce.current) return;
+    if (salary.trim().length === 0 && marketSalary) {
+      prefilledOnce.current = true;
+      const min = Math.round(marketSalary.min / 1000);
+      const max = Math.round(marketSalary.max / 1000);
+      onSalaryChange(`${min}-${max}k brut/an`);
+    }
+    // eslint-disable-next-line react-hooks/exhaustive-deps
+  }, [marketSalary]);
 
   const isReady = salary.trim().length >= 3 && nonNeg.length >= 1;
 
