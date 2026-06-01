@@ -833,7 +833,28 @@ RÈGLES DURES
 - **Respect de l'appétence technique** : ${data.technicalAppetite === "no-code" ? "AUCUNE mention de Python/R/code. Outils visuels uniquement." : data.technicalAppetite === "low-code" ? "SQL + Excel + BI OK, pas de Python avancé." : "Adapté au profil."}
 - **Format** : markdown propre, # pour les titres principaux, **gras** pour les sous-sections, paragraphes courts. Pas de bullet points partout — alternance paragraphes et listes selon le sens.
 - **Pas de signature dans le texte** — l'UI ajoutera la signature.
-- **Aucun caractère chinois ni alphabet non-latin.**`;
+- **Aucun caractère chinois ni alphabet non-latin.**
+${
+  data.ikigai &&
+  (data.ikigai.passion.userText || data.ikigai.forces.userText || data.ikigai.alignment.salaryExpectation)
+    ? `
+────────────────────────────────────
+BLOC IKIGAI — OBLIGATOIRE EN TOUTE FIN
+────────────────────────────────────
+
+Après le bilan, sur une DERNIÈRE ligne, émets ce commentaire HTML EXACT (il
+sera transformé en diagramme visuel, l'utilisateur ne verra pas le code) :
+
+<!--IKIGAI:{"passion":"<3-5 mots: ce qui l'anime>","forces":"<3-5 mots: sa force clé>","market":"<3-5 mots: l'état du marché pour son rôle cible>","alignment":"<3-5 mots: son cadre/salaire clé>","sweetSpot":"<le rôle cible précis qui croise les 4, ex: Head of People Analytics>"}-->
+
+RÈGLES DU BLOC :
+- JSON valide sur UNE seule ligne, entre <!-- et -->
+- Chaque libellé : 3-5 mots MAX, percutant, tiré du dossier réel
+- "sweetSpot" : le rôle cible précis (pas générique)
+- Aucun caractère asiatique
+- C'est la toute dernière ligne, après "Pour aller plus loin"`
+    : ""
+}`;
 }
 
 // ============================================================

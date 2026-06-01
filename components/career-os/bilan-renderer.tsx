@@ -23,6 +23,7 @@ import {
   BilanPlanTimeline,
   extractPlanPhases,
 } from "./bilan-plan-timeline";
+import { IkigaiDiagram, extractIkigaiData } from "./ikigai-diagram";
 
 interface CareerOsBilanProps {
   content: string;
@@ -43,7 +44,12 @@ interface CareerOsBilanProps {
 function cleanText(text: string): string {
   return text
     .replace(/[⺀-鿿豈-﫿]/g, "")
-    .replace(/　/g, " ");
+    .replace(/　/g, " ")
+    // Masque tout commentaire HTML, même incomplet pendant le streaming
+    // (ex: le bloc <!--IKIGAI:... en cours de frappe) pour éviter qu'il
+    // s'affiche en texte brut avant d'être extrait.
+    .replace(/<!--[\s\S]*$/g, "")
+    .trimEnd();
 }
 
 /**
@@ -149,13 +155,18 @@ export function CareerOsBilan({
   // visual timeline. If successful, we strip that section from the markdown
   // (so it doesn't appear twice) and inject the timeline at the right spot
   // in the block flow.
-  const planPhases = extractPlanPhases(content);
+  // Extrait d'abord le bloc Ikigai (balise HTML commentée en fin de bilan)
+  // pour l'afficher en diagramme et le retirer du texte markdown.
+  const { data: ikigaiData, cleaned: contentSansIkigai } =
+    extractIkigaiData(content);
+
+  const planPhases = extractPlanPhases(contentSansIkigai);
   const contentForBlocks = planPhases
-    ? content.replace(
+    ? contentSansIkigai.replace(
         /#\s*Plan[\s\S]*?(?=\n#\s|\n# |$)/i,
         "__BILAN_PLAN_PLACEHOLDER__"
       )
-    : content;
+    : contentSansIkigai;
 
   const blocks = parseBlocks(contentForBlocks);
   const today = new Date().toLocaleDateString("fr-FR", {
@@ -191,6 +202,10 @@ export function CareerOsBilan({
 
       {/* Visual header — dataviz strip when stats are provided */}
       {stats && <BilanHeaderStats stats={stats} />}
+
+      {/* Diagramme Ikigai — les 4 cercles + sweet spot, si l'IA a émis
+          le bloc de données structuré en fin de bilan. */}
+      {ikigaiData && <IkigaiDiagram data={ikigaiData} />}
 
       {/* Document body */}
       <div className="space-y-1 font-serif-like">
