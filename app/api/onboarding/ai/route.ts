@@ -63,13 +63,33 @@ export async function POST(request: NextRequest) {
     return new Response("Non authentifié", { status: 401 });
   }
 
-  // ── Server-side rate limit: max 20 onboarding AI calls per day ──
+  // On parse le body AVANT le rate limit pour connaître le `mode` : les
+  // reformulations (~120 tokens, quasi gratuites) ne doivent PAS être
+  // décomptées, sinon un onboarding complet (~6 reformulations + 4 Ikigai
+  // + ambitions + summary + retries) épuise le quota en plein parcours.
+  let body: {
+    step: string;
+    data: Partial<OnboardingFormData>;
+    mode?: "insight" | "reformulation" | "ikigai";
+  };
+  try {
+    body = await request.json();
+  } catch {
+    return new Response("Requête invalide", { status: 400 });
+  }
+  const { step, data, mode } = body;
+
+  // ── Rate limit : 60 appels IA "coûteux" / jour / utilisateur ──
+  // On ne compte PAS les reformulations (coût marginal). Le seuil de 60
+  // laisse largement la place à plusieurs onboardings complets + des
+  // régénérations, tout en bornant l'abus.
   const dbUser = await prisma.user.findUnique({
     where: { supabaseId: user.id },
     select: { id: true },
   });
 
-  if (dbUser) {
+  const isCheapCall = mode === "reformulation";
+  if (dbUser && !isCheapCall) {
     const today = new Date();
     today.setHours(0, 0, 0, 0);
     const onboardingCallsToday = await prisma.activity.count({
@@ -80,13 +100,16 @@ export async function POST(request: NextRequest) {
         createdAt: { gte: today },
       },
     });
-    if (onboardingCallsToday >= 20) {
+    if (onboardingCallsToday >= 60) {
       return Response.json(
-        { error: "Trop de requêtes IA aujourd'hui" },
+        {
+          error:
+            "Votre coach IA est très sollicité (limite quotidienne atteinte). Réessayez demain ou contactez-nous.",
+        },
         { status: 429 }
       );
     }
-    // Track usage
+    // Track usage (uniquement les appels coûteux)
     await prisma.activity.create({
       data: { userId: dbUser.id, type: "AGENT_INTERACTION", title: "Onboarding AI" },
     });
@@ -98,13 +121,6 @@ export async function POST(request: NextRequest) {
   }
 
   try {
-    const body = await request.json();
-    const { step, data, mode } = body as {
-      step: string;
-      data: Partial<OnboardingFormData>;
-      mode?: "insight" | "reformulation" | "ikigai";
-    };
-
     // ── Ikigai mode (Sprint 3 : coach senior sur les 4 dimensions) ──
     // Le step est de la forme "ikigai-passion" / "ikigai-forces" / etc.
     // On stream 200-280 mots, system prompt dédié.
