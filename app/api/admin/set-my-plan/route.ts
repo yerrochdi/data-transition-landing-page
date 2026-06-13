@@ -22,6 +22,20 @@ export const dynamic = "force-dynamic";
 const VALID_PLANS = ["FREE", "BOOST", "PREMIUM", "FOUNDING", "ENTERPRISE"] as const;
 
 export async function GET(request: NextRequest) {
+  // Double barrière (défense en profondeur) :
+  // 1. isAdmin() — l'email doit être dans ADMIN_EMAILS (fail-closed).
+  // 2. Un secret partagé ADMIN_ACTION_SECRET passé en ?key=... — empêche
+  //    qu'une simple fuite de session admin suffise à muter un plan.
+  // Si ADMIN_ACTION_SECRET n'est pas configuré, l'endpoint est désactivé
+  // (fail-closed) : c'est un outil de test, son absence = pas d'accès.
+  const adminSecret = process.env.ADMIN_ACTION_SECRET;
+  const providedKey = new URL(request.url).searchParams.get("key");
+  if (!adminSecret || providedKey !== adminSecret) {
+    return Response.json(
+      { ok: false, error: "Forbidden" },
+      { status: 403 }
+    );
+  }
   if (!(await isAdmin())) {
     return Response.json({ ok: false, error: "Forbidden" }, { status: 403 });
   }

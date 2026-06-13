@@ -1,5 +1,6 @@
 import { NextRequest } from "next/server";
 import { createClient } from "@/lib/supabase/server";
+import { prisma } from "@/lib/db";
 import { ai } from "@/lib/ai/client";
 import { SYSTEM_PROMPT } from "@/lib/ai/prompts";
 
@@ -88,6 +89,39 @@ export async function POST(request: NextRequest) {
 
   if (!user) {
     return new Response("Non authentifié", { status: 401 });
+  }
+
+  // ── Rate limit : 5 analyses LinkedIn / jour / utilisateur ──
+  // C'est l'endpoint LLM le plus coûteux (moonshot-v1-32k, 2500 tokens) :
+  // sans plafond, un utilisateur peut boucler des uploads PDF et générer
+  // des coûts non bornés. 5/jour couvre largement un usage légitime.
+  const dbUser = await prisma.user.findUnique({
+    where: { supabaseId: user.id },
+    select: { id: true },
+  });
+  if (dbUser) {
+    const today = new Date();
+    today.setHours(0, 0, 0, 0);
+    const callsToday = await prisma.activity.count({
+      where: {
+        userId: dbUser.id,
+        type: "AGENT_INTERACTION",
+        title: "LinkedIn Analysis",
+        createdAt: { gte: today },
+      },
+    });
+    if (callsToday >= 5) {
+      return Response.json(
+        {
+          error:
+            "Limite quotidienne d'analyses LinkedIn atteinte (5/jour). Réessayez demain.",
+        },
+        { status: 429 }
+      );
+    }
+    await prisma.activity.create({
+      data: { userId: dbUser.id, type: "AGENT_INTERACTION", title: "LinkedIn Analysis" },
+    });
   }
 
   if (!process.env.MOONSHOT_API_KEY) {

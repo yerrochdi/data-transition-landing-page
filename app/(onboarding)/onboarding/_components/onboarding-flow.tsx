@@ -112,6 +112,70 @@ export function OnboardingFlow({ initialData, chosenPlan = "free" }: OnboardingF
     setMounted(true);
   }, []);
 
+  // ── Sauvegarde locale des réponses Ikigai (QW1) ──
+  // Les modules Ikigai (Passion/Forces/Alignement) collectent les réponses
+  // les plus coûteuses émotionnellement, mais ne sont pas persistés serveur
+  // pendant l'onboarding. Un refresh perdrait tout. On les sauvegarde dans
+  // localStorage et on réhydrate au mount.
+  const IKIGAI_STORAGE_KEY = "nextmove_onboarding_ikigai";
+
+  // Réhydratation au mount (une seule fois).
+  useEffect(() => {
+    if (typeof window === "undefined") return;
+    try {
+      const saved = window.localStorage.getItem(IKIGAI_STORAGE_KEY);
+      if (!saved) return;
+      const parsed = JSON.parse(saved) as Partial<OnboardingFormData["ikigai"]>;
+      // On ne réhydrate que les champs texte/saisie de l'utilisateur, pas
+      // les insights IA (qui se régénèrent). Évite d'écraser un état déjà saisi.
+      if (parsed.passion?.userText) {
+        dispatch({ type: "SET_IKIGAI_PASSION_TEXT", value: parsed.passion.userText });
+      }
+      if (parsed.forces?.userText) {
+        dispatch({ type: "SET_IKIGAI_FORCES_TEXT", value: parsed.forces.userText });
+      }
+      if (parsed.alignment?.salaryExpectation) {
+        dispatch({ type: "SET_IKIGAI_ALIGNMENT_SALARY", value: parsed.alignment.salaryExpectation });
+      }
+      if (parsed.alignment?.nonNegotiables?.length) {
+        for (const n of parsed.alignment.nonNegotiables) {
+          dispatch({ type: "ADD_IKIGAI_ALIGNMENT_NON_NEG", value: n });
+        }
+      }
+    } catch {
+      // localStorage corrompu/indisponible — on ignore silencieusement
+    }
+    // eslint-disable-next-line react-hooks/exhaustive-deps
+  }, []);
+
+  // Sauvegarde debouncée à chaque évolution des réponses Ikigai.
+  useEffect(() => {
+    if (typeof window === "undefined") return;
+    const t = window.setTimeout(() => {
+      try {
+        window.localStorage.setItem(
+          IKIGAI_STORAGE_KEY,
+          JSON.stringify({
+            passion: { userText: formData.ikigai.passion.userText },
+            forces: { userText: formData.ikigai.forces.userText },
+            alignment: {
+              salaryExpectation: formData.ikigai.alignment.salaryExpectation,
+              nonNegotiables: formData.ikigai.alignment.nonNegotiables,
+            },
+          })
+        );
+      } catch {
+        // quota/indispo — on ignore
+      }
+    }, 800);
+    return () => window.clearTimeout(t);
+  }, [
+    formData.ikigai.passion.userText,
+    formData.ikigai.forces.userText,
+    formData.ikigai.alignment.salaryExpectation,
+    formData.ikigai.alignment.nonNegotiables,
+  ]);
+
   // Mesure la hauteur réelle de la nav mobile bottom (portal au body) et
   // expose-la en CSS var --onboarding-nav-h pour que le padding bottom du
   // step content s'adapte exactement — plus de chevauchement, plus de
@@ -213,6 +277,13 @@ export function OnboardingFlow({ initialData, chosenPlan = "free" }: OnboardingF
         aiInsights.skills
       ).then(async (result) => {
         if (result.success) {
+          // Onboarding finalisé → on purge le brouillon Ikigai local pour
+          // ne pas le réhydrater chez un prochain user sur ce navigateur.
+          try {
+            window.localStorage.removeItem(IKIGAI_STORAGE_KEY);
+          } catch {
+            /* ignore */
+          }
           // If user chose a paid plan during signup → redirect to Stripe Checkout
           if (PAID_CHOSEN_PLANS.includes(chosenPlan)) {
             const checkout = await createCheckoutSession(chosenPlan as "boost" | "pro" | "sprint");
