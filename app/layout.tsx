@@ -1,7 +1,8 @@
 import React from "react";
 import type { Metadata, Viewport } from "next";
 import { Inter, Plus_Jakarta_Sans } from "next/font/google";
-import { Analytics } from "@vercel/analytics/react";
+import { AnalyticsGate } from "@/components/analytics-gate";
+import { CookieConsent } from "@/components/cookie-consent";
 
 import "./globals.css";
 
@@ -81,7 +82,8 @@ export default function RootLayout({
         className={`${inter.variable} ${jakarta.variable} font-body antialiased bg-background text-foreground selection:bg-primary selection:text-primary-foreground`}
       >
         {children}
-        <Analytics />
+        <CookieConsent />
+        <AnalyticsGate />
       </body>
     </html>
   );

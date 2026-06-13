@@ -1,5 +1,6 @@
 import type { Metadata } from "next";
 import { LegalLayout } from "../_components/legal-layout";
+import { CookiePreferencesButton } from "@/components/cookie-preferences-button";
 
 export const metadata: Metadata = {
   title: "Politique cookies",
@@ -51,10 +52,12 @@ export default function CookiesPage() {
         Ces cookies ne nécessitent pas de consentement préalable au sens de l&apos;article 82 de la loi Informatique et Libertés, car ils sont indispensables à la fourniture du service.
       </p>
 
-      <h3>2.2 Mesure d&apos;audience anonyme</h3>
+      <h3>2.2 Mesure d&apos;audience (soumise à consentement)</h3>
       <p>
-        NextMove utilise <strong>Vercel Analytics</strong> pour des statistiques d&apos;usage agrégées et anonymisées. Aucun cookie persistant n&apos;est déposé, aucune donnée individuelle n&apos;est traitée. Ce dispositif est exempté de consentement par la CNIL.
+        NextMove utilise <strong>Vercel Analytics</strong> pour des statistiques d&apos;usage agrégées et anonymisées, afin d&apos;améliorer le service. Ce dispositif n&apos;est activé qu&apos;<strong>après votre consentement explicite</strong>, recueilli via le bandeau affiché lors de votre première visite. Vous pouvez modifier ou retirer ce consentement à tout moment ci-dessous.
       </p>
+
+      <CookiePreferencesButton />
 
       <h2>3. Comment gérer les cookies&nbsp;?</h2>
       <p>
