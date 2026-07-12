@@ -196,7 +196,10 @@ export async function updateFoundingMemberStatus(
  * Retourne null si :
  *   - L'user n'est pas authentifié
  *   - L'user n'a pas de candidature Founding ACCEPTED non activée
- *   - L'user a déjà le plan FOUNDING (paiement passé)
+ *   - L'user a DÉJÀ UN PLAN PAYANT, quel qu'il soit (FOUNDING, BOOST,
+ *     PREMIUM, ENTERPRISE) — afficher "votre profil reste au plan gratuit"
+ *     à un compte Pro serait incohérent. La bannière ne concerne que les
+ *     comptes FREE dont l'activation Founding est restée en suspens.
  */
 export async function getPendingFoundingActivation(): Promise<{
   activationToken: string;
@@ -209,12 +212,13 @@ export async function getPendingFoundingActivation(): Promise<{
 
   if (!authUser?.email) return null;
 
-  // Si l'user est déjà FOUNDING, pas besoin de bannière
+  // La bannière ne s'adresse qu'aux comptes FREE : tout plan payant
+  // (Founding, Boost, Pro/Premium, Enterprise) la rendrait incohérente.
   const dbUser = await prisma.user.findUnique({
     where: { supabaseId: authUser.id },
     select: { plan: true },
   });
-  if (dbUser?.plan === "FOUNDING") return null;
+  if (dbUser && dbUser.plan !== "FREE") return null;
 
   const application = await prisma.foundingMemberApplication.findFirst({
     where: {

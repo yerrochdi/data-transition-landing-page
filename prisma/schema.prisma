@@ -71,6 +71,11 @@ model UserProfile {
   skillGaps        String[]
   careerScore      Int      @default(0)
   readinessScore   Int      @default(0)
+  // Sprint 2 — readiness vivante : le score courant = baseline (déclaratif,
+  // figé à l'onboarding) + bonus de progression prouvée (livrables validés,
+  // phases complétées…). On stocke la baseline séparément pour que le
+  // recalcul soit idempotent (pas de double comptage du bonus).
+  readinessBaseline Int     @default(0)
   confidenceLevel  Int      @default(5) // 1-10
 
   // Career goal — 3 imposed dimensions (V1 Sprint 1)
@@ -515,6 +520,15 @@ enum ActivityType {
   OPPORTUNITY_BOOKMARKED
   MILESTONE
   ONBOARDING_STEP
+  // Sprint 2 — journal d'événements de carrière (système nerveux).
+  // Chaque action significative devient un événement typé qui alimente
+  // la readiness vivante, le Point du Lundi et (plus tard) le carnet
+  // d'impact + le dossier d'entretien annuel.
+  DELIVERABLE_VALIDATED
+  IMPACT_LOGGED
+  COMMITMENT_MADE
+  WIN_DECLARED
+  CHECKIN_ANSWERED
 }
 
 // ============================================================

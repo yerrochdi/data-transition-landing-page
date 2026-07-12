@@ -423,6 +423,12 @@ export async function toggleTask(taskProgressId: string): Promise<{ success: boo
       },
     });
 
+    // Sprint 2 — readiness vivante : un seul recalcul en fin d'action
+    // couvre à la fois la tâche complétée ET l'éventuelle phase complétée
+    // (le recalcul recompte tout, il est idempotent). Jamais bloquant.
+    const { recomputeReadiness } = await import("@/lib/dashboard/readiness");
+    await recomputeReadiness(userId);
+
     return { success: true };
   } catch (e) {
     console.error("Toggle task error:", e);

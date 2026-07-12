@@ -164,6 +164,10 @@ export async function completeOnboarding(
         skillGaps,
         confidenceLevel: data.confidenceLevel,
         readinessScore,
+        // Sprint 2 — readiness vivante : la baseline déclarative est figée
+        // ici ; le readinessScore courant évoluera ensuite avec la
+        // progression prouvée (cf. lib/dashboard/readiness.ts).
+        readinessBaseline: readinessScore,
         careerScore,
         ...goalFields,
       },
@@ -177,6 +181,7 @@ export async function completeOnboarding(
         skillGaps,
         confidenceLevel: data.confidenceLevel,
         readinessScore,
+        readinessBaseline: readinessScore,
         careerScore,
         ...goalFields,
       },
