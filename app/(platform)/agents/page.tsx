@@ -2,6 +2,7 @@ import { getDashboardData } from "@/lib/dashboard/actions";
 import { getDailyUsage } from "@/lib/billing/actions";
 import { getPlanLimits } from "@/lib/billing/plans";
 import { getNextActionForCurrentUser } from "@/lib/orchestrator/actions";
+import { getLastConversationForCurrentUser } from "@/lib/copilot/history";
 import { redirect } from "next/navigation";
 import { CopilotChat } from "./_components/copilot-chat";
 import type { SuggestionData } from "./_components/copilot-chat";
@@ -104,9 +105,10 @@ export default async function AgentsPage({
 
   const params = await searchParams;
   const suggestions = buildSuggestions(data);
-  const [dailyUsage, nextAction] = await Promise.all([
+  const [dailyUsage, nextAction, history] = await Promise.all([
     getDailyUsage("copilot"),
     getNextActionForCurrentUser(),
+    getLastConversationForCurrentUser(),
   ]);
   const limits = getPlanLimits(data.user.plan);
 
@@ -119,6 +121,8 @@ export default async function AgentsPage({
       dailyLimit={limits.copilotMessagesPerDay}
       plan={data.user.plan}
       nextAction={nextAction}
+      initialMessages={history?.messages ?? []}
+      initialConversationId={history?.conversationId ?? null}
     />
   );
 }

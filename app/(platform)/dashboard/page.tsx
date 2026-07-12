@@ -9,19 +9,21 @@ import {
 } from "@/lib/career-os/actions";
 import { getPendingFoundingActivation } from "@/lib/founding-members/actions";
 import { FoundingActivationBanner } from "@/components/billing/founding-activation-banner";
+import { getReadinessTrendForCurrentUser } from "@/lib/dashboard/readiness";
 
 export default async function DashboardPage({
   searchParams,
 }: {
   searchParams: Promise<{ upgraded?: string }>;
 }) {
-  const [data, nextAction, careerOs, bilanSharing, foundingPending] =
+  const [data, nextAction, careerOs, bilanSharing, foundingPending, readinessTrend] =
     await Promise.all([
       getDashboardData(),
       getNextActionForCurrentUser(),
       getCareerOsEnrichment(),
       getBilanSharingState(),
       getPendingFoundingActivation(),
+      getReadinessTrendForCurrentUser(),
     ]);
 
   if (!data) {
@@ -48,6 +50,7 @@ export default async function DashboardPage({
         nextAction={nextAction}
         careerOs={careerOs}
         bilanSharing={bilanSharing}
+        readinessTrend={readinessTrend}
       />
     </>
   );

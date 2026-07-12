@@ -138,6 +138,23 @@ ${deliverable.externalUrl ? `**Lien externe :** ${deliverable.externalUrl}\n\n` 
       await refreshNextAction(deliverable.userId).catch((err) => {
         console.error("[orchestrator] refresh after deliverable failed:", err);
       });
+
+      // Sprint 2 — journal d'événements + readiness vivante.
+      // L'événement alimente le Point du Lundi ; le recalcul fait bouger
+      // le score visiblement ("+4 pts"). Jamais bloquant pour la validation.
+      await prisma.activity
+        .create({
+          data: {
+            userId: deliverable.userId,
+            type: "DELIVERABLE_VALIDATED",
+            title: "Livrable validé",
+            description: `Livrable validé avec un score IA de ${score}/100`,
+            icon: "CheckCircle2",
+          },
+        })
+        .catch((err) => console.error("[activity] log failed:", err));
+      const { recomputeReadiness } = await import("@/lib/dashboard/readiness");
+      await recomputeReadiness(deliverable.userId);
     }
 
     return review;

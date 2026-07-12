@@ -55,6 +55,14 @@ export interface PriorityAction {
   readinessSnapshot: number;
 }
 
+/** Message persisté, sérialisé côté serveur (timestamp ISO). */
+export interface PersistedMessage {
+  id: string;
+  role: "user" | "assistant";
+  content: string;
+  timestamp: string;
+}
+
 interface CopilotChatProps {
   suggestions: SuggestionData[];
   userName: string;
@@ -63,6 +71,9 @@ interface CopilotChatProps {
   dailyLimit?: number;
   plan?: string;
   nextAction?: PriorityAction | null;
+  /** Sprint 2 (QW-B) — historique persistant hydraté côté serveur. */
+  initialMessages?: PersistedMessage[];
+  initialConversationId?: string | null;
 }
 
 // ─── Icon Map ─────────────────────────────────────────────────────
@@ -248,8 +259,19 @@ function MessageBubble({ message, isStreaming }: { message: Message; isStreaming
 
 // ─── Main Component ───────────────────────────────────────────────
 
-export function CopilotChat({ suggestions, userName, initialQuery, dailyUsage = 0, dailyLimit = Infinity, plan = "FREE", nextAction = null }: CopilotChatProps) {
-  const [messages, setMessages] = useState<Message[]>([]);
+export function CopilotChat({ suggestions, userName, initialQuery, dailyUsage = 0, dailyLimit = Infinity, plan = "FREE", nextAction = null, initialMessages = [], initialConversationId = null }: CopilotChatProps) {
+  // Sprint 2 (QW-B) — mémoire du coach : l'historique persistant est
+  // hydraté depuis le serveur, et l'id de conversation est renvoyé au
+  // backend à chaque tour pour rattacher les messages au même fil.
+  const [messages, setMessages] = useState<Message[]>(() =>
+    initialMessages.map((m) => ({
+      id: m.id,
+      role: m.role,
+      content: m.content,
+      timestamp: new Date(m.timestamp),
+    }))
+  );
+  const conversationIdRef = useRef<string | null>(initialConversationId);
   const [input, setInput] = useState("");
   const [isStreaming, setIsStreaming] = useState(false);
   const [error, setError] = useState<string | null>(null);
@@ -330,6 +352,8 @@ export function CopilotChat({ suggestions, userName, initialQuery, dailyUsage = 
         headers: { "Content-Type": "application/json" },
         body: JSON.stringify({
           messages: newMessages.map((m) => ({ role: m.role, content: m.content })),
+          // Rattache le tour au fil persistant (mémoire du coach).
+          conversationId: conversationIdRef.current,
         }),
       });
 
@@ -337,6 +361,11 @@ export function CopilotChat({ suggestions, userName, initialQuery, dailyUsage = 
         const errorText = await response.text();
         throw new Error(errorText || `Erreur ${response.status}`);
       }
+
+      // Le backend renvoie l'id de conversation (créé au 1er tour) —
+      // on le mémorise pour les tours suivants.
+      const cid = response.headers.get("X-Conversation-Id");
+      if (cid) conversationIdRef.current = cid;
 
       const reader = response.body?.getReader();
       const decoder = new TextDecoder();

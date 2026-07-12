@@ -29,6 +29,7 @@ import { SkillGaps } from "./skill-gaps";
 import { WelcomeModal } from "./welcome-modal";
 import { NextBestAction, type NextBestActionProps } from "./next-best-action";
 import { CareerOsCard } from "./career-os-card";
+import { ReadinessKpi, type ReadinessTrendData } from "./readiness-kpi";
 import { cn } from "@/lib/utils";
 
 interface CareerOsStatus {
@@ -48,6 +49,8 @@ interface DashboardViewProps {
   nextAction: NextBestActionProps | null;
   careerOs: CareerOsStatus | null;
   bilanSharing: BilanSharingState | null;
+  /** Sprint 2 — readiness vivante : delta hebdo + historique sparkline. */
+  readinessTrend?: ReadinessTrendData | null;
 }
 
 export function DashboardView({
@@ -55,6 +58,7 @@ export function DashboardView({
   nextAction,
   careerOs,
   bilanSharing,
+  readinessTrend = null,
 }: DashboardViewProps) {
   const { user, profile, onboarding, journey } = data;
 
@@ -183,11 +187,7 @@ export function DashboardView({
 
             {/* KPIs grid */}
             <div className="flex-1 grid grid-cols-2 sm:grid-cols-3 lg:grid-cols-3 gap-3 w-full">
-              <MiniKpi
-                label="Readiness"
-                value={readinessScore > 0 ? `${readinessScore}%` : "—"}
-                icon={TrendingUp}
-              />
+              <ReadinessKpi score={readinessScore} trend={readinessTrend} />
               <MiniKpi
                 label="Confiance"
                 value={`${confidenceLevel}/10`}

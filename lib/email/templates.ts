@@ -297,3 +297,65 @@ export function upgradeEmail(firstName: string, plan: string = "PREMIUM"): strin
     <p style="color:#888;font-size:12px">Tu peux gérer ton abonnement dans les <a href="${SITE_URL()}/settings" style="color:#4be277">paramètres</a>.</p>
   `);
 }
+
+// ── Sprint 2 (QW-C) — Le Point du Lundi ─────────────────────────────
+// Digest hebdomadaire "gagné" (pattern Whoop, cf. audit/06) : delta de
+// readiness + prochaine action + opportunité matchée. Riche si la semaine
+// a été active, sobre sinon — jamais culpabilisant. Vouvoiement.
+
+export function weeklyDigestEmail(params: {
+  firstName: string;
+  readinessScore: number;
+  weeklyDelta: number;
+  weekEvents: number;
+  nextAction: { title: string; why: string; href: string; estimatedMinutes: number } | null;
+  topOpportunity: { title: string; company: string; matchScore: number } | null;
+}): string {
+  const { firstName, readinessScore, weeklyDelta, weekEvents, nextAction, topOpportunity } = params;
+
+  const deltaBlock =
+    weeklyDelta > 0
+      ? `<div style="background:#0d1f14;border:1px solid #1d4029;border-radius:12px;padding:16px;margin:16px 0;text-align:center">
+          <p style="margin:0;color:#4be277;font-size:26px;font-weight:800">+${weeklyDelta} pts</p>
+          <p style="margin:4px 0 0;color:#8a9;font-size:12px">de readiness cette semaine — votre progression est réelle. Vous êtes à <strong style="color:#fff">${readinessScore}%</strong>.</p>
+        </div>`
+      : `<div style="background:#141414;border:1px solid #222;border-radius:12px;padding:16px;margin:16px 0;text-align:center">
+          <p style="margin:0;color:#fff;font-size:26px;font-weight:800">${readinessScore}%</p>
+          <p style="margin:4px 0 0;color:#888;font-size:12px">de readiness. Une action cette semaine suffit à faire bouger ce chiffre.</p>
+        </div>`;
+
+  const weekLine =
+    weekEvents > 0
+      ? `<p>Votre semaine : <strong style="color:#4be277">${weekEvents} action${weekEvents > 1 ? "s" : ""}</strong> enregistrée${weekEvents > 1 ? "s" : ""} sur votre Career OS.</p>`
+      : `<p>Semaine calme côté NextMove — ça arrive. La bonne nouvelle : il suffit d'une action pour relancer la dynamique.</p>`;
+
+  const actionBlock = nextAction
+    ? `<div style="background:#0a0d0c;border:1px solid #1c2620;border-radius:12px;padding:18px;margin:16px 0">
+        <p style="margin:0 0 6px;color:#4be277;font-size:10px;text-transform:uppercase;letter-spacing:2px;font-weight:bold">Votre prochaine action (~${nextAction.estimatedMinutes} min)</p>
+        <p style="margin:0 0 6px;color:#fff;font-size:15px;font-weight:700">${nextAction.title}</p>
+        <p style="margin:0;color:#aab;font-size:12px;line-height:1.6">${nextAction.why}</p>
+      </div>`
+    : "";
+
+  const oppBlock = topOpportunity
+    ? `<div style="background:#0a0d10;border:1px solid #1a2430;border-radius:12px;padding:18px;margin:16px 0">
+        <p style="margin:0 0 6px;color:#adc6ff;font-size:10px;text-transform:uppercase;letter-spacing:2px;font-weight:bold">Opportunité de la semaine · ${topOpportunity.matchScore}% match</p>
+        <p style="margin:0;color:#fff;font-size:14px;font-weight:700">${topOpportunity.title}</p>
+        <p style="margin:4px 0 0;color:#889;font-size:12px">${topOpportunity.company}</p>
+      </div>`
+    : "";
+
+  return layout(`
+    <h1 style="color:#fff;font-size:20px;margin:0 0 12px">Votre Point du Lundi, ${firstName}</h1>
+    ${weekLine}
+    ${deltaBlock}
+    ${actionBlock}
+    ${oppBlock}
+    <div style="text-align:center;margin:24px 0 8px">
+      <a href="${SITE_URL()}/dashboard" style="display:inline-block;background:linear-gradient(135deg,#4be277,#36d068);color:#000;font-weight:bold;font-size:14px;padding:12px 28px;border-radius:12px;text-decoration:none">
+        Ouvrir mon Career OS
+      </a>
+    </div>
+    <p style="color:#666;font-size:11px;text-align:center">Le Point du Lundi arrive chaque semaine. Une action par semaine suffit — c'est la régularité qui transforme.</p>
+  `);
+}

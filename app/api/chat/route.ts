@@ -11,6 +11,79 @@ interface ChatMessage {
   content: string;
 }
 
+// ── Sprint 2 (QW-B) : mémoire du coach ──────────────────────────────
+// Les conversations sont désormais persistées dans AgentConversation/
+// AgentMessage (tables qui existaient mais n'étaient jamais écrites).
+// Le coach n'est plus amnésique : historique rechargeable + mémoire de
+// la session précédente injectée dans le prompt (plafonnée en tokens).
+
+const COPILOT_AGENT_SLUG = "copilot";
+
+/** Garantit l'existence de l'AgentDefinition du Copilot (idempotent). */
+async function ensureCopilotAgent(): Promise<string> {
+  const agent = await prisma.agentDefinition.upsert({
+    where: { slug: COPILOT_AGENT_SLUG },
+    update: {},
+    create: {
+      slug: COPILOT_AGENT_SLUG,
+      name: "Copilot NextMove",
+      role: "Coach de transition",
+      description:
+        "Le coach IA central de NextMove : personnalisé, orienté action, aligné sur la priorité du moment.",
+      icon: "Sparkles",
+      color: "primary",
+      capabilities: [],
+      quickActions: [],
+    },
+    select: { id: true },
+  });
+  return agent.id;
+}
+
+/**
+ * Mémoire de la session précédente : jusqu'à 6 messages de la dernière
+ * conversation AUTRE que la conversation courante, tronqués à 220 chars
+ * chacun (garde-fou coût : ~350 tokens max au total).
+ */
+async function buildMemoryContext(
+  userId: string,
+  currentConversationId: string | null
+): Promise<string> {
+  const previous = await prisma.agentConversation.findFirst({
+    where: {
+      userId,
+      ...(currentConversationId ? { id: { not: currentConversationId } } : {}),
+    },
+    orderBy: { updatedAt: "desc" },
+    select: {
+      updatedAt: true,
+      messages: {
+        orderBy: { createdAt: "desc" },
+        take: 6,
+        select: { role: true, content: true },
+      },
+    },
+  });
+
+  if (!previous || previous.messages.length === 0) return "";
+
+  const lines = [...previous.messages]
+    .reverse()
+    .map(
+      (m) =>
+        `${m.role === "USER" ? "Lui/Elle" : "Toi"} : ${m.content.slice(0, 220)}${m.content.length > 220 ? "…" : ""}`
+    )
+    .join("\n");
+
+  const dateStr = previous.updatedAt.toLocaleDateString("fr-FR", {
+    day: "numeric",
+    month: "long",
+  });
+
+  return `MÉMOIRE DE VOTRE DERNIÈRE SESSION ENSEMBLE (${dateStr}) — utilise-la pour assurer la continuité (rappelle ses objectifs/engagements passés quand c'est pertinent, sans réciter mécaniquement) :
+${lines}`;
+}
+
 function buildProfileContext(user: {
   firstName: string;
   onboarding: {
@@ -162,7 +235,10 @@ export async function POST(request: NextRequest) {
 
   try {
     const body = await request.json();
-    const { messages } = body as { messages: ChatMessage[] };
+    const { messages, conversationId: clientConversationId } = body as {
+      messages: ChatMessage[];
+      conversationId?: string | null;
+    };
 
     if (!messages?.length) {
       return new Response("Aucun message", { status: 400 });
@@ -210,11 +286,59 @@ export async function POST(request: NextRequest) {
     const nextAction = await getNextActionForCurrentUser();
     const orchestratorContext = buildOrchestratorContext(nextAction);
 
+    // ── Sprint 2 (QW-B) : résoudre/créer la conversation persistée ──
+    // On vérifie que la conversation appartient bien à l'utilisateur
+    // (sinon on en crée une nouvelle — jamais d'accès croisé).
+    let conversationId: string | null = null;
+    try {
+      if (clientConversationId) {
+        const existing = await prisma.agentConversation.findFirst({
+          where: { id: clientConversationId, userId: dbUser.id },
+          select: { id: true },
+        });
+        conversationId = existing?.id ?? null;
+      }
+      if (!conversationId) {
+        const agentId = await ensureCopilotAgent();
+        const created = await prisma.agentConversation.create({
+          data: {
+            userId: dbUser.id,
+            agentId,
+            title: messages[messages.length - 1]?.content.slice(0, 80) ?? null,
+          },
+          select: { id: true },
+        });
+        conversationId = created.id;
+      }
+    } catch (err) {
+      // La persistance ne doit jamais bloquer le chat lui-même.
+      console.error("[chat] conversation resolve failed:", err);
+    }
+
+    // Mémoire de la session précédente (plafonnée, cf. buildMemoryContext)
+    const memoryContext = conversationId
+      ? await buildMemoryContext(dbUser.id, conversationId).catch(() => "")
+      : "";
+
+    // Persiste le message utilisateur (le dernier du tableau client)
+    const lastUserMessage = messages[messages.length - 1];
+    if (conversationId && lastUserMessage?.role === "user") {
+      prisma.agentMessage
+        .create({
+          data: {
+            conversationId,
+            role: "USER",
+            content: lastUserMessage.content,
+          },
+        })
+        .catch((err) => console.error("[chat] persist user msg failed:", err));
+    }
+
     // Build messages array for the AI
     const aiMessages = [
       {
         role: "system" as const,
-        content: `${COPILOT_SYSTEM}\n\n${profileContext}\n\n${orchestratorContext}`,
+        content: `${COPILOT_SYSTEM}\n\n${profileContext}\n\n${orchestratorContext}${memoryContext ? `\n\n${memoryContext}` : ""}`,
       },
       ...messages.slice(-10).map((m) => ({
         role: m.role as "user" | "assistant",
@@ -231,16 +355,41 @@ export async function POST(request: NextRequest) {
     });
 
     const encoder = new TextEncoder();
+    // Accumule la réponse complète pour la persister à la fin du stream.
+    let assistantFullText = "";
+    const persistedConversationId = conversationId;
     const readable = new ReadableStream({
       async start(controller) {
         try {
           for await (const chunk of stream) {
             const content = chunk.choices[0]?.delta?.content;
             if (content) {
+              assistantFullText += content;
               controller.enqueue(encoder.encode(content));
             }
           }
           controller.close();
+          // Persiste la réponse du coach une fois le stream terminé
+          // (fire-and-forget : jamais bloquant).
+          if (persistedConversationId && assistantFullText.trim()) {
+            prisma.agentMessage
+              .create({
+                data: {
+                  conversationId: persistedConversationId,
+                  role: "AGENT",
+                  content: assistantFullText,
+                },
+              })
+              .then(() =>
+                prisma.agentConversation.update({
+                  where: { id: persistedConversationId },
+                  data: { updatedAt: new Date() },
+                })
+              )
+              .catch((err) =>
+                console.error("[chat] persist agent msg failed:", err)
+              );
+          }
         } catch (error) {
           console.error("Chat stream error:", error);
           controller.error(error);
@@ -255,6 +404,9 @@ export async function POST(request: NextRequest) {
       headers: {
         "Content-Type": "text/plain; charset=utf-8",
         "Cache-Control": "no-cache",
+        // Le client stocke cet id et le renvoie aux tours suivants —
+        // c'est ce qui rattache la session au fil persistant.
+        ...(conversationId ? { "X-Conversation-Id": conversationId } : {}),
       },
     });
   } catch (error) {
