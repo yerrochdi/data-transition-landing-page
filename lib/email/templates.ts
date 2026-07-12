@@ -310,8 +310,18 @@ export function weeklyDigestEmail(params: {
   weekEvents: number;
   nextAction: { title: string; why: string; href: string; estimatedMinutes: number } | null;
   topOpportunity: { title: string; company: string; matchScore: number } | null;
+  /** Engagements pris auprès du coach (14 derniers jours, 3 max). */
+  commitments?: string[];
 }): string {
-  const { firstName, readinessScore, weeklyDelta, weekEvents, nextAction, topOpportunity } = params;
+  const { firstName, readinessScore, weeklyDelta, weekEvents, nextAction, topOpportunity, commitments = [] } = params;
+
+  const commitmentsBlock = commitments.length
+    ? `<div style="background:#141008;border:1px solid #3a2d12;border-radius:12px;padding:18px;margin:16px 0">
+        <p style="margin:0 0 8px;color:#e2b34a;font-size:10px;text-transform:uppercase;letter-spacing:2px;font-weight:bold">Vos engagements en cours</p>
+        ${commitments.map((c) => `<p style="margin:0 0 6px;color:#ddd;font-size:13px">→ ${c}</p>`).join("")}
+        <p style="margin:8px 0 0;color:#887;font-size:11px">Où en êtes-vous ? Dites-le à votre coach — c'est ce qui fait avancer.</p>
+      </div>`
+    : "";
 
   const deltaBlock =
     weeklyDelta > 0
@@ -350,6 +360,7 @@ export function weeklyDigestEmail(params: {
     ${weekLine}
     ${deltaBlock}
     ${actionBlock}
+    ${commitmentsBlock}
     ${oppBlock}
     <div style="text-align:center;margin:24px 0 8px">
       <a href="${SITE_URL()}/dashboard" style="display:inline-block;background:linear-gradient(135deg,#4be277,#36d068);color:#000;font-weight:bold;font-size:14px;padding:12px 28px;border-radius:12px;text-decoration:none">

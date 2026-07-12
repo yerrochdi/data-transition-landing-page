@@ -41,6 +41,107 @@ async function ensureCopilotAgent(): Promise<string> {
 }
 
 /**
+ * ── Engagements (feature #4 roadmap — le chat impacte l'application) ──
+ *
+ * Après chaque échange, un appel léger (v1-8k, 80 tokens max, 2 messages
+ * de contexte) détecte si l'utilisateur a pris un engagement concret.
+ * Si oui → événement COMMITMENT_MADE dans le journal, qui alimente :
+ *   - le contexte du coach aux prochains tours ("où en êtes-vous ?")
+ *   - le Point du Lundi (bloc "vos engagements")
+ * Fire-and-forget : n'impacte jamais la latence du chat.
+ */
+async function extractAndLogCommitment(
+  userId: string,
+  conversationId: string,
+  userMsg: string,
+  assistantMsg: string
+): Promise<void> {
+  try {
+    const completion = await ai.chat.completions.create({
+      model: "moonshot-v1-8k",
+      messages: [
+        {
+          role: "user",
+          content: `Analyse cet échange coach/utilisateur. L'utilisateur a-t-il pris (ou confirmé) un ENGAGEMENT CONCRET à faire quelque chose ? (ex: "oui je m'y mets cette semaine", "je vais refaire mon CV d'ici lundi", "ok je m'engage à…")
+
+Utilisateur : """${userMsg.slice(0, 500)}"""
+Coach : """${assistantMsg.slice(0, 500)}"""
+
+Réponds UNIQUEMENT avec ce JSON (aucun texte autour, aucun caractère asiatique) :
+{"commitment": "<l'engagement reformulé en action courte, 12 mots max, ou null si aucun engagement clair>"}
+
+ATTENTION : une simple question ou réflexion n'est PAS un engagement. Il faut une intention d'action affirmée par l'UTILISATEUR (pas par le coach).`,
+        },
+      ],
+      max_tokens: 80,
+      temperature: 0.2,
+    });
+
+    let text = (completion.choices[0]?.message?.content || "").trim();
+    text = text.replace(/^```(?:json)?\s*/i, "").replace(/\s*```\s*$/, "");
+    const match = text.match(/\{[\s\S]*\}/);
+    if (!match) return;
+    const parsed = JSON.parse(match[0]) as { commitment?: string | null };
+    const commitment = parsed.commitment?.trim();
+    if (!commitment || commitment.toLowerCase() === "null" || commitment.length < 5) return;
+
+    // Dédup : pas deux fois le même engagement ouvert en 14 jours.
+    const since = new Date();
+    since.setDate(since.getDate() - 14);
+    const existing = await prisma.activity.count({
+      where: {
+        userId,
+        type: "COMMITMENT_MADE",
+        title: commitment,
+        createdAt: { gte: since },
+      },
+    });
+    if (existing > 0) return;
+
+    await prisma.activity.create({
+      data: {
+        userId,
+        type: "COMMITMENT_MADE",
+        title: commitment,
+        description: "Engagement pris auprès du coach",
+        icon: "Handshake",
+        metadata: { source: "copilot", conversationId },
+      },
+    });
+  } catch (err) {
+    console.error("[chat] commitment extraction failed:", err);
+  }
+}
+
+/**
+ * Engagements ouverts des 14 derniers jours (3 max) injectés dans le
+ * contexte du coach — c'est ce qui lui permet de relancer.
+ */
+async function buildCommitmentsContext(userId: string): Promise<string> {
+  const since = new Date();
+  since.setDate(since.getDate() - 14);
+  const commitments = await prisma.activity.findMany({
+    where: { userId, type: "COMMITMENT_MADE", createdAt: { gte: since } },
+    orderBy: { createdAt: "desc" },
+    take: 3,
+    select: { title: true, createdAt: true },
+  });
+  if (commitments.length === 0) return "";
+
+  const lines = commitments
+    .map(
+      (c) =>
+        `- "${c.title}" (pris le ${c.createdAt.toLocaleDateString("fr-FR", { day: "numeric", month: "long" })})`
+    )
+    .join("\n");
+
+  return `ENGAGEMENTS EN COURS DE L'UTILISATEUR (pris auprès de vous lors de sessions précédentes) :
+${lines}
+
+Si la conversation s'y prête, demandez où en est l'engagement le plus récent — UNE seule relance par conversation, jamais sur un ton de reproche.`;
+}
+
+/**
  * Mémoire de la session précédente : jusqu'à 6 messages de la dernière
  * conversation AUTRE que la conversation courante, tronqués à 220 chars
  * chacun (garde-fou coût : ~350 tokens max au total).
@@ -197,29 +298,29 @@ Ne sois pas dogmatique : si l'user insiste, aide-le. Mais le PREMIER réflexe do
 
 const COPILOT_SYSTEM = `${SYSTEM_PROMPT}
 
-Tu es le Copilot IA personnel de l'utilisateur sur NextMove AI, une plateforme de transition de carrière vers la data/IA. Tu es son coach, pas un chatbot générique. Tu connais où il en est dans son parcours et tu l'orientes vers la prochaine bonne étape.
+Vous êtes le coach IA personnel de l'utilisateur sur NextMove AI, une plateforme de transition de carrière vers la data/IA. Vous êtes un COACH, pas un chatbot : un coach écoute, réagit court, et fait AGIR.
 
-CONTEXTE : L'utilisateur a complété un diagnostic complet. Son profil est fourni ci-dessous, ainsi que sa priorité du moment. Tu dois TOUJOURS te baser sur ces données pour personnaliser tes réponses.
+CONTEXTE : L'utilisateur a complété un diagnostic complet. Son profil est fourni ci-dessous, ainsi que sa priorité du moment et ses engagements en cours. Basez TOUTES vos réponses sur ces données.
+
+FORMAT DE RÉPONSE — RÈGLES DURES :
+- 80 à 120 mots MAXIMUM. Jamais plus, sauf si on vous demande explicitement un plan détaillé ou une analyse de document.
+- Structure implicite de chaque réponse : (1) une réaction courte et personnalisée, (2) UNE action concrète et datée ("cette semaine", "d'ici lundi"), (3) une question qui appelle un engagement ("Vous vous y mettez cette semaine ?", "On se fixe ça comme objectif ?").
+- Une seule action à la fois. Un coach ne noie pas — il focalise.
+- Pas de listes à puces sauf si un plan est explicitement demandé. Du texte direct.
+- Vouvoiement systématique (cohérent avec tout NextMove).
+- Français uniquement, AUCUN caractère asiatique.
+
+ENGAGEMENTS — VOTRE MÉCANIQUE CENTRALE :
+- Quand l'utilisateur exprime une intention ("je vais…", "je veux…", "il faudrait que je…"), transformez-la en engagement concret : reformulez-la en action précise + échéance, et demandez confirmation.
+- Quand des ENGAGEMENTS EN COURS figurent dans le contexte : si la conversation s'y prête, demandez où ça en est — sans harceler (une seule relance par conversation).
+- Célébrez sobrement les engagements tenus (pas de "bravo !!!" — un "C'est fait, et c'est ce qui fait bouger votre readiness." suffit).
 
 COMPORTEMENT :
-- Réponds TOUJOURS en français
-- Sois concis (max 200 mots sauf si on te demande un plan détaillé)
-- Sois actionnable : chaque réponse doit contenir AU MOINS une action concrète
-- Mentionne son rôle cible et son secteur quand c'est pertinent
-- Adapte le niveau technique à son APPÉTENCE TECHNIQUE déclarée : si "no-code", JAMAIS de Python/R/code, propose uniquement Tableau/Power BI/Looker/Make. Si "low-code", SQL + Excel avancé OK mais pas de Python avancé. Si "code", outils techniques OK.
-- Si la confiance est basse (≤4), sois encourageant et bienveillant
-- Si la confiance est haute (≥8), challenge-le pour aller plus loin
-- Utilise le tutoiement
-- N'utilise AUCUN caractère chinois
+- Adaptez le niveau technique à son APPÉTENCE TECHNIQUE : "no-code" → JAMAIS de Python/R/code, uniquement Tableau/Power BI/Looker/Make. "low-code" → SQL + Excel avancé OK, pas de Python avancé. "code" → outils techniques OK.
+- Confiance basse (≤4) : encourageant et bienveillant. Confiance haute (≥8) : challengez.
+- Quand la demande s'éloigne de sa priorité du moment, ramenez-y doucement (cf. règle priorité).
 
-TU PEUX :
-- Recommander des formations spécifiques (avec noms de plateformes)
-- Analyser un CV ou une lettre de motivation
-- Préparer à un entretien pour le rôle cible
-- Créer un plan d'action semaine par semaine
-- Identifier des opportunités d'emploi à chercher
-- Donner du feedback sur un projet portfolio
-- Aider à networker dans le secteur cible`;
+VOUS POUVEZ : recommander des formations précises, analyser un CV, préparer un entretien, bâtir un plan semaine par semaine, identifier des opportunités, donner du feedback portfolio, aider à networker.`;
 
 export async function POST(request: NextRequest) {
   const supabase = await createClient();
@@ -320,6 +421,11 @@ export async function POST(request: NextRequest) {
       ? await buildMemoryContext(dbUser.id, conversationId).catch(() => "")
       : "";
 
+    // Engagements ouverts — le coach relance dessus (1 fois max par conv.)
+    const commitmentsContext = await buildCommitmentsContext(dbUser.id).catch(
+      () => ""
+    );
+
     // Persiste le message utilisateur (le dernier du tableau client)
     const lastUserMessage = messages[messages.length - 1];
     if (conversationId && lastUserMessage?.role === "user") {
@@ -338,7 +444,7 @@ export async function POST(request: NextRequest) {
     const aiMessages = [
       {
         role: "system" as const,
-        content: `${COPILOT_SYSTEM}\n\n${profileContext}\n\n${orchestratorContext}${memoryContext ? `\n\n${memoryContext}` : ""}`,
+        content: `${COPILOT_SYSTEM}\n\n${profileContext}\n\n${orchestratorContext}${commitmentsContext ? `\n\n${commitmentsContext}` : ""}${memoryContext ? `\n\n${memoryContext}` : ""}`,
       },
       ...messages.slice(-10).map((m) => ({
         role: m.role as "user" | "assistant",
@@ -349,7 +455,10 @@ export async function POST(request: NextRequest) {
     const stream = await ai.chat.completions.create({
       model: "moonshot-v1-32k",
       messages: aiMessages,
-      max_tokens: 1024,
+      // 700 (vs 1024 avant) : borne structurelle contre la verbosité.
+      // Le prompt vise 80-120 mots ; 700 tokens laissent la place aux
+      // plans détaillés explicitement demandés, pas aux dissertations.
+      max_tokens: 700,
       temperature: 0.7,
       stream: true,
     });
@@ -389,6 +498,17 @@ export async function POST(request: NextRequest) {
               .catch((err) =>
                 console.error("[chat] persist agent msg failed:", err)
               );
+
+            // Détection d'engagement — le chat impacte enfin le journal
+            // d'événements (et donc le dashboard + le Point du Lundi).
+            if (lastUserMessage?.role === "user") {
+              extractAndLogCommitment(
+                dbUser.id,
+                persistedConversationId,
+                lastUserMessage.content,
+                assistantFullText
+              ).catch(() => {});
+            }
           }
         } catch (error) {
           console.error("Chat stream error:", error);

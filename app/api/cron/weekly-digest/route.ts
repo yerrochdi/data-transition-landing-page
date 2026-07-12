@@ -98,6 +98,20 @@ export async function GET(request: NextRequest) {
           },
         });
 
+        // 5. Engagements pris auprès du coach (14 jours, 3 max)
+        const twoWeeksAgo = new Date();
+        twoWeeksAgo.setDate(twoWeeksAgo.getDate() - 14);
+        const commitmentRows = await prisma.activity.findMany({
+          where: {
+            userId: u.id,
+            type: "COMMITMENT_MADE",
+            createdAt: { gte: twoWeeksAgo },
+          },
+          orderBy: { createdAt: "desc" },
+          take: 3,
+          select: { title: true },
+        });
+
         const html = weeklyDigestEmail({
           firstName: u.firstName,
           readinessScore: u.profile?.readinessScore ?? 0,
@@ -111,6 +125,7 @@ export async function GET(request: NextRequest) {
                 matchScore: match.matchScore,
               }
             : null,
+          commitments: commitmentRows.map((c) => c.title),
         });
 
         const subject =
