@@ -160,6 +160,16 @@ model OnboardingResponse {
   aiSummary        String?  @db.Text
   aiRecommendation String?  @db.Text
 
+  // Sprint 2b — matériel personnel de l'onboarding, persisté pour que le
+  // coach puisse s'y référer (expérience personnalisée) et pour les
+  // futurs bilans v2. Avant : perdu après la génération du bilan.
+  // ikigai : {passion:{userText,aiInsight}, forces:{...}, market:{...},
+  //           alignment:{salaryExpectation,nonNegotiables,aiInsight}}
+  ikigai            Json?
+  // linkedinAnalysis : {synthesis, deduced_specialty, real_skills_deduced,
+  //                     hidden_patterns, transition_angle, ...}
+  linkedinAnalysis  Json?
+
   // Public sharing of the bilan — opt-in by the user from the dashboard.
   // Same pattern as deliverables (shareableSlug + isPublic).
   bilanIsPublic        Boolean @default(false)

@@ -214,6 +214,10 @@ function buildProfileContext(user: {
     learningStyle: string[];
     priorities: string[];
     aiSummary: string | null;
+    /** Matériel personnel Ikigai persisté à l'onboarding (Json). */
+    ikigai?: unknown;
+    /** Diagnostic LinkedIn persisté à l'onboarding (Json). */
+    linkedinAnalysis?: unknown;
   } | null;
   profile: {
     careerScore: number;
@@ -267,8 +271,75 @@ Priorités : ${o.priorities?.join(", ") || "Non précisées"}
 
 Career Score : ${p?.careerScore ?? 0}/1000
 Readiness : ${p?.readinessScore ?? 0}%
-
+${buildPersonalMaterialBlock(o.ikigai, o.linkedinAnalysis)}
 ${o.aiSummary ? `DIAGNOSTIC IA PRÉCÉDENT :\n${o.aiSummary}` : ""}`;
+}
+
+/**
+ * Le matériel le plus PERSONNEL de l'onboarding : les mots exacts de
+ * l'utilisateur sur ce qui l'anime et ses forces (Ikigai), ses
+ * non-négociables, et la lecture senior de son CV LinkedIn. C'est ce qui
+ * fait la différence entre un coach qui récite un profil et un coach qui
+ * CONNAÎT la personne — citez ses propres mots quand c'est pertinent.
+ * Chaque champ est tronqué (garde-fou tokens : ~400 max au total).
+ */
+function buildPersonalMaterialBlock(
+  ikigaiRaw: unknown,
+  linkedinRaw: unknown
+): string {
+  const parts: string[] = [];
+
+  const ikigai = ikigaiRaw as {
+    passion?: { userText?: string };
+    forces?: { userText?: string };
+    alignment?: { salaryExpectation?: string; nonNegotiables?: string[] };
+  } | null;
+
+  if (ikigai) {
+    if (ikigai.passion?.userText) {
+      parts.push(
+        `Ce qui l'anime (ses mots exacts) : "${ikigai.passion.userText.slice(0, 280)}"`
+      );
+    }
+    if (ikigai.forces?.userText) {
+      parts.push(
+        `Ses forces vues par les autres (ses mots) : "${ikigai.forces.userText.slice(0, 280)}"`
+      );
+    }
+    if (ikigai.alignment?.nonNegotiables?.length) {
+      parts.push(
+        `Ses non-négociables : ${ikigai.alignment.nonNegotiables.slice(0, 6).join(", ")}`
+      );
+    }
+    if (ikigai.alignment?.salaryExpectation) {
+      parts.push(`Attente salariale : ${ikigai.alignment.salaryExpectation}`);
+    }
+  }
+
+  const li = linkedinRaw as {
+    deduced_specialty?: string;
+    hidden_patterns?: string[];
+    transition_angle?: string;
+  } | null;
+
+  if (li) {
+    if (li.deduced_specialty) {
+      parts.push(`Spécialité réelle (lecture de son CV) : ${li.deduced_specialty.slice(0, 160)}`);
+    }
+    if (li.hidden_patterns?.length) {
+      parts.push(`Patterns de carrière : ${li.hidden_patterns.slice(0, 4).join(" · ")}`);
+    }
+    if (li.transition_angle) {
+      parts.push(`Angle de transition naturel : ${li.transition_angle.slice(0, 220)}`);
+    }
+  }
+
+  if (parts.length === 0) return "";
+
+  return `
+MATÉRIEL PERSONNEL (recueilli en profondeur à l'onboarding — c'est ce qui rend votre coaching personnel, utilisez-le) :
+${parts.map((p) => `- ${p}`).join("\n")}
+`;
 }
 
 type NextActionForPrompt = Awaited<ReturnType<typeof getNextActionForCurrentUser>>;

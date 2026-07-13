@@ -129,6 +129,14 @@ export async function completeOnboarding(
       priorities: data.priorities,
       aiSummary,
       aiRecommendation,
+      // Matériel personnel — persisté pour que le coach puisse s'y référer
+      // (avant : perdu après la génération du bilan).
+      ikigai: data.ikigai
+        ? JSON.parse(JSON.stringify(data.ikigai))
+        : undefined,
+      linkedinAnalysis: data.linkedinAnalysis
+        ? JSON.parse(JSON.stringify(data.linkedinAnalysis))
+        : undefined,
       completedAt: new Date(),
     };
 
